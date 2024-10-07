@@ -7,7 +7,7 @@
 #+texinfo_dir_category: Emacs misc features
 #+texinfo_dir_title: Transient: (transient).
 #+texinfo_dir_desc: Transient Commands
-#+subtitle: for version 0.7.5
+#+subtitle: for version 0.7.7
 
 #+setupfile: .orgconfig
 
@@ -20,7 +20,7 @@ resource to get over that hurdle is Psionic K's interactive tutorial,
 available at https://github.com/positron-solutions/transient-showcase.
 
 #+texinfo: @noindent
-This manual is for Transient version 0.7.5.
+This manual is for Transient version 0.7.7.
 
 #+texinfo: @insertcopying
 :END:
@@ -1296,7 +1296,7 @@ function, which for infix arguments serves about the same purpose as
   returned value is a ~transient-prefix~ object, which holds information
   associated with the transient prefix command.
 
-- Variable: transient-active-prefix ::
+- Function: transient-active-prefix ::
 
   This function returns the active transient object.  Return ~nil~ if
   there is no active transient, if the transient buffer isn't shown,
@@ -1308,9 +1308,9 @@ function, which for infix arguments serves about the same purpose as
   is current, this function is also suitable for use in asynchronous
   code, such as timers and callbacks (this function's main use-case).
 
-  If optional PREFIXES is non-~nil~, it must be a list of prefix command
-  symbols, in which case the active transient object is only returned
-  if it matches one of the PREFIXES."
+  If optional PREFIXES is non-~nil~, it must be a prefix command symbol
+  or a list of symbols, in which case the active transient object is
+  only returned if it matches one of the PREFIXES.
 
 ** Transient State
 #+cindex: transient state
@@ -1842,6 +1842,12 @@ functions use ~describe-function~.
   Show help for the prefix, infix or suffix command represented by
   {{{var(OBJ)}}}.
 
+  Regardless of OBJ's type, if its ~show-help~ slot is non-nil, that
+  must be a function, which takes OBJ is its only argument.  It must
+  prepare, display and return a buffer, and select the window used to
+  display it.  The ~transient-show-help-window~ macro is intended for
+  use in such functions.
+
   For prefixes, show the info manual, if that is specified using the
   ~info-manual~ slot.  Otherwise, show the manpage if that is specified
   using the ~man-page~ slot.  Otherwise, show the command's
@@ -1852,11 +1858,17 @@ functions use ~describe-function~.
   For infixes, show the manpage if that is specified.  Otherwise show
   the command's documentation string.
 
+- Macro: transient-with-help-window &rest body ::
+
+  Evaluate BODY, send output to ~*Help*~ buffer, and display it in a
+  window.  Select the help window, and make the help buffer current
+  and return it.
+
 ** Prefix Slots
 
 - ~show-help~, ~man-page~ or ~info-manual~ can be used to specify the
   documentation for the prefix and its suffixes.  The command
-  ~transient-help~ uses the method ~transient-show-help~ (which see) to
+  ~transient-help~ uses the function ~transient-show-help~ (which see) to
   lookup and use these values.
 
 - ~history-key~ If multiple prefix commands should share a single value,
@@ -1953,7 +1965,7 @@ Also see [[*Suffix Classes]].
 
 - ~show-help~ A function used to display help for the suffix.  If
   unspecified, the prefix controls how help is displayed for its
-  suffixes.
+  suffixes.  See also function ~transient-show-help~.
 
 *** Slots of ~transient-infix~
 :PROPERTIES:
