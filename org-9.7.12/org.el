@@ -9,7 +9,7 @@
 ;; URL: https://orgmode.org
 ;; Package-Requires: ((emacs "26.1"))
 
-;; Version: 9.7.11
+;; Version: 9.7.12
 
 ;; This file is part of GNU Emacs.
 ;;
@@ -5489,14 +5489,14 @@ by a #."
 	    (org-remove-flyspell-overlays-in nl-before-endline end-of-endline)
             (cond
 	     ((and org-src-fontify-natively
-                   ;; Technically, according to
+                   ;; Technically, according to the
                    ;; `org-src-fontify-natively' docstring, we should
                    ;; only fontify src blocks.  However, it is common
-                   ;; to use undocumented fontification of example
-                   ;; blocks with undocumented language specifier.
-                   ;; Keep this undocumented feature for user
-                   ;; convenience.
-                   (member block-type '("src" "example")))
+                   ;; to use undocumented fontification of export and
+                   ;; example blocks. (The latter which do not support a
+                   ;; language specifier.) Keep this undocumented feature
+                   ;; for user convenience.
+                   (member block-type '("src" "export" "example")))
 	      (save-match-data
                 (org-src-font-lock-fontify-block (or lang "") block-start block-end))
 	      (add-text-properties bol-after-beginline block-end '(src-block t)))
