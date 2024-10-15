@@ -35,6 +35,9 @@
 
 ;; * Helper functions and vars
 
+(defvar-local gptel--rewrite-overlays nil
+  "List of active rewrite overlays in the buffer.")
+
 (defvar gptel--set-buffer-locally nil
   "Set model parameters from `gptel-menu' buffer-locally.
 
@@ -59,13 +62,19 @@ Meant to be called when `gptel-menu' is active."
                   args))
 
 (defun gptel--instructions-make-overlay (text &optional ov)
-  "TODO"
+  "Make or move overlay OV with TEXT."
   (save-excursion
+    ;; Move point to overlay position
     (cond
-     ((use-region-p) (goto-char (region-beginning)))
-     ((gptel--in-response-p) (gptel-beginning-of-response))
-     (t (text-property-search-backward 'gptel 'response)))
-    (skip-chars-forward "\n \t")
+     ((use-region-p)
+      (if (pos-visible-in-window-p (region-beginning))
+          (goto-char (region-beginning))))
+     ((gptel--in-response-p)
+      (gptel-beginning-of-response)
+      (skip-chars-forward "\n \t"))
+     (t (text-property-search-backward 'gptel 'response)
+        (skip-chars-forward "\n \t")))
+    ;; Make overlay
     (if (and ov (overlayp ov))
         (move-overlay ov (point) (point) (current-buffer))
       (setq ov (make-overlay (point) (point) nil t)))
@@ -75,9 +84,8 @@ Meant to be called when `gptel-menu' is active."
     (overlay-put ov 'category 'gptel)
     (overlay-put
      ov 'after-string
-     (concat
-      (propertize (concat "GPTEL: " text)
-                  'font-lock-face '(:inherit shadow :box t))
+     (concat (propertize (concat "DIRECTIVE: " text)
+                         'font-lock-face '(:inherit shadow :weight bold  :box t))
       "\n"))
     ov))
 
@@ -89,23 +97,15 @@ documention."
   (ignore-errors
     (read-from-minibuffer prompt initial-input read-expression-map t history)))
 
-(defun gptel--refactor-or-rewrite ()
+(defsubst gptel--refactor-or-rewrite ()
   "Rewrite should be refactored into refactor.
 
 Or is it the other way around?"
   (if (derived-mode-p 'prog-mode)
       "Refactor" "Rewrite"))
 
-(defvar-local gptel--rewrite-message nil)
-(defun gptel--rewrite-message ()
-  "Set a generic refactor/rewrite message for the buffer."
-  (if (derived-mode-p 'prog-mode)
-      (format "You are a %s programmer. Refactor the following code. Generate only code, no explanation."
-              (gptel--strip-mode-suffix major-mode))
-    (format "You are a prose editor. Rewrite the following text to be more professional.")))
-
 (defvar gptel--crowdsourced-prompts-url
-  "https://github.com/f/awesome-chatgpt-prompts/raw/main/prompts.csv"
+  "https://raw.githubusercontent.com/f/awesome-chatgpt-prompts/main/prompts.csv"
   "URL for crowdsourced LLM system prompts.")
 
 (defvar gptel--crowdsourced-prompts
@@ -223,8 +223,10 @@ This is used only for setting this variable via `gptel-menu'.")
   "Class used for gptel-backends.")
 
 (cl-defmethod transient-format-value ((obj gptel-provider-variable))
-  (propertize (concat (gptel-backend-name (oref obj value)) ":"
-                      (buffer-local-value (oref obj model) transient--original-buffer))
+  (propertize (concat
+               (gptel-backend-name (oref obj value)) ":"
+               (gptel--model-name
+                (buffer-local-value (oref obj model) transient--original-buffer)))
               'face 'transient-value))
 
 (cl-defmethod transient-infix-set ((obj gptel-provider-variable) value)
@@ -307,7 +309,9 @@ Also format its value in the Transient menu."
     (gptel--infix-temperature :if (lambda () gptel-expert-commands))
     (gptel--infix-use-context)
     (gptel--infix-track-response
-     :if (lambda () (and gptel-expert-commands (not gptel-mode))))]
+     :if (lambda () (and gptel-expert-commands (not gptel-mode))))
+    (gptel--infix-track-media
+     :if (lambda () (and gptel-mode (gptel--model-capable-p 'media))))]
    ["Prompt from"
     ("m" "Minibuffer instead" "m")
     ("y" "Kill-ring instead" "y")
@@ -338,8 +342,11 @@ Also format its value in the Transient menu."
   [["Send"
     (gptel--suffix-send)
     ("M-RET" "Regenerate" gptel--regenerate :if gptel--in-response-p)]
-   [:description gptel--refactor-or-rewrite
-    :if use-region-p
+   [:description (lambda ()
+                   (concat
+                    (and gptel--rewrite-overlays "Continue ")
+                    (gptel--refactor-or-rewrite)))
+    :if (lambda () (or gptel--rewrite-overlays (use-region-p)))
     ("r"
      ;;FIXME: Transient complains if I use `gptel--refactor-or-rewrite' here. It
      ;;reads this function as a suffix instead of a function that returns the
@@ -451,30 +458,6 @@ Customize `gptel-directives' for task-specific prompts."
     :setup-children gptel-system-prompt--setup
     :pad-keys t])
 
-;; ** Prefix for rewriting/refactoring
-
-(transient-define-prefix gptel-rewrite-menu ()
-  "Rewrite or refactor text region using an LLM."
-  [:description
-   (lambda ()
-     (format "Directive:  %s"
-             (truncate-string-to-width
-              (or gptel--rewrite-message (gptel--rewrite-message))
-              (max (- (window-width) 14) 20) nil nil t)))
-   (gptel--infix-rewrite-prompt)]
-  [[:description "Diff Options"
-   ("-w" "Wordwise diff" "-w")]
-   [:description
-    (lambda () (if (derived-mode-p 'prog-mode)
-              "Refactor" "Rewrite"))
-    (gptel--suffix-rewrite)
-    (gptel--suffix-rewrite-and-replace)
-    (gptel--suffix-rewrite-and-ediff)]]
-  (interactive)
-  (unless gptel--rewrite-message
-    (setq gptel--rewrite-message (gptel--rewrite-message)))
-  (transient-setup 'gptel-rewrite-menu))
-
 
 ;; * Transient Infixes
 
@@ -562,15 +545,29 @@ responses."
             (cl-loop
              for (name . backend) in gptel--known-backends
              nconc (cl-loop for model in (gptel-backend-models backend)
-                            collect (list (concat name ":" model) backend model))
-             into models-alist finally return
+                            collect (list (concat name ":" (gptel--model-name model))
+                                          backend model))
+             into models-alist
+             with completion-extra-properties =
+             `(:annotation-function
+               ,(lambda (comp)
+                  (let* ((model (nth 2 (assoc comp models-alist)))
+                         (desc (get model :description))
+                         (caps (get model :capabilities)))
+                   (when (or desc caps)
+                    (concat
+                     (propertize " " 'display `(space :align-to (0.33 . ,(window-width))))
+                     desc
+                     (propertize " " 'display `(space :align-to (0.75 . ,(window-width))))
+                     (when caps (prin1-to-string caps)))))))
+             finally return
              (cdr (assoc (completing-read prompt models-alist nil t)
                          models-alist)))))
 
 (transient-define-infix gptel--infix-temperature ()
   "Temperature of request."
   :description "Temperature (0 - 2.0)"
-  :class 'transient-lisp-variable
+  :class 'gptel-lisp-variable
   :variable 'gptel-temperature
   :set-value #'gptel--set-with-scope
   :key "-t"
@@ -596,6 +593,24 @@ querying the LLM."
   :display-if-true "Yes"
   :display-if-false "No"
   :key "-d")
+
+(transient-define-infix gptel--infix-track-media ()
+  "Send media from \"standalone\" links in the prompt.
+
+When the active `gptel-model' supports it, gptel can send images
+or other media from links in the buffer to the LLM.  Only
+\"standalone\" links are considered: these are links on their own
+line with no surrounding text.
+
+What link types are sent depends on the mime-types the model
+supports.  See `gptel-track-media' for more information."
+  :description "Send media from links"
+  :class 'gptel--switches
+  :variable 'gptel-track-media
+  :set-value #'gptel--set-with-scope
+  :display-if-true "Yes"
+  :display-if-false "No"
+  :key "-I")
 
 ;; ** Infixes for adding and removing context
 
@@ -670,20 +685,6 @@ Or in an extended conversation:
   :argument ":"
   :description "Add directive"
   :transient t)
-
-(transient-define-infix gptel--infix-rewrite-prompt ()
-  "Chat directive (system message) to use for rewriting or refactoring."
-  :description (lambda () (if (derived-mode-p 'prog-mode)
-                         "Set directives for refactor"
-                       "Set directives for rewrite"))
-  :format "%k %d"
-  :class 'transient-lisp-variable
-  :variable 'gptel--rewrite-message
-  :key "h"
-  :prompt "Set directive for rewrite: "
-  :reader (lambda (prompt _ history)
-            (read-string
-             prompt (gptel--rewrite-message) history)))
 
 
 ;; * Transient Suffixes
@@ -941,9 +942,8 @@ When LOCAL is non-nil, set the system message only in the current buffer."
                         (window-height . ,#'fit-window-to-buffer)))
       (let ((quit-to-menu
              (lambda ()
+               "Cancel system message update and return to `gptel-menu'"
                (interactive)
-               (local-unset-key (kbd "C-c C-c"))
-               (local-unset-key (kbd "C-c C-k"))
                (quit-window)
                (display-buffer
                 orig-buf
@@ -951,16 +951,20 @@ When LOCAL is non-nil, set the system message only in the current buffer."
                    display-buffer-use-some-window)
                   (body-function . ,#'select-window)))
                (call-interactively #'gptel-menu))))
-        (local-set-key (kbd "C-c C-c")
-                       (lambda ()
-                         (interactive)
-                         (let ((system-message
-                                (buffer-substring msg-start (point-max))))
-                           (with-current-buffer orig-buf
-                             (gptel--set-with-scope 'gptel--system-message system-message
-                                                    gptel--set-buffer-locally)))
-                         (funcall quit-to-menu)))
-        (local-set-key (kbd "C-c C-k") quit-to-menu)))))
+        (use-local-map
+         (make-composed-keymap
+          (define-keymap
+            "C-c C-c" (lambda ()
+                        "Confirm system message and return to `gptel-menu'."
+                        (interactive)
+                        (let ((system-message
+                               (buffer-substring msg-start (point-max))))
+                          (with-current-buffer orig-buf
+                            (gptel--set-with-scope 'gptel--system-message system-message
+                                                   gptel--set-buffer-locally)))
+                        (funcall quit-to-menu))
+            "C-c C-k" quit-to-menu)
+          text-mode-map))))))
 
 ;; ** Suffix for displaying and removing context
 (declare-function gptel-context--buffer-setup "gptel-context")
@@ -1004,80 +1008,6 @@ When LOCAL is non-nil, set the system message only in the current buffer."
                         'transient-value))))))
   (interactive)
   (gptel-context--buffer-setup))
-
-;; ** Suffixes for rewriting/refactoring
-
-(transient-define-suffix gptel--suffix-rewrite ()
-  "Rewrite or refactor region contents."
-  :key "r"
-  :description #'gptel--refactor-or-rewrite
-  (interactive)
-  (let* ((prompt (buffer-substring-no-properties
-                  (region-beginning) (region-end)))
-         (stream gptel-stream)
-         (gptel--system-message gptel--rewrite-message))
-    (gptel-request prompt :stream stream)))
-
-(transient-define-suffix gptel--suffix-rewrite-and-replace ()
-  "Refactor region contents and replace it."
-  :key "R"
-  :description (lambda () (concat (gptel--refactor-or-rewrite) " in place"))
-  (interactive)
-  (let* ((prompt (buffer-substring-no-properties
-                  (region-beginning) (region-end)))
-         (stream gptel-stream)
-         (gptel--system-message gptel--rewrite-message))
-    (kill-region (region-beginning) (region-end))
-    (message "Original text saved to kill-ring.")
-    (gptel-request prompt :stream stream :in-place t)))
-
-(transient-define-suffix gptel--suffix-rewrite-and-ediff (args)
-  "Refactoring or rewrite region contents and run Ediff."
-  :key "E"
-  :description (lambda () (concat (gptel--refactor-or-rewrite) " and Ediff"))
-  (interactive (list (transient-args transient-current-command)))
-  (letrec ((prompt (buffer-substring-no-properties
-                  (region-beginning) (region-end)))
-           (gptel--system-message gptel--rewrite-message)
-           ;; TODO: Technically we should save the window config at the time
-           ;; `ediff-setup-hook' runs, but this will do for now.
-           (cwc (current-window-configuration))
-           (gptel--ediff-restore
-            (lambda ()
-              (when (window-configuration-p cwc)
-                (set-window-configuration cwc))
-              (remove-hook 'ediff-quit-hook gptel--ediff-restore))))
-    (message "Waiting for response... ")
-    (gptel-request
-     prompt
-     :context (cons (region-beginning) (region-end))
-     :callback
-     (lambda (response info)
-       (if (not response)
-           (message "ChatGPT response error: %s" (plist-get info :status))
-         (let* ((gptel-buffer (plist-get info :buffer))
-                (gptel-bounds (plist-get info :context))
-                (buffer-mode
-                 (buffer-local-value 'major-mode gptel-buffer)))
-           (pcase-let ((`(,new-buf ,new-beg ,new-end)
-                        (with-current-buffer (get-buffer-create "*gptel-rewrite-Region.B-*")
-                          (let ((inhibit-read-only t))
-                            (erase-buffer)
-                            (funcall buffer-mode)
-                            (insert response)
-                            (goto-char (point-min))
-                            (list (current-buffer) (point-min) (point-max))))))
-             (require 'ediff)
-             (add-hook 'ediff-quit-hook gptel--ediff-restore)
-             (apply
-              #'ediff-regions-internal
-              (get-buffer (ediff-make-cloned-buffer gptel-buffer "-Region.A-"))
-              (car gptel-bounds) (cdr gptel-bounds)
-              new-buf new-beg new-end
-              nil
-              (if (transient-arg-value "-w" args)
-                  (list 'ediff-regions-wordwise 'word-wise nil)
-                (list 'ediff-regions-linewise nil nil))))))))))
 
 (provide 'gptel-transient)
 ;;; gptel-transient.el ends here

@@ -71,6 +71,11 @@
                             (:category "HARM_CATEGORY_HATE_SPEECH"
                              :threshold "BLOCK_NONE")]))
         params)
+    ;; HACK only gemini-pro doesn't support system messages.  Need a less hacky
+    ;; way to do this.
+    (unless (equal gptel-model "gemini-pro")
+      (plist-put prompts-plist :system_instruction
+                 `(:parts (:text ,gptel--system-message))))
     (when gptel-temperature
       (setq params
             (plist-put params
@@ -85,7 +90,9 @@
     prompts-plist))
 
 (cl-defmethod gptel--parse-buffer ((_backend gptel-gemini) &optional max-entries)
-  (let ((prompts) (prop))
+  (let ((prompts) (prop)
+        (include-media (and gptel-track-media (or (gptel--model-capable-p 'media)
+                                                  (gptel--model-capable-p 'url)))))
     (if (or gptel-mode gptel-track-response)
         (while (and
                 (or (not max-entries) (>= max-entries 0))
@@ -94,40 +101,109 @@
                             (when (get-char-property (max (point-min) (1- (point)))
                                                      'gptel)
                               t))))
-          (push (list :role (if (prop-match-value prop) "model" "user")
-                      :parts
-                      (list :text (string-trim
-                                   (buffer-substring-no-properties (prop-match-beginning prop)
-                                                                   (prop-match-end prop))
-                                   (format "[\t\r\n ]*\\(?:%s\\)?[\t\r\n ]*"
-                                           (regexp-quote (gptel-prompt-prefix-string)))
-                                   (format "[\t\r\n ]*\\(?:%s\\)?[\t\r\n ]*"
-                                           (regexp-quote (gptel-response-prefix-string))))))
-                prompts)
+          (if (prop-match-value prop)   ;assistant role
+              (push (list :role "model"
+                          :parts
+                          (list :text (buffer-substring-no-properties (prop-match-beginning prop)
+                                                                      (prop-match-end prop))))
+                    prompts)
+            (if include-media
+                (push (list :role "user"
+                            :parts (gptel--gemini-parse-multipart
+                                    (gptel--parse-media-links
+                                     major-mode (prop-match-beginning prop) (prop-match-end prop))))
+                      prompts)
+              (push (list :role "user"
+                          :parts
+                          (vconcat
+                           (list :text (gptel--trim-prefixes
+                                        (buffer-substring-no-properties (prop-match-beginning prop)
+                                                                        (prop-match-end prop))))))
+                    prompts)))
           (and max-entries (cl-decf max-entries)))
       (push (list :role "user"
                   :parts
-                  (list :text (string-trim
-                               (buffer-substring-no-properties (point-min) (point-max)))))
+                  (vconcat
+                   (list :text (string-trim
+                                (buffer-substring-no-properties (point-min) (point-max))))))
             prompts))
-    (cl-callf (lambda (msg) (concat gptel--system-message "\n\n" msg))
-        (thread-first (car prompts)
-                      (plist-get :parts)
-                      (plist-get :text)))
+    ;; HACK Prepend the system message to the first user prompt, but only for
+    ;; this model.
+    (when (equal gptel-model "gemini-pro")
+      (cl-callf (lambda (msg) (concat gptel--system-message "\n\n" msg))
+          (thread-first (car prompts)
+                        (plist-get :parts)
+                        (plist-get :text))))
     prompts))
 
-(cl-defmethod gptel--wrap-user-prompt ((_backend gptel-gemini) prompts)
-  "Wrap the last user prompt in PROMPTS with the context string."
-  (cl-callf gptel-context--wrap
-      (plist-get (plist-get (car (last prompts)) :parts) :text)))
+(defun gptel--gemini-parse-multipart (parts)
+  "Convert a multipart prompt PARTS to the Gemini API format.
+
+The input is an alist of the form
+ ((:text \"some text\")
+  (:media \"/path/to/media.png\" :mime \"image/png\")
+  (:text \"More text\")).
+
+The output is a vector of entries in a backend-appropriate
+format."
+  (cl-loop
+   for part in parts
+   for n upfrom 1
+   with last = (length parts)
+   for text = (plist-get part :text)
+   for media = (plist-get part :media)
+   if text do
+   (and (or (= n 1) (= n last)) (setq text (gptel--trim-prefixes text))) and
+   unless (string-empty-p text)
+   collect (list :text text) into parts-array end
+   else if media
+   collect
+   `(:inline_data
+     (:mime_type ,(plist-get part :mime)
+      :data ,(gptel--base64-encode media)))
+   into parts-array
+   finally return (vconcat parts-array)))
+
+(cl-defmethod gptel--wrap-user-prompt ((_backend gptel-gemini) prompts
+                                       &optional inject-media)
+  "Wrap the last user prompt in PROMPTS with the context string.
+
+If INJECT-MEDIA is non-nil wrap it with base64-encoded media
+files in the context."
+  (if inject-media
+      ;; Wrap the first user prompt with included media files/contexts
+      (when-let ((media-list (gptel-context--collect-media)))
+        (cl-callf (lambda (current)
+                    (vconcat (gptel--gemini-parse-multipart media-list)
+                             current))
+            (plist-get (car prompts) :parts)))
+    ;; Wrap the last user prompt with included text contexts
+    (cl-callf (lambda (current)
+                (if-let ((wrapped (gptel-context--wrap nil)))
+                    (vconcat `((:text ,wrapped)) current)
+                  current))
+        (plist-get (car (last prompts)) :parts))))
 
 ;;;###autoload
 (cl-defun gptel-make-gemini
     (name &key curl-args header key (stream nil)
           (host "generativelanguage.googleapis.com")
           (protocol "https")
-          (models '("gemini-pro"
-                    "gemini-1.5-pro-latest"))
+          (models '((gemini-pro
+                     :description "Complex reasoning tasks, problem solving, data extraction and generation"
+                     :capabilities (tool json media)
+                     :mime-types ("image/png" "image/jpeg" "image/webp" "image/heic" "image/heif"
+                                  "application/pdf" "text/plain" "text/csv" "text/html"))
+                    (gemini-1.5-flash
+                     :description "Fast and versatile performance across a diverse variety of tasks"
+                     :capabilities (tool json media)
+                     :mime-types ("image/png" "image/jpeg" "image/webp" "image/heic" "image/heif"
+                                  "application/pdf" "text/plain" "text/csv" "text/html"))
+                    (gemini-1.5-pro-latest
+                     :description "Complex reasoning tasks, problem solving, data extraction and generation"
+                     :capabilities (tool json media)
+                     :mime-types ("image/png" "image/jpeg" "image/webp" "image/heic" "image/heif"
+                                  "application/pdf" "text/plain" "text/csv" "text/html"))))
           (endpoint "/v1beta/models"))
 
   "Register a Gemini backend for gptel with NAME.
@@ -139,7 +215,27 @@ CURL-ARGS (optional) is a list of additional Curl arguments.
 HOST (optional) is the API host, defaults to
 \"generativelanguage.googleapis.com\".
 
-MODELS is a list of available model names.
+MODELS is a list of available model names, as symbols.
+Additionally, you can specify supported LLM capabilities like
+vision or tool-use by appending a plist to the model with more
+information, in the form
+
+ (model-name . plist)
+
+Currently recognized plist keys are :description, :capabilities
+and :mime-types.  An example of a model specification including
+both kinds of specs:
+
+:models
+\\='(gemini-pro                            ;Simple specs
+  gemini-1.5-flash
+  (gemini-1.5-pro-latest                ;Full spec
+   :description
+   \"Complex reasoning tasks, problem solving and data extraction\"
+   :capabilities (tool json)
+   :mime-types
+   (\"image/jpeg\" \"image/png\" \"image/webp\" \"image/heic\")))
+
 
 STREAM is a boolean to enable streaming responses, defaults to
 false.
@@ -150,9 +246,9 @@ ENDPOINT (optional) is the API endpoint for completions, defaults to
 \"/v1beta/models\".
 
 HEADER (optional) is for additional headers to send with each
-request. It should be an alist or a function that retuns an
+request.  It should be an alist or a function that retuns an
 alist, like:
-((\"Content-Type\" . \"application/json\"))
+ ((\"Content-Type\" . \"application/json\"))
 
 KEY (optional) is a variable whose value is the API key, or
 function that returns the key."
@@ -162,7 +258,7 @@ function that returns the key."
                   :name name
                   :host host
                   :header header
-                  :models models
+                  :models (gptel--process-models models)
                   :protocol protocol
                   :endpoint endpoint
                   :stream stream
