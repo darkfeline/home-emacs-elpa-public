@@ -43,16 +43,17 @@ or call the function `ws-butler-global-mode'.")
 (custom-autoload 'ws-butler-global-mode "ws-butler" nil)
 (autoload 'ws-butler-global-mode "ws-butler" "\
 Toggle Ws-Butler mode in all buffers.
-With prefix ARG, enable Ws-Butler-Global mode if ARG is positive; otherwise,
-disable it.
+With prefix ARG, enable Ws-Butler-Global mode if ARG is positive;
+otherwise, disable it.
 
 If called from Lisp, toggle the mode if ARG is `toggle'.
 Enable the mode if ARG is nil, omitted, or is a positive number.
 Disable the mode if ARG is a negative number.
 
-Ws-Butler mode is enabled in all buffers where `(lambda nil (unless (apply
-#'derived-mode-p ws-butler-global-exempt-modes) (ws-butler-mode)))' would do
-it.
+Ws-Butler mode is enabled in all buffers where `(lambda nil Enable
+`ws-butler-mode' unless current major mode is exempt. (unless (apply
+#'derived-mode-p ws-butler-global-exempt-modes) (ws-butler-mode)))'
+would do it.
 
 See `ws-butler-mode' for more information on Ws-Butler mode.
 
