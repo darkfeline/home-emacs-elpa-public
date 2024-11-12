@@ -269,7 +269,7 @@ results as a string."
   "Return non-nil if the last prompt matches input prompt.
 Backport of `python-util-comint-end-of-output-p' to emacs28.  To
 be removed after minimum supported version reaches emacs29."
-  (when-let ((prompt (python-util-comint-last-prompt)))
+  (when-let* ((prompt (python-util-comint-last-prompt)))
     (python-shell-comint-end-of-output-p
      (buffer-substring-no-properties
       (car prompt) (cdr prompt)))))
@@ -538,7 +538,8 @@ by `org-babel-comint-async-filter'."
   (org-babel-comint-async-register
    session (current-buffer)
    "ob_comint_async_python_\\(start\\|end\\|file\\)_\\(.+\\)"
-   'org-babel-chomp 'org-babel-python-async-value-callback)
+   'org-babel-chomp 'org-babel-python-async-value-callback
+   'disable-prompt-filtering)
   (pcase result-type
     (`output
      (let ((uuid (org-id-uuid)))

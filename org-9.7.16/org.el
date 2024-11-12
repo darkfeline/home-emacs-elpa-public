@@ -9,7 +9,7 @@
 ;; URL: https://orgmode.org
 ;; Package-Requires: ((emacs "26.1"))
 
-;; Version: 9.7.14
+;; Version: 9.7.16
 
 ;; This file is part of GNU Emacs.
 ;;
@@ -8278,9 +8278,13 @@ See the docstring of `org-open-file' for details."
   ;; link abbreviations. So, suppressing parser complains about
   ;; non-Org buffer to keep the feature working at least to the extent
   ;; it did before.
+  (require 'warnings) ; Emacs <30
+  (defvar warning-suppress-types) ; warnings.el
   (let ((warning-suppress-types
          (cons '(org-element org-element-parser)
                warning-suppress-types)))
+    ;; FIXME: Suppress warning in Emacs <30
+    ;; (ignore warning-suppress-types)
     (org-open-at-point)))
 
 (defvar org-window-config-before-follow-link nil
@@ -13233,8 +13237,8 @@ However, if LITERAL-NIL is set, return the string value \"nil\" instead."
     ;; Consider global properties, if we found no PROPERTY (or maybe
     ;; only PROPERTY+).
     (unless found-inherited?
-      (when-let ((global (org--property-global-or-keyword-value
-                          property t)))
+      (when-let* ((global (org--property-global-or-keyword-value
+                           property t)))
         (setq values (cons global values))))
     (when values
       (setq values (mapconcat

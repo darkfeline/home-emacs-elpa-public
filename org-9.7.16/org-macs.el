@@ -33,6 +33,7 @@
 
 (require 'cl-lib)
 (require 'format-spec)
+(eval-when-compile (require 'subr-x))  ; For `when-let*', Emacs < 29
 
 ;;; Org version verification.
 
@@ -573,7 +574,7 @@ is selected, only the bare key is returned."
 		   ((assoc current specials) (throw 'exit current))
 		   (t (error "No entry available")))))))
         (when buffer
-          (when-let ((window (get-buffer-window buffer t)))
+          (when-let* ((window (get-buffer-window buffer t)))
             (quit-window 'kill window))
           (kill-buffer buffer))))))
 
