@@ -4,6 +4,9 @@
 *.elc
 
 # VC packages
+/easydraw
+/go-mode
 /jakuri
 /magit
 /mir
+/reintegrate
