@@ -1,3 +1,7 @@
 /archives/
 /gnupg/
+
 *.elc
+
+# VC packages
+/jakuri
