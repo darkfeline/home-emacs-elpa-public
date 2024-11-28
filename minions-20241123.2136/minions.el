@@ -6,8 +6,8 @@
 ;; Homepage: https://github.com/tarsius/minions
 ;; Keywords: convenience
 
-;; Package-Version: 20240805.1422
-;; Package-Revision: 413b95a0d1c7
+;; Package-Version: 20241123.2136
+;; Package-Revision: e04415dc028b
 ;; Package-Requires: ((emacs "26.1") (compat "30.0.0.0"))
 
 ;; SPDX-License-Identifier: GPL-3.0-or-later
@@ -229,7 +229,7 @@ are enabled."
                     minor-mode-alist))
 
 (defun minions--modes ()
-  (cl-mapcan
+  (mapcan
    (lambda (fn)
      (let ((var (and (boundp fn) fn))
            (ignore nil))
