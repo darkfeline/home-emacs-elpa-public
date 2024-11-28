@@ -6,8 +6,8 @@
 ;; Homepage: https://github.com/magit/ghub
 ;; Keywords: tools
 
-;; Package-Version: 20241001.1025
-;; Package-Revision: 23d1cd6b089d
+;; Package-Version: 20241123.2135
+;; Package-Revision: 4f39b86544ab
 ;; Package-Requires: (
 ;;     (emacs "26.3")
 ;;     (compat "30.0.0.0")
@@ -447,10 +447,10 @@ to the value of `ghub-response-headers', for later use when
 this function is called with nil for PAYLOAD."
   (if (eq (ghub--req-forge req) 'bitbucket)
       (if payload
-          (let* ((page (cl-mapcan (lambda (key)
-                                    (and-let* ((elt (assq key payload)))
-                                      (list elt)))
-                                  '(size page pagelen next previous)))
+          (let* ((page (mapcan (lambda (key)
+                                 (and-let* ((elt (assq key payload)))
+                                   (list elt)))
+                               '(size page pagelen next previous)))
                  (headers (cons (cons 'link-alist page) headers)))
             (if (and req (or (ghub--req-callback req)
                              (ghub--req-errorback req)))
