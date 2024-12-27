@@ -5,9 +5,9 @@
 ;; Author: Daniel Mendler <mail@daniel-mendler.de>
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2021
-;; Version: 1.9
-;; Package-Requires: ((emacs "27.1") (compat "30") (vertico "1.9"))
-;; Homepage: https://github.com/minad/vertico
+;; Version: 1.10
+;; Package-Requires: ((emacs "28.1") (compat "30") (vertico "1.10"))
+;; URL: https://github.com/minad/vertico
 
 ;; This file is part of GNU Emacs.
 
@@ -179,9 +179,6 @@ selected candidate for the current command."
      (when-let (((>= n 0)) (session (nth n vertico-repeat--step)))
        (setq vertico-repeat--pos n)
        session))))
-
-(define-obsolete-function-alias
-  'vertico-repeat-last 'vertico-repeat-previous "1.4")
 
 ;;;###autoload
 (defun vertico-repeat-select ()

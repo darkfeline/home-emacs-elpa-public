@@ -5,9 +5,9 @@
 ;; Author: Daniel Mendler <mail@daniel-mendler.de>
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2021
-;; Version: 1.9
-;; Package-Requires: ((emacs "27.1") (compat "30") (vertico "1.9"))
-;; Homepage: https://github.com/minad/vertico
+;; Version: 1.10
+;; Package-Requires: ((emacs "28.1") (compat "30") (vertico "1.10"))
+;; URL: https://github.com/minad/vertico
 
 ;; This file is part of GNU Emacs.
 
@@ -83,9 +83,11 @@
   (when vertico-flat-mode
     (push `(vertico--input . ,vertico-flat-map) minor-mode-map-alist)))
 
-(cl-defmethod vertico--display-candidates (candidates &context (vertico-flat-mode (eql t)))
+(cl-defmethod vertico--resize (&context (vertico-flat-mode (eql t)))
   (setq-local truncate-lines nil
-              resize-mini-windows t)
+              resize-mini-windows t))
+
+(cl-defmethod vertico--display-candidates (candidates &context (vertico-flat-mode (eql t)))
   (move-overlay vertico--candidates-ov (point-max) (point-max))
   (overlay-put
    vertico--candidates-ov 'after-string
