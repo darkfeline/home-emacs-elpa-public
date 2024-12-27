@@ -6,8 +6,8 @@
 ;; Maintainer: Federico Tedin <federicotedin@gmail.com>
 ;; Homepage: https://github.com/federicotdn/verb
 ;; Keywords: tools
-;; Package-Version: 20241021.1914
-;; Package-Revision: c05263f8cad0
+;; Package-Version: 20241223.1316
+;; Package-Revision: 2c46542a64e7
 ;; Package-Requires: ((emacs "26.3"))
 
 ;; This file is NOT part of GNU Emacs.
@@ -332,7 +332,7 @@ Request templates are defined without HTTP methods, paths or hosts.")
   "Prefix for Verb metadata keys in heading properties.
 Matching is case insensitive.")
 
-(defconst verb-version "2.16.0"
+(defconst verb-version "3.0.0"
   "Verb package version.")
 
 (defconst verb--multipart-boundary-alphabet
@@ -722,6 +722,9 @@ an error."
 (defalias 'verb-shell #'shell-command-to-string
   "Alias to `shell-command-to-string'.")
 
+(defalias 'verb-url #'url-encode-url
+  "Alias to `url-encode-url'.")
+
 (defun verb-unix-epoch ()
   "Return the current time as an integer number of seconds since the epoch."
   (floor (time-to-seconds)))
@@ -920,7 +923,7 @@ Note that the entire buffer is considered when generating the request
 spec, not only the section contained by the source block.
 
 This function is called from ob-verb.el (`org-babel-execute:verb')."
-  (verb-load-prelude-files-from-hierarchy)
+  (verb--load-preludes-from-hierarchy)
   (save-excursion
     (goto-char pos)
     (let* ((verb--vars (append vars verb--vars))
@@ -999,7 +1002,7 @@ all the request specs in SPECS, in the order they were passed in."
   ;; Load all prelude verb-var's before rest of the spec to be complete, unless
   ;; specs already exists which means called from ob-verb block and loaded.
   (unless specs
-    (verb-load-prelude-files-from-hierarchy))
+    (verb--load-preludes-from-hierarchy))
   (let ((p (point))
         done final-spec)
     (save-restriction
@@ -1029,9 +1032,9 @@ all the request specs in SPECS, in the order they were passed in."
                           "Remember to tag your headlines with :%s:")
                   verb-tag))))
 
-(defun verb-load-prelude-files-from-hierarchy ()
+(defun verb--load-preludes-from-hierarchy ()
   "Load all Verb-Prelude's of current heading and up, including buffer level.
-Children with same named verb-vars as parents, will override the parent
+Children setting same named Verb variables as parents will override the parent
 settings."
   (save-restriction
     (widen)
@@ -1058,9 +1061,9 @@ settings."
                                    (org-element-property :value keyword)))))))
           (when prelude
             (push prelude preludes)))
-        ;; Lower-level prelude files override same settings in hierarchy
-        (dolist (file preludes)
-          (verb-load-prelude-file file))))))
+        ;; Lower-level preludes override same settings in hierarchy
+        (dolist (prelude preludes)
+          (verb--load-prelude prelude))))))
 
 (defun verb-kill-response-buffer-and-window (&optional keep-window)
   "Delete response window and kill its buffer.
@@ -1183,8 +1186,25 @@ This affects only the current buffer."
             (yes-or-no-p "Unset all Verb variables for current buffer? "))
     (setq verb--vars nil)))
 
-(defun verb-load-prelude-file (filename)
-  "Load Emacs Lisp or JSON configuration file FILENAME into Verb variables."
+(defun verb--load-prelude (prelude)
+  "Load prelude PRELUDE from a file, or from string contents.
+PRELUDE is interpreted as a filename if and only if it is a single-line
+string containing no parenthesis nor curly brackets."
+  (if (and (= 1 (length (split-string prelude "\n")))
+           (not (string-match-p "[(){}]" prelude)))
+      (verb--load-prelude-from-file prelude)
+    (verb--load-prelude-from-string prelude)))
+
+(defun verb--load-prelude-from-string (value)
+  "Load Emacs Lisp or JSON prelude data from VALUE.
+First, try to read VALUE as JSON.  If that fails, evaluate the code as
+Emacs Lisp."
+  (condition-case nil
+      (verb--process-json-prelude value)
+    (json-readtable-error (verb--eval-string value))))
+
+(defun verb--load-prelude-from-file (filename)
+  "Load Emacs Lisp or JSON prelude file FILENAME into Verb variables."
   (interactive)
   (save-excursion
     (let ((file-extension (file-name-extension filename)))
@@ -1192,34 +1212,41 @@ This affects only the current buffer."
         (setq file-extension (file-name-extension (file-name-base filename))))
       (cond
        ((string= "el" file-extension) ; file is Emacs Lisp
-        (when (or verb-suppress-load-unsecure-prelude-warning
-                  (yes-or-no-p
-                   (concat (format "File %s may contain code " filename)
-                           "that may not be safe\nLoad it anyways? ")))
-          (load-file filename)))
-       ((string-match-p "^json.*" file-extension) ; file is JSON(C)
-        (let* ((file-contents
-                (with-temp-buffer
-                  (insert-file-contents filename)
-                  (set-auto-mode)
-                  (goto-char (point-min))
-                  ;; If a modern JSON / JavaScript package not
-                  ;; installed, then comments cannot be removed or
-                  ;; supported. Also, not likely to have JSON comments
-                  ;; if this is the case.
-                  (when comment-start
-                    (comment-kill (count-lines (point-min) (point-max))))
-                  (verb--buffer-string-no-properties)))
-               (json-object-type 'plist)
-               (data (json-read-from-string file-contents)))
-          ;; Search for values on the topmost container, and one level down.
-          (cl-loop for (k v) on data by #'cddr
-                   do (verb-set-var (substring (symbol-name k) 1) v)
-                   if (and (listp v) (cl-evenp (length v)))
-                   do (cl-loop for (subk subv) on v by #'cddr
-                               do (verb-set-var
-                                   (substring (symbol-name subk) 1) subv)))))
+        (if (or verb-suppress-load-unsecure-prelude-warning
+                (yes-or-no-p
+                 (concat (format "File %s may contain code " filename)
+                         "that may not be safe (see: "
+                         "`verb-suppress-load-unsecure-prelude-warning')"
+                         "\nLoad it anyways? ")))
+            (load-file filename)
+          (user-error "Operation cancelled")))
+       ((string-match-p "^json.?" file-extension) ; file is JSON(C)
+        (let ((file-contents
+               (with-temp-buffer
+                 (insert-file-contents filename)
+                 (set-auto-mode)
+                 (goto-char (point-min))
+                 ;; If a modern JSON / JavaScript package not
+                 ;; installed, then comments cannot be removed or
+                 ;; supported. Also, not likely to have JSON comments
+                 ;; if this is the case.
+                 (when comment-start
+                   (comment-kill (count-lines (point-min) (point-max))))
+                 (verb--buffer-string-no-properties))))
+          (verb--process-json-prelude file-contents)))
        (t (user-error "Unable to determine file type for %s" filename))))))
+
+(defun verb--process-json-prelude (json-string)
+  "Process JSON-STRING and set Verb variables accordingly."
+  (let* ((json-object-type 'plist)
+         (data (json-read-from-string json-string)))
+    ;; Search for values on the topmost container, and one level down.
+    (cl-loop for (k v) on data by #'cddr
+             do (verb-set-var (substring (symbol-name k) 1) v)
+             if (and (listp v) (cl-evenp (length v)))
+             do (cl-loop for (subk subv) on v by #'cddr
+                         do (verb-set-var
+                             (substring (symbol-name subk) 1) subv)))))
 
 (defun verb-show-vars ()
   "Show values of variables set with `verb-var' or `verb-set-var'.
