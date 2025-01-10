@@ -1,14 +1,14 @@
 ;;; minions.el --- A minor-mode menu for the mode line  -*- lexical-binding:t -*-
 
-;; Copyright (C) 2018-2024 Jonas Bernoulli
+;; Copyright (C) 2018-2025 Jonas Bernoulli
 
 ;; Author: Jonas Bernoulli <emacs.minions@jonas.bernoulli.dev>
 ;; Homepage: https://github.com/tarsius/minions
 ;; Keywords: convenience
 
-;; Package-Version: 20241123.2136
-;; Package-Revision: e04415dc028b
-;; Package-Requires: ((emacs "26.1") (compat "30.0.0.0"))
+;; Package-Version: 20250101.1417
+;; Package-Revision: 7ccb5e23a54c
+;; Package-Requires: ((emacs "26.1") (compat "30.0.1.0"))
 
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
