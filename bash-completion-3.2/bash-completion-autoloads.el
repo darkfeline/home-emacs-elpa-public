@@ -26,6 +26,13 @@ nil if no completions available.
 
 When doing completion outside of a comint buffer, call
 `bash-completion-dynamic-complete-nocomint' instead.")
+(autoload 'bash-completion-capf-nonexclusive "bash-completion" "\
+Bash completion function for `completion-at-point-functions'.
+
+Returns the same list as the one returned by
+`bash-completion-dynamic-complete-nocomint' appended with
+(:exclusive no) so that other completion functions are tried
+when bash-completion fails to match the text at point.")
 (autoload 'bash-completion-dynamic-complete-nocomint "bash-completion" "\
 Return completion information for bash command at an arbitrary position.
 
@@ -65,13 +72,12 @@ Returns (list stub-start stub-end completions) with
 
 (fn COMP-START &optional COMP-POS DYNAMIC-TABLE)")
 (autoload 'bash-completion-refresh "bash-completion" "\
-Force a refresh the completion table.
+Does nothing.
 
-This can be called after changing the completion table on BASH,
-or after starting a new BASH job.
-
-This is only useful when `bash-completion-use-separate-processes'
-is t." t)
+This command is obsolete and doesn't do anything useful anymore.
+It used to refresh the copy of the completion table kept in
+memory, but bash-completion.el now uses the completion table of
+the Bash process directly." t)
 (autoload 'bash-completion-reset "bash-completion" "\
 Force the next completion command to start with a fresh BASH process.
 
