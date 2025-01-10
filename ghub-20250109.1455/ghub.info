@@ -1,6 +1,6 @@
 This is ghub.info, produced by makeinfo version 6.8 from ghub.texi.
 
-     Copyright (C) 2017-2024 Jonas Bernoulli
+     Copyright (C) 2017-2025 Jonas Bernoulli
      <emacs.ghub@jonas.bernoulli.dev>
 
      You can redistribute this document and/or modify it under the terms
@@ -29,7 +29,7 @@ APIs of various instances of various Git forge implementations.
 
 This manual is for Ghub version 4.2.0.
 
-     Copyright (C) 2017-2024 Jonas Bernoulli
+     Copyright (C) 2017-2025 Jonas Bernoulli
      <emacs.ghub@jonas.bernoulli.dev>
 
      You can redistribute this document and/or modify it under the terms

@@ -1,13 +1,13 @@
 ;;; ghub.el --- Client libraries for Git forge APIs  -*- lexical-binding:t -*-
 
-;; Copyright (C) 2016-2024 Jonas Bernoulli
+;; Copyright (C) 2016-2025 Jonas Bernoulli
 
 ;; Author: Jonas Bernoulli <emacs.ghub@jonas.bernoulli.dev>
 ;; Homepage: https://github.com/magit/ghub
 ;; Keywords: tools
 
-;; Package-Version: 20241208.2219
-;; Package-Revision: 97edaf450ef7
+;; Package-Version: 20250109.1455
+;; Package-Revision: 568b79538873
 ;; Package-Requires: (
 ;;     (emacs "29.1")
 ;;     (compat "30.0.0.0")

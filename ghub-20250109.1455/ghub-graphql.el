@@ -1,6 +1,6 @@
 ;;; ghub-graphql.el --- Access Github API using GrapthQL  -*- lexical-binding:t -*-
 
-;; Copyright (C) 2016-2024 Jonas Bernoulli
+;; Copyright (C) 2016-2025 Jonas Bernoulli
 
 ;; Author: Jonas Bernoulli <emacs.ghub@jonas.bernoulli.dev>
 ;; Homepage: https://github.com/magit/ghub
@@ -204,7 +204,8 @@ behave as for `ghub-request' (which see)."
                                 updatedAt
                                 body)
                      (labels    [(:edges t)]
-                                id)))))
+                                id))
+     (owner "... on Organization { " (teams [(:edges t)] combinedSlug) " }\n"))))
 
 (defconst ghub-fetch-repository-review-threads
   '(query
