@@ -7,7 +7,7 @@
 #+texinfo_dir_category: Emacs misc features
 #+texinfo_dir_title: Transient: (transient).
 #+texinfo_dir_desc: Transient Commands
-#+subtitle: for version 0.8.1
+#+subtitle: for version 0.8.3
 
 #+setupfile: .orgconfig
 
@@ -20,7 +20,7 @@ resource to get over that hurdle is Psionic K's interactive tutorial,
 available at https://github.com/positron-solutions/transient-showcase.
 
 #+texinfo: @noindent
-This manual is for Transient version 0.8.1.
+This manual is for Transient version 0.8.3.
 
 #+texinfo: @insertcopying
 :END:
@@ -427,6 +427,23 @@ window, and the key bindings are the same as for ~scroll-up-command~ and
   This command scrolls text of transient popup window down {{{var(ARG)}}}
   lines.  If {{{var(ARG)}}} is ~nil~, then it scrolls near full screen.  This
   is a wrapper around ~scroll-down-command~ (which see).
+
+The following commands are not available by default.  If you would
+like to use them for all menus, bind them in ~transient-map~.
+
+- Command: transient-copy-menu-text ::
+
+  This command copies the contents of the menu buffer to the kill
+  ring.
+
+- Command: transient-toggle-docstrings ::
+
+  This command toggle between showing suffix descriptions in the menu
+  (as usual) or showing the first lines of the respective docstrings
+  in their place.  For commands that do not have a docstring, always
+  display the suffix description.  Because there likely isn't enough
+  room to display multiple docstrings side-by-side, a single column
+  is used when displaying docstrings.
 
 ** Configuration
 
@@ -1885,6 +1902,9 @@ object should not affect later invocations.
   it is somewhat likely that future improvements won't be fully
   backward compatible.
 
+- The ~transient-describe-target~ class is used by the command
+  ~transient-describe~.
+
 - The ~transient-value-preset~ class is used to implement the command
   ~transient-preset~, which activates a value preset.
 
@@ -1957,14 +1977,26 @@ functions use ~describe-function~.
 - Function: transient-init-value obj ::
 
   This generic function sets the initial value of the object {{{var(OBJ)}}}.
+  Methods exist for both prefix and suffix objects.
 
-  This function is called for all suffix commands, but unless a
-  concrete method is implemented this falls through to the default
-  implementation, which is a noop.  In other words this usually
-  only does something for infix commands, but note that this is
-  not implemented for the abstract class ~transient-infix~, so if
-  your class derives from that directly, then you must implement
-  a method.
+  For ~transient-argument~ objects this function handles setting the
+  value by itself.
+
+  For other ~transient-suffix~ objects (including ~transient-infix~
+  objects), this calls ~transient-default-value~ and uses the value
+  returned by that, unless it is the special value ~eieio--unbound~,
+  which indicates that there is no default value.  Since that is what
+  the default method for ~transient-suffix~ objects does, both of these
+  functions effectively are noops for these classes.
+
+  If you implement a class that derives from ~transient-infix~ directly,
+  then you must implement a dedicated method for this function and/or
+  ~transient-default-value~.
+
+- Function: transient-default-value obj ::
+
+  This generic function returns the default value of the object {{{var(OBJ)}}}.
+  Methods exist for both prefix and suffix objects.
 
 - Function: transient-infix-read obj ::
 
@@ -2235,6 +2267,8 @@ Also see [[*Suffix Classes]].
 This is the abstract superclass of ~transient-suffix~ and ~transient-group~.
 This is where the shared ~if*~ and ~inapt-if*~ slots (see [[*Predicate Slots]])
 and the ~level~ slot (see [[*Enabling and Disabling Suffixes]]) are defined.
+
+- ~parent~ The object for the parent group.
 
 *** Slots of ~transient-suffix~
 :PROPERTIES:
@@ -2588,7 +2622,7 @@ General Public License for more details.
 #  LocalWords:  Magit's Makefile OBJ OBJ's Pre alist arglist
 #  LocalWords:  args autoloaded boolean booleans customizable docstring
 #  LocalWords:  eval featurep infixes init isearch keymap keymaps loc
-#  LocalWords:  magit manpage minibuffer monospaced ness nilly noop
+#  LocalWords:  magit manpage minibuffer monospaced ness nilly noop noops
 #  LocalWords:  plist pre prev rebase redisplay src subclass subclasses
 #  LocalWords:  subcommands subprocess superclass tooltip termcap utils
 
