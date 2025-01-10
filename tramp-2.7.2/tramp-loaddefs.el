@@ -472,6 +472,10 @@ First arg specifies the OPERATION, second arg ARGS is a list of
 arguments to pass to the OPERATION.
 
 (fn OPERATION &rest ARGS)")
+(autoload 'tramp-archive-file-name-p "tramp-archive" "\
+Return t if NAME is a string with archive file name syntax.
+
+(fn NAME)")
 
 
 ;;; Generated autoloads from tramp-cache.el
@@ -1145,7 +1149,7 @@ UU-encode the region between BEG and END.
 
 ;;; Generated autoloads from trampver.el
 
-(defconst tramp-version "2.7.1.5" "\
+(defconst tramp-version "2.7.2" "\
 This version of Tramp.")
 (defconst tramp-bug-report-address "tramp-devel@gnu.org" "\
 Email address to send bug reports to.")
