@@ -1,11 +1,11 @@
 ;;; vertico.el --- VERTical Interactive COmpletion -*- lexical-binding: t -*-
 
-;; Copyright (C) 2021-2024 Free Software Foundation, Inc.
+;; Copyright (C) 2021-2025 Free Software Foundation, Inc.
 
 ;; Author: Daniel Mendler <mail@daniel-mendler.de>
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2021
-;; Version: 1.10
+;; Version: 1.11
 ;; Package-Requires: ((emacs "28.1") (compat "30"))
 ;; URL: https://github.com/minad/vertico
 ;; Keywords: convenience, files, matching, completion
@@ -117,7 +117,7 @@ The value should lie between 0 and vertico-count/2."
 (defface vertico-group-title '((t :inherit shadow :slant italic))
   "Face used for the title text of the candidate group headlines.")
 
-(defface vertico-group-separator '((t :inherit shadow :strike-through t))
+(defface vertico-group-separator '((t :inherit vertico-group-title :strike-through t))
   "Face used for the separator lines of the candidate groups.")
 
 (defface vertico-current '((t :inherit highlight :extend t))
@@ -140,7 +140,8 @@ The value should lie between 0 and vertico-count/2."
   "<remap> <exit-minibuffer>" #'vertico-exit
   "<remap> <kill-ring-save>" #'vertico-save
   "M-RET" #'vertico-exit-input
-  "TAB" #'vertico-insert)
+  "TAB" #'vertico-insert
+  "<touchscreen-begin>" #'ignore)
 
 (defvar-local vertico--hilit #'identity
   "Lazy candidate highlighting function.")
@@ -626,6 +627,8 @@ The function is configured by BY, BSIZE, BINDEX, BPRED and PRED."
 
 (cl-defgeneric vertico--setup ()
   "Setup completion UI."
+  (when (boundp 'pixel-scroll-precision-mode)
+    (setq-local pixel-scroll-precision-mode nil))
   (setq-local scroll-margin 0
               vertico--input t
               completion-auto-help nil
@@ -718,7 +721,7 @@ When the prefix argument is 0, the group order is reset."
   (interactive)
   (if (or (use-region-p) (not transient-mark-mode))
       (call-interactively #'kill-ring-save)
-    (kill-new (vertico--candidate))))
+    (kill-new (substring-no-properties (vertico--candidate)))))
 
 (defun vertico-insert ()
   "Insert current candidate in minibuffer."
