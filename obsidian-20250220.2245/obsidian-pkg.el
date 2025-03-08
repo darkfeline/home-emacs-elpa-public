@@ -1,5 +1,5 @@
 ;; -*- no-byte-compile: t; lexical-binding: nil -*-
-(define-package "obsidian" "20240713.906"
+(define-package "obsidian" "20250220.2245"
   "Obsidian Notes interface."
   '((emacs         "27.2")
     (f             "0.2.0")
@@ -7,8 +7,9 @@
     (dash          "2.13")
     (markdown-mode "2.5")
     (elgrep        "1.0.0")
-    (yaml          "0.5.1"))
+    (yaml          "0.5.1")
+    (ht            "2.3"))
   :url "https://github.com/licht1stein/obsidian.el"
-  :commit "5730759eb22d6d3bc78761865dd0f2fdb4100e37"
-  :revdesc "5730759eb22d"
+  :commit "0b31775d5da1dfd3d1ffcf9fa05908a3ba26ed15"
+  :revdesc "0b31775d5da1"
   :keywords '("obsidian" "pkm" "convenience"))
