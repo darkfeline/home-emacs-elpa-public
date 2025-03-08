@@ -1,6 +1,6 @@
 ;;; consult-info.el --- Search through the info manuals -*- lexical-binding: t -*-
 
-;; Copyright (C) 2021-2024 Free Software Foundation, Inc.
+;; Copyright (C) 2021-2025 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -32,10 +32,12 @@
 (defvar-local consult-info--manual nil)
 (defvar consult-info--history nil)
 
-(defun consult-info--candidates (buffers input)
-  "Dynamically find lines in BUFFERS matching INPUT."
-  (pcase-let* ((`(,regexps . ,hl)
-                (funcall consult--regexp-compiler input 'emacs t))
+(defun consult-info--candidates (buffers input callback)
+  "Collect matching candidates from info buffers.
+INPUT is the user input which should be matched.
+BUFFERS is the list of buffers.
+CALLBACK receives the candidates."
+  (pcase-let* ((`(,regexps . ,hl) (consult--compile-regexp input 'emacs t))
                (re (concat "\\(\^_\n\\(?:.*Node:[ \t]*\\([^,\t\n]+\\)\\)?.*\n\\)\\|" (car regexps)))
                (candidates nil)
                (cand-idx 0)
@@ -68,18 +70,19 @@
                        (not (looking-at-p "^\\s-*$"))
                        (looking-at-p "^[[:print:]]*$")
                        ;; Matches all regexps
-                       (seq-every-p (lambda (r)
-                                      (goto-char bol)
-                                      (re-search-forward r eol t))
-                                    (cdr regexps)))
+                       (cl-loop for r in (cdr regexps) always
+                                (progn
+                                  (goto-char bol)
+                                  (re-search-forward r eol t))))
                   (let ((cand (concat
                                (funcall hl (buffer-substring-no-properties bol eol))
                                (consult--tofu-encode cand-idx))))
                     (put-text-property 0 1 'consult--info (list full-node bol buf) cand)
                     (cl-incf cand-idx)
                     (push cand candidates)))
-                (goto-char (1+ eol)))))))
-      (nreverse candidates))))
+                (goto-char (1+ eol))))))
+        (funcall callback (nreverse candidates))
+        (setq candidates nil)))))
 
 (defun consult-info--position (cand)
   "Return position information for CAND."
@@ -131,7 +134,7 @@
             (setq consult-info--manual (concat "(" manual ")"))
             (and (ignore-errors (funcall init))
                  (prog1 buf
-                   (rename-buffer (concat " Preview:" (buffer-name)))
+                   (consult--preview-rename-buffer buf)
                    (setq buf nil)))))
       (when buf (kill-buffer buf)))))
 
@@ -194,8 +197,7 @@
        :category 'consult-info
        :history '(:input consult-info--history)
        :group #'consult-info--group
-       :initial (consult--async-split-initial "")
-       :add-history (consult--async-split-thingatpt 'symbol)
+       :add-history (thing-at-point 'symbol)
        :lookup #'consult--lookup-member))))
 
 (provide 'consult-info)
