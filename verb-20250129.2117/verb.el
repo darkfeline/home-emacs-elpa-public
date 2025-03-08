@@ -6,8 +6,8 @@
 ;; Maintainer: Federico Tedin <federicotedin@gmail.com>
 ;; Homepage: https://github.com/federicotdn/verb
 ;; Keywords: tools
-;; Package-Version: 20250105.1845
-;; Package-Revision: 13ddd3d5339b
+;; Package-Version: 20250129.2117
+;; Package-Revision: bfffe206d541
 ;; Package-Requires: ((emacs "26.3"))
 
 ;; This file is NOT part of GNU Emacs.
@@ -314,7 +314,6 @@ no warning will be shown when loading Emacs Lisp external files."
                                           "Connection"
                                           "Host"
                                           "Accept-Encoding"
-                                          "Extension"
                                           "Content-Length")
   "List of HTTP headers which are automatically added by url.el.
 The values of these headers can't be easily modified by Verb, so a
@@ -387,6 +386,9 @@ here under its value.")
 
 (defvar verb--requests-count 0
   "Number of HTTP requests sent in the past.")
+
+(defvar verb--in-flight-requests 0
+  "Number of HTTP requests currently in-flight.")
 
 (defvar-local verb--response-number nil
   "The number of this particular HTTP response buffer.")
@@ -709,18 +711,29 @@ KEY and VALUE must be strings.  KEY must not be the empty string."
   (unless verb-mode
     (verb-mode)))
 
-(defun verb-headers-get (headers name)
-  "Return value for HTTP header under NAME in HEADERS.
-HEADERS must be an alist of (KEY . VALUE) elements.  NAME and KEY will
-be compared ignoring case.  If no value is present under NAME, signal
-an error."
-  (if-let ((val (assoc-string name headers t)))
+(defun verb-headers-get (data name &optional noerror)
+  "Return value for HTTP header under NAME in DATA.
+DATA must be one of the following:
+- An instance of `verb-response', which will contain headers as an
+  alist described below.
+- An alist of (KEY . VALUE) elements.
+NAME and KEY will be compared ignoring case.  If no value is present
+under NAME, signal an error (unless NOERROR is non-nil, in which case
+return nil)."
+  (when (verb--object-of-class-p data 'verb-response)
+    (setq data (oref data headers)))
+  (if-let ((val (assoc-string name data t)))
       (cdr val)
-    (user-error "HTTP header has no value for \"%s\"" name)))
+    (unless noerror
+      (user-error "No value found for HTTP header \"%s\"" name))))
 
-
-(defalias 'verb-shell #'shell-command-to-string
-  "Alias to `shell-command-to-string'.")
+(defun verb-shell (command &optional trim)
+  "Return output of running `shell-command-to-string' with COMMAND.
+If TRIM is non-nil, trim leading and trailing whitespace before returning."
+  (let ((s (shell-command-to-string command)))
+    (if trim
+        (string-trim s)
+      s)))
 
 (defalias 'verb-url #'url-encode-url
   "Alias to `url-encode-url'.")
@@ -1069,15 +1082,15 @@ settings."
                   (push prelude preludes)))
               (verb--up-heading)))
         (let ((prelude (car (org-element-map
-                             (org-element-parse-buffer)
-                             'keyword
-                             (lambda (keyword)
-                               (when (string= (upcase (concat
-                                                       verb--metadata-prefix
-                                                       "prelude"))
-                                              (org-element-property
-                                               :key keyword))
-                                 (org-element-property :value keyword)))))))
+                                (org-element-parse-buffer)
+                                'keyword
+                              (lambda (keyword)
+                                (when (string= (upcase (concat
+                                                        verb--metadata-prefix
+                                                        "prelude"))
+                                               (org-element-property
+                                                :key keyword))
+                                  (org-element-property :value keyword)))))))
           (when prelude
             (push prelude preludes)))
         ;; Lower-level preludes override same settings in hierarchy
@@ -1810,19 +1823,19 @@ NUM is this request's identification number."
   (when timeout-timer
     (cancel-timer timeout-timer))
 
-  ;; Remove url.el advice.
-  (verb--unadvice-url)
-  ;; Undo proxy setup.
-  (verb--undo-setup-proxy rs)
+  (verb--teardown-request-environment rs)
 
   ;; Handle errors first.
   (when-let ((http-error (plist-get status :error))
              (error-info (cdr http-error))
+             (error-code (car error-info))
              (url (oref rs url)))
     ;; If there's an HTTP error code (404, 405, etc.) in the error
-    ;; information, continue as usual.
-    (unless (numberp (and (eq (car error-info) 'http)
-                          (cadr error-info)))
+    ;; information, or if we hit the max redirections limit, continue
+    ;; as usual.
+    (unless (or (numberp (and (eq error-code 'http)
+                              (cadr error-info)))
+                (eq error-code 'http-redirect-limit))
       (kill-buffer (current-buffer))
       (kill-buffer response-buf)
       (let ((msg (format "Request error: could not connect to %s:%s"
@@ -2042,6 +2055,43 @@ contents, which means it can potentially delete a response body if the
 response body was actually not compressed."
   (list (nth 0 args) (nth 1 args)))
 
+(defun verb--setup-request-environment (rs)
+  "Prepare request environment for request spec RS."
+  ;; Advice url.el functions.
+  (verb--advice-url)
+  ;; Configure proxy if needed.
+  (verb--setup-proxy rs)
+  ;; Set up url-max-redirections
+  (when-let ((max (verb--request-spec-metadata-get rs "max-redirections")))
+    (when (< 0 verb--in-flight-requests)
+      (verb-util--log nil 'W (concat "Setting global url-max-redirections "
+                                     "even though there are still in-flight "
+                                     "requests.")))
+    (verb--request-spec-metadata-set rs "original-max-redirections"
+                                     url-max-redirections)
+    (setq url-max-redirections (string-to-number max)))
+  ;; Increase number of in-flight requests.
+  (setq verb--in-flight-requests (1+ verb--in-flight-requests)))
+
+(defun verb--teardown-request-environment (rs)
+  "Undo all operations made for sending request described by RS.
+This undoes all changes made by `verb--setup-request-environment' in
+reverse order."
+  ;; Decrease number of in-flight requests.
+  (setq verb--in-flight-requests (1- verb--in-flight-requests))
+  (when (< verb--in-flight-requests 0)
+    (verb-util--log
+     nil 'W "Environment setup may have been skipped for a request")
+    (setq verb--in-flight-requests 0))
+  ;; Undo changes to url-max-redirections
+  (when-let ((max (verb--request-spec-metadata-get
+                   rs "original-max-redirections")))
+    (setq url-max-redirections max))
+  ;; Undo proxy setup.
+  (verb--undo-setup-proxy rs)
+  ;; Undo advice.
+  (verb--unadvice-url))
+
 (defun verb--advice-url ()
   "Advice some url.el functions.
 For more information, see `verb-advice-url'."
@@ -2058,38 +2108,38 @@ For more information, see `verb-advice-url'."
 (defun verb--unadvice-url ()
   "Undo advice from `verb--advice-url'."
   (when verb-advice-url
-    (advice-remove 'url-http-user-agent-string
-                   #'verb--http-user-agent-string)
-    (advice-remove 'url-http-handle-authentication
-                   #'verb--http-handle-authentication)
     (when (and (fboundp 'zlib-available-p)
 	           (zlib-available-p))
       (advice-remove 'zlib-decompress-region
-                     #'verb--zlib-decompress-region))))
+                     #'verb--zlib-decompress-region))
+    (advice-remove 'url-http-handle-authentication
+                   #'verb--http-handle-authentication)
+    (advice-remove 'url-http-user-agent-string
+                   #'verb--http-user-agent-string)))
 
 (defun verb--setup-proxy (rs)
   "Set up any HTTP proxy configuration specified by RS."
   (when-let ((proxy (verb--request-spec-metadata-get rs "proxy")))
-    (push (cons "http" proxy) url-proxy-services)))
+    (add-to-list 'url-proxy-services (cons "http" proxy))))
 
 (defun verb--undo-setup-proxy (rs)
   "Undo any HTTP proxy configuration specified by RS."
   (when-let ((proxy (verb--request-spec-metadata-get rs "proxy")))
-    (setq url-proxy-services (cdr url-proxy-services))))
+    (setq url-proxy-services (delete (cons "http" proxy) url-proxy-services))))
 
 (defun verb--get-accept-header (headers)
   "Retrieve the value of the \"Accept\" header from alist HEADERS.
 If the header is not present, return \"*/*\" as default."
-  (verb--to-ascii (or (cdr (assoc-string "Accept" headers t))
+  (verb--to-ascii (or (verb-headers-get headers "Accept" t)
                       "*/*")))
 
 (cl-defmethod verb-request-spec-validate ((rs verb-request-spec))
   "Run validations on request spec RS and return it.
 If a validation does not pass, signal `user-error'."
   (unless (oref rs method)
-    (user-error "%s" (concat "No HTTP method specified\n"
-                             "Make sure you specify a concrete HTTP "
-                             "method (not " verb--template-keyword
+    (user-error "%s" (concat "No HTTP method specified\nMake sure you specify "
+                             "a concrete HTTP method (e.g. GET, not "
+                             verb--template-keyword
                              ") in the heading hierarchy")))
   (let ((url (oref rs url)))
     (unless url
@@ -2148,11 +2198,7 @@ loaded into."
                                           #'verb--timeout-warn
                                           response-buf rs num)))
 
-    ;; Advice url.el functions.
-    (verb--advice-url)
-
-    ;; Configure proxy if needed.
-    (verb--setup-proxy rs)
+    (verb--setup-request-environment rs)
 
     ;; Look for headers that might get duplicated by url.el.
     (dolist (h verb--url-pre-defined-headers)
@@ -2187,10 +2233,8 @@ loaded into."
                  (setq timeout-timer nil))
                ;; Kill response buffer.
                (kill-buffer response-buf)
-               ;; Undo advice.
-               (verb--unadvice-url)
-               ;; Undo proxy setup.
-               (verb--undo-setup-proxy rs)
+
+               (verb--teardown-request-environment rs)
 
                (let ((msg (format "Error sending request: %s" (cadr err))))
                  ;; Log the error.
@@ -2225,16 +2269,14 @@ Note: this function is unrelated to `verb--request-spec-send'."
   (let ((eww-accept-content-types (verb--get-accept-header (oref rs headers)))
         (url-request-extra-headers (verb--prepare-http-headers
                                     (oref rs headers))))
-    (verb--advice-url)
-    (verb--setup-proxy rs)
+    (verb--setup-request-environment rs)
     (unwind-protect
         (prog1
             (eww (verb-request-spec-url-to-string rs))
           ;; "Use" the variable to avoid compiler warning.
           ;; This variable is not available in some Emacs versions.
           eww-accept-content-types)
-      (verb--unadvice-url)
-      (verb--undo-setup-proxy rs))))
+      (verb--teardown-request-environment rs))))
 
 (cl-defmethod verb-request-spec-to-string ((rs verb-request-spec))
   "Return request spec RS as a string.
