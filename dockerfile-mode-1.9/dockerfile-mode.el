@@ -4,8 +4,8 @@
 ;; Package-Requires: ((emacs "24"))
 ;; Homepage: https://github.com/spotify/dockerfile-mode
 ;; URL: https://github.com/spotify/dockerfile-mode
-;; Version: 1.7
-;; Keywords: docker
+;; Version: 1.9
+;; Keywords: docker languages processes tools
 ;;
 ;; Licensed under the Apache License, Version 2.0 (the "License"); you may not
 ;; use this file except in compliance with the License. You may obtain a copy of
@@ -34,7 +34,7 @@
 (declare-function cygwin-convert-file-name-to-windows "cygw32.c" (file &optional absolute-p))
 
 (defgroup dockerfile nil
-  "dockerfile code editing commands for Emacs."
+  "Dockerfile editing commands for Emacs."
   :link '(custom-group-link :tag "Font Lock Faces group" font-lock-faces)
   :prefix "dockerfile-"
   :group 'languages)
@@ -69,6 +69,17 @@ Each element of the list will be passed as a separate
 
 (defcustom dockerfile-build-progress "auto"
   "Type of --progress output (auto, plain, tty) of docker build."
+  :group 'dockerfile
+  :type 'string)
+
+(defcustom dockerfile-build-extra-options nil
+  "Extra command-line options to send to docker build.
+
+Use this variable to add custom command-line switches not covered by
+existing dockerfile-build-* variables.
+
+Example:
+(setq-default dockerfile-build-extra-options \"--network host\")"
   :group 'dockerfile
   :type 'string)
 
@@ -156,19 +167,16 @@ Lines beginning with a keyword are ignored, and any others are
 indented by one `dockerfile-indent-offset'. Functionality toggled
 by `dockerfile-enable-auto-indent'."
   (when dockerfile-enable-auto-indent
-    (unless (member (get-text-property (point-at-bol) 'face)
+    (unless (member (get-text-property (line-beginning-position) 'face)
              '(font-lock-comment-delimiter-face font-lock-keyword-face))
      (save-excursion
        (beginning-of-line)
-       (skip-chars-forward "[ \t]" (point-at-eol))
-       (unless (equal (point) (point-at-eol)) ; Ignore empty lines.
-         ;; Delete existing whitespace.
-         (delete-char (- (point-at-bol) (point)))
-         (indent-to dockerfile-indent-offset))))))
+       (unless (looking-at-p "\\s-*$") ; Ignore empty lines.
+         (indent-line-to dockerfile-indent-offset))))))
 
 (defun dockerfile-build-arg-string ()
   "Create a --build-arg string for each element in `dockerfile-build-args'."
-  (mapconcat (lambda (arg) (concat "--build-arg " (shell-quote-argument arg)))
+  (mapconcat (lambda (arg) (concat "--build-arg="  (replace-regexp-in-string "\\\\=" "=" (shell-quote-argument arg))))
              dockerfile-build-args " "))
 
 (defun dockerfile-standard-filename (file)
@@ -181,7 +189,9 @@ file name.  Otherwise, uses Emacs' standard conversion function."
     (convert-standard-filename file)))
 
 (defun dockerfile-tag-string (image-name)
-  "Return a --tag shell-quoted IMAGE-NAME string or an empty string if image-name is blank."
+  "Return a --tag shell-quoted IMAGE-NAME string.
+
+Returns an empty string if IMAGE-NAME is blank."
     (if (string= image-name "") "" (format "--tag %s " (shell-quote-argument image-name))))
 
 (define-obsolete-variable-alias 'docker-image-name 'dockerfile-image-name "2017-10-22")
@@ -202,15 +212,25 @@ This can be set in file or directory-local variables.")
 (defun dockerfile-build-buffer (image-name &optional no-cache)
   "Build an image called IMAGE-NAME based upon the buffer.
 
-If prefix arg NO-CACHE is set, don't cache the image.
-The build string will be of the format:
-`sudo docker build --no-cache --force-rm --pull --force-rm --tag IMAGE-NAME --build-args arg1.. -f filename directory`"
+If the prefix arg NO-CACHE is set, don't cache the image.
+
+The shell command used to build the image is:
+
+    sudo docker build    \\
+      --no-cache         \\
+      --force-rm         \\
+      --pull             \\
+      --tag IMAGE-NAME   \\
+      --build-args args  \\
+      --progress type    \\
+      -f filename        \\
+      directory"
 
   (interactive (list (dockerfile-read-image-name) prefix-arg))
   (save-buffer)
     (compilation-start
         (format
-            "%s%s%s build %s %s %s %s %s --progress %s -f %s %s"
+            "%s%s%s build %s %s %s %s %s --progress %s %s -f %s %s"
             (if dockerfile-use-buildkit "DOCKER_BUILDKIT=1 " "")
             (if dockerfile-use-sudo "sudo " "")
             dockerfile-mode-command
@@ -220,6 +240,7 @@ The build string will be of the format:
             (dockerfile-tag-string image-name)
             (dockerfile-build-arg-string)
             dockerfile-build-progress
+            (or dockerfile-build-extra-options "")
             (shell-quote-argument (dockerfile-standard-filename
 				   (or (file-remote-p (buffer-file-name) 'localname)
 				       (buffer-file-name))))
@@ -252,8 +273,7 @@ returned, otherwise the base image name is used."
 ;;;###autoload
 (define-derived-mode dockerfile-mode prog-mode "Dockerfile"
   "A major mode to edit Dockerfiles.
-\\{dockerfile-mode-map}
-"
+\\{dockerfile-mode-map}"
   (set-syntax-table dockerfile-mode-syntax-table)
   (set (make-local-variable 'imenu-generic-expression)
        `(("Stage" dockerfile--imenu-function 1)))
@@ -268,8 +288,11 @@ returned, otherwise the base image name is used."
   (set (make-local-variable 'indent-line-function) #'dockerfile-indent-line-function))
 
 ;;;###autoload
-(add-to-list 'auto-mode-alist '("/Dockerfile\\(?:\\.[^/\\]*\\)?\\'" .
-                                dockerfile-mode))
+(add-to-list 'auto-mode-alist
+             (cons (concat "[/\\]"
+                           "\\(?:Containerfile\\|Dockerfile\\)"
+                           "\\(?:\\.[^/\\]*\\)?\\'")
+                   'dockerfile-mode))
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.dockerfile\\'" . dockerfile-mode))
