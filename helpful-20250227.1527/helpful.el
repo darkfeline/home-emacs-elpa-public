@@ -5,8 +5,8 @@
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
 ;; Keywords: help, lisp
-;; Package-Version: 20240613.1523
-;; Package-Revision: 4ba24cac9fb1
+;; Package-Version: 20250227.1527
+;; Package-Revision: 3794389ef685
 ;; Package-Requires: ((emacs "25") (dash "2.18.0") (s "1.11.0") (f "0.20.0") (elisp-refs "1.2"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -607,7 +607,9 @@ overrides that to include previously opened buffers."
   (let* ((sym (button-get button 'symbol))
          (buf (button-get button 'buffer))
          (sym-value (helpful--sym-value sym buf))
-         (set-func (symbol-name helpful-set-variable-function))
+         (set-func (if (local-variable-p sym buf)
+                       "setq"
+                     (symbol-name helpful-set-variable-function)))
          ;; Inspired by `counsel-read-setq-expression'.
          (expr
           (minibuffer-with-setup-hook
@@ -1318,8 +1320,8 @@ Return nil otherwise."
        (package-version
         (format
          "This variable was added, or its default value changed, in %s version %s."
-         (car package-version)
-         (cdr package-version)))
+         (or (car-safe package-version) "unknown")
+         (or (cdr-safe package-version) "unknown")))
        (emacs-version
         (format
          "This variable was added, or its default value changed, in Emacs %s."
@@ -2569,7 +2571,9 @@ For example, \"(some-func FOO &optional BAR)\"."
             (cond
              ((symbolp sym)
               (help-function-arglist sym))
-             ((byte-code-function-p sym)
+             ((or (byte-code-function-p sym)
+                  (if (fboundp 'interpreted-function-p)
+                      (interpreted-function-p sym)))
               ;; argdesc can be a list of arguments or an integer
               ;; encoding the min/max number of arguments. See
               ;; Byte-Code Function Objects in the elisp manual.
