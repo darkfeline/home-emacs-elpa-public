@@ -12,10 +12,10 @@
 ;;; Generated autoloads from ws-butler.el
 
 (autoload 'ws-butler-mode "ws-butler" "\
-White space cleanup, without obtrusive white space removal.
+Whitespace cleanup without obtrusive whitespace removal.
 
-Whitespaces at EOL and EOF are trimmed upon file save, and only
-for lines modified by you.
+Whitespaces at end-of-line and end-of-buffer are trimmed upon save, but
+only for lines modified by you.
 
 This is a minor mode.  If called interactively, toggle the
 `Ws-Butler mode' mode.  If the prefix argument is positive,
@@ -50,10 +50,8 @@ If called from Lisp, toggle the mode if ARG is `toggle'.
 Enable the mode if ARG is nil, omitted, or is a positive number.
 Disable the mode if ARG is a negative number.
 
-Ws-Butler mode is enabled in all buffers where `(lambda nil Enable
-`ws-butler-mode' unless current major mode is exempt. (unless (apply
-#'derived-mode-p ws-butler-global-exempt-modes) (ws-butler-mode)))'
-would do it.
+Ws-Butler mode is enabled in all buffers where
+`ws-butler--global-mode-turn-on' would do it.
 
 See `ws-butler-mode' for more information on Ws-Butler mode.
 

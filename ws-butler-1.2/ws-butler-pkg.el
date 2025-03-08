@@ -1,0 +1,2 @@
+;; Generated package description from ws-butler.el  -*- mode: lisp-data; no-byte-compile: t -*-
+(define-package "ws-butler" "1.2" "Unobtrusively remove trailing whitespace" '((emacs "24.1")) :commit "5c1b4f89f0fc60b61646dbd64e946d07ab515a24" :authors '(("Le Wang" . "l26wang@gmail.com")) :maintainer '("Sean Whitton" . "spwhitton@spwhitton.name") :keywords '("text") :url "https://elpa.nongnu.org/nongnu/ws-butler.html")
