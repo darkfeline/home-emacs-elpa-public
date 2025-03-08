@@ -5,8 +5,8 @@
 ;; Author: Bjarte Johansen <Bjarte dot Johansen at gmail dot com>
 ;; Homepage: https://github.com/ljos/jq-mode
 ;; Package-Requires: ((emacs "25.1"))
-;; Package-Version: 20240528.752
-;; Package-Revision: a0f79eba786d
+;; Package-Version: 20250113.1214
+;; Package-Revision: eeb86b4d5ad8
 
 ;; This file is not part of GNU Emacs.
 
@@ -349,7 +349,7 @@
          (deactivate-mark)
          (read-from-minibuffer
           jq-interactive-default-prompt
-          nil
+          "."
           jq-interactive-map
           nil
           'jq-interactive-history))
