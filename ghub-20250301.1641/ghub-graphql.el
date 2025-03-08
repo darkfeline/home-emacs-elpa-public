@@ -1,4 +1,4 @@
-;;; ghub-graphql.el --- Access Github API using GrapthQL  -*- lexical-binding:t -*-
+;;; ghub-graphql.el --- Access Github API using GraphQL  -*- lexical-binding:t -*-
 
 ;; Copyright (C) 2016-2025 Jonas Bernoulli
 
@@ -21,23 +21,28 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this file.  If not, see <https://www.gnu.org/licenses/>.
 
+;;; Commentary:
+
+;; This library implements GraphQL queries for Github.
+
 ;;; Code:
 
 (require 'ghub)
 (require 'gsexp)
 (require 'treepy)
 
-;; Needed for Emacs < 27.
-(eval-when-compile (require 'json))
-(declare-function json-read-from-string "json" (string))
-(declare-function json-encode "json" (object))
-
-(eval-when-compile (require 'pp)) ; Needed for Emacs < 29.
 (eval-when-compile (require 'subr-x))
 
 ;;; Api
 
 (define-error 'ghub-graphql-error "GraphQL Error" 'ghub-error)
+
+(defvar ghub-graphql-message-progress nil
+  "Whether to show \"Fetching page N...\" in echo area during requests.
+By default this information is only shown in the mode-line of the buffer
+from which the request was initiated, and if you kill that buffer, then
+nowhere.  That may make it desirable to display the same message in the
+echo area as well.")
 
 (defvar ghub-graphql-items-per-request 50
   "Number of GraphQL items to query for entities that return a collection.
@@ -204,8 +209,7 @@ behave as for `ghub-request' (which see)."
                                 updatedAt
                                 body)
                      (labels    [(:edges t)]
-                                id))
-     (owner "... on Organization { " (teams [(:edges t)] combinedSlug) " }\n"))))
+                                id)))))
 
 (defconst ghub-fetch-repository-review-threads
   '(query
@@ -391,6 +395,9 @@ See Info node `(ghub)GraphQL Support'."
 
 (cl-defun ghub--graphql-retrieve (req &optional lineage cursor)
   (let ((p (cl-incf (ghub--graphql-req-pages req))))
+    (when ghub-graphql-message-progress
+      (let ((message-log-max nil))
+        (message "Fetching page %s..." p)))
     (when (> p 1)
       (ghub--graphql-set-mode-line req "Fetching page %s" p)))
   (setf (ghub--graphql-req-query-str req)
@@ -595,7 +602,7 @@ See Info node `(ghub)GraphQL Support'."
                 child))))))
 
 (defun ghub--alist-zip (root)
-  (let ((branchp (lambda (elt) (and (listp elt) (listp (cdr elt)))))
+  (let ((branchp (##and (listp %) (listp (cdr %))))
         (make-node (lambda (_ children) children)))
     (treepy-zipper branchp #'identity make-node root)))
 
@@ -608,7 +615,6 @@ See Info node `(ghub)GraphQL Support'."
         (force-mode-line-update t)))))
 
 (defun ghub--graphql-pp-response (data)
-  (require 'pp) ; needed for Emacs < 29.
   (pp-display-expression data "*Pp Eval Output*"))
 
 ;;; _
