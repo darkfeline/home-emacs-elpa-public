@@ -7,7 +7,7 @@
 #+texinfo_dir_category: Emacs misc features
 #+texinfo_dir_title: Transient: (transient).
 #+texinfo_dir_desc: Transient Commands
-#+subtitle: for version 0.8.3
+#+subtitle: for version 0.8.5
 
 #+setupfile: .orgconfig
 
@@ -20,7 +20,7 @@ resource to get over that hurdle is Psionic K's interactive tutorial,
 available at https://github.com/positron-solutions/transient-showcase.
 
 #+texinfo: @noindent
-This manual is for Transient version 0.8.3.
+This manual is for Transient version 0.8.5.
 
 #+texinfo: @insertcopying
 :END:
@@ -408,6 +408,48 @@ available even if the user lowers the transient level.
   the level specified by ~transient-default-level~ are temporarily
   available anyway.
 
+- Function: transient-set-default-level suffix level ::
+
+  This function sets the default level of the suffix COMMAND to LEVEL.
+
+  If a suffix command appears in multiple menus, it may make sense to
+  consistently change its level in all those menus at once.  For
+  example, the ~--gpg-sign~ argument (which is implemented using the
+  command ~magit:--gpg-sign~), is bound in all of Magit's menu which
+  create commits.  Users who sometimes sign their commits would want
+  that argument to be available in all of these menus, while for users
+  who never sign it is just unnecessary noise in any menus.
+
+  To always make ~--gpg-sign~ available, use:
+
+  #+begin_src emacs-lisp
+    (transient-set-default-level 'magit:--gpg-sign 1)
+  #+end_src
+
+  To never make ~--gpg-sign~ available, use:
+
+  #+begin_src emacs-lisp
+    (transient-set-default-level 'magit:--gpg-sign 0)
+  #+end_src
+
+  This sets the level in the suffix prototype object for this command.
+  Commands only have a suffix prototype if they were defined using one
+  of ~transient-define-argument~, ~transient-define-infix~ and
+  ~transient-define-suffix~.  For all other commands this would signal
+  an error.  (This is one of the reasons why package authors should
+  use one of these functions to define shared suffix commands, and
+  especially shared arguments.)
+
+  If the user changes the level of a suffix in a particular menu,
+  using {{{kbd(C-x l)}}} as shown above, then that obviously shadows the default.
+
+  It is also possible to set the level of a suffix binding in a
+  particular menu, either when defining the menu using
+  ~transient-define-prefix,~ or later using ~transient-insert-suffix~.  If
+  such bindings specify a level, then that also overrides the default.
+  (Per-suffix default levels is a new feature, so you might encounter
+  this quite often.)
+
 ** Other Commands
 
 When invoking a transient in a small frame, the transient window may
@@ -578,6 +620,11 @@ Also see [[* Common Suffix Commands]].
   This displays the window at the bottom of the selected frame.
   For alternatives see [[info:elisp#Buffer Display Action Functions]],
   and [[info:elisp#Buffer Display Action Alists]].
+
+  When you switch to a different ACTION, you should keep the ALIST
+  entries for ~dedicated~ and ~inhibit-same-window~ in most cases.
+  Do not drop them because you are unsure whether they are needed;
+  if you are unsure, then keep them.
 
   Note that the buffer that was current before the transient buffer
   is shown should remain the current buffer.  Many suffix commands
@@ -822,8 +869,10 @@ that tree are not objects but have the form {{{codevar((LEVEL CLASS PLIST))}}}, 
   they are never active at the same time, see [[*Predicate Slots]].
 
   Unfortunately both false-positives and false-negatives are possible.
-  To deal with the former use non-~nil~ {{{var(KEEP-OTHER.)}}}  To deal with the
-  latter remove the conflicting binding explicitly.
+  To deal with the former use non-~nil~ {{{var(KEEP-OTHER.)}}}  The symbol ~always~
+  prevents the removal of a false-positive in some cases where other
+  non-~nil~ values would fail.  To deal with false-negatives remove the
+  conflicting binding separately, using ~transient-remove-suffix~.
 
 - Function: transient-replace-suffix prefix loc suffix ::
 
@@ -1142,6 +1191,12 @@ constructor of that class.
   contained in a group are right padded, effectively aligning the
   descriptions.
 
+- If a keyword argument accepts a function as value, you an use a
+  ~lambda~ expression.  As a special case, the ~##~ macro (which returns a
+  ~lambda~ expression and is implemented in the ~llama~ package) is also
+  supported.  Inside group specifications, the use of ~##~ is not
+  supported anywhere but directly following a keyword symbol.
+
 The {{{var(ELEMENT)}}}s are either all subgroups, or all suffixes and strings.
 (At least currently no group type exists that would allow mixing
 subgroups with commands at the same level, though in principle there
@@ -1251,6 +1306,12 @@ Finally, details can be specified using optional {{{var(KEYWORD)}}}-{{{var(VALUE
 Each keyword has to be a keyword symbol, either ~:class~ or a keyword
 argument supported by the constructor of that class.  See [[*Suffix
 Slots]].
+
+If a keyword argument accepts a function as value, you an use a ~lambda~
+expression.  As a special case, the ~##~ macro (which returns a ~lambda~
+expression and is implemented in the ~llama~ package) is also supported.
+Inside suffix bindings, the use of ~##~ is not supported anywhere but
+directly following a keyword symbol.
 
 ** Defining Suffix and Infix Commands
 #+cindex: defining suffix commands
@@ -1370,6 +1431,47 @@ function, which for infix arguments serves about the same purpose as
   {{{var(PREFIX)}}}.  This is a list of objects.  This function should only be
   used if you need the objects (as opposed to just their values) and
   if the current command is not being invoked from {{{var(PREFIX)}}}.
+
+** Using Prefix Scope
+
+Some transients have a sort of secondary value, called a scope.  A
+prefix's scope can be accessed using ~transient-scope~; similar to how
+its value can be accessed using ~transient-args~.
+
+- Function: transient-scope prefixes classes ::
+
+  This function returns the scope of the active or current transient
+  prefix command.
+
+  If optional PREFIXES and CLASSES are both nil, return the scope of
+  the prefix currently being setup, making this variation useful, e.g.,
+  in ~:if*~ predicates.  If no prefix is being setup, but the current
+  command was invoked from some prefix, then return the scope of that.
+
+  If PREFIXES is non-nil, it must be a prefix command or a list of such
+  commands.  If CLASSES is non-nil, it must be a prefix class or a list
+  of such classes.  When this function is called from the body or the
+  ~interactive~ form of a suffix command, PREFIXES and/or CLASSES should
+  be non-nil.  If either is non-nil, try the following in order:
+
+  - If the current suffix command was invoked from a prefix, which
+    appears in PREFIXES, return the scope of that prefix.
+
+  - If the current suffix command was invoked from a prefix, and its
+    class derives from one of the CLASSES, return the scope of that
+    prefix.
+
+  - If a prefix is being setup and it appears in PREFIXES, return its
+    scope.
+
+  - If a prefix is being setup and its class derives from one of the
+    CLASSES, return its scope.
+
+  - Finally try to return the default scope of the first command in
+    PREFIXES.  This only works if that slot is set in the respective
+    class definition or using its `transient-init-scope' method.
+
+  If no prefix matches, return nil.
 
 ** Current Suffix Command
 
@@ -1560,16 +1662,9 @@ For completeness sake, some notes about complications:
 
 - While a sub-prefix is active we nearly always want {{{kbd(C-g)}}} to take the
   user back to the “super-prefix”, even when the other suffixes don't
-  do that.  However, in rare cases this may not be desirable, and that
-  makes the following complication necessary:
-
-  For ~transient-suffix~ objects the ~transient~ slot is unbound.  We can
-  ignore that for the most part because ~nil~ and the slot being unbound
-  are treated as equivalent, and mean “do exit”.  That isn't actually
-  true for suffixes that are sub-prefixes though.  For such suffixes
-  unbound means “do exit but allow going back”, which is the default,
-  while ~nil~ means “do exit permanently”, which requires that slot to
-  be explicitly set to that value.
+  do that.  However, in rare cases this may not be desirable, in which
+  case ~replace~ can be used as the value of the sub-prefix's ~transient~
+  slot.
 
 *** Pre-commands for Infixes
 :PROPERTIES:
@@ -1617,7 +1712,7 @@ slot for the sub-prefix itself.
 
 - Function: transient--do-recurse ::
 
-  Call the transient prefix command, preparing for return to active
+  Call the transient prefix command, preparing for return to outer
   transient.
 
   Whether we actually return to the parent transient is ultimately
@@ -2196,8 +2291,9 @@ functions use ~describe-function~.
 - ~mode-line-format~ is this prefix's mode line format, overriding
   ~transient-mode-line-format~.  It should have the same type.
 
-- ~column-width~ is only respected inside ~transient-columns~ groups and
-  allows aligning columns across separate instances of that.
+- ~column-widths~ is only respected inside ~transient-columns~ groups and
+  allows aligning columns across separate instances of that.  A list
+  of integers.
 
 - ~variable-pitch~ controls whether alignment is done pixel-wise to
   account for use of variable-pitch characters, which is useful, e.g.,
@@ -2265,8 +2361,9 @@ Also see [[*Suffix Classes]].
 :END:
 
 This is the abstract superclass of ~transient-suffix~ and ~transient-group~.
-This is where the shared ~if*~ and ~inapt-if*~ slots (see [[*Predicate Slots]])
-and the ~level~ slot (see [[*Enabling and Disabling Suffixes]]) are defined.
+This is where the shared ~if*~ and ~inapt-if*~ slots (see [[*Predicate Slots]]),
+the ~level~ slot (see [[*Enabling and Disabling Suffixes]]), and the ~advice~
+and ~advice*~ slots (see [[*Slots of ~transient-suffix~]]) are defined.
 
 - ~parent~ The object for the parent group.
 
@@ -2307,6 +2404,20 @@ and the ~level~ slot (see [[*Enabling and Disabling Suffixes]]) are defined.
 
 - ~definition~ A command, which is used if the body is omitted when
   defining a command using ~transient-define-suffix~.
+
+The following two slots are experimental.  They can also be set for a
+group, in which case they apply to all suffixes in that group, except
+for suffixes that set the same slot to a non-nil value.
+
+- ~advice~ A function used to advise the command.  The advise is called
+  using ~(apply advice command args)~, i.e., it behaves like an "around"
+  advice.
+
+- ~advice*~ A function used to advise the command.  Unlike ~advice~, this
+  advises not only the command body but also its ~interactive~ spec.  If
+  both slots are non-nil, ~advice~ is used for the body and ~advice*~ is
+  used for the ~interactive~ form.  When advising the ~interactive~ spec,
+  called using ~(funcall advice #'advice-eval-interactive-spec spec)~.
 
 *** Slots of ~transient-infix~
 :PROPERTIES:

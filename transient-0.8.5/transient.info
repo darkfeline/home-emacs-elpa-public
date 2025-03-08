@@ -1,4 +1,4 @@
-This is doc86VDRD.info, produced by makeinfo version 6.8 from
+This is doc9FYvkp.info, produced by makeinfo version 6.8 from
 transient.texi.
 
      Copyright (C) 2018–2025 Free Software Foundation, Inc.
@@ -19,7 +19,7 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
 
-File: doc86VDRD.info,  Node: Top,  Next: Introduction,  Up: (dir)
+File: doc9FYvkp.info,  Node: Top,  Next: Introduction,  Up: (dir)
 
 Transient User and Developer Manual
 ***********************************
@@ -32,7 +32,7 @@ used to implement similar menus in other packages.
 resource to get over that hurdle is Psionic K’s interactive tutorial,
 available at <https://github.com/positron-solutions/transient-showcase>.
 
-This manual is for Transient version 0.8.3.
+This manual is for Transient version 0.8.5.
 
      Copyright (C) 2018–2025 Free Software Foundation, Inc.
 
@@ -81,6 +81,7 @@ Defining New Commands
 * Binding Suffix and Infix Commands::
 * Defining Suffix and Infix Commands::
 * Using Infix Arguments::
+* Using Prefix Scope::
 * Current Suffix Command::
 * Current Prefix Command::
 * Transient State::
@@ -111,7 +112,7 @@ Suffix Methods
 
 
 
-File: doc86VDRD.info,  Node: Introduction,  Next: Usage,  Prev: Top,  Up: Top
+File: doc9FYvkp.info,  Node: Introduction,  Next: Usage,  Prev: Top,  Up: Top
 
 1 Introduction
 **************
@@ -184,7 +185,7 @@ you’ve tried it, it’s hard to go back to the ‘C-u what can I do here
 again?’ way.
 
 
-File: doc86VDRD.info,  Node: Usage,  Next: Modifying Existing Transients,  Prev: Introduction,  Up: Top
+File: doc9FYvkp.info,  Node: Usage,  Next: Modifying Existing Transients,  Prev: Introduction,  Up: Top
 
 2 Usage
 *******
@@ -202,7 +203,7 @@ File: doc86VDRD.info,  Node: Usage,  Next: Modifying Existing Transients,  Prev:
 * Configuration::
 
 
-File: doc86VDRD.info,  Node: Invoking Transients,  Next: Aborting and Resuming Transients,  Up: Usage
+File: doc9FYvkp.info,  Node: Invoking Transients,  Next: Aborting and Resuming Transients,  Up: Usage
 
 2.1 Invoking Transients
 =======================
@@ -227,7 +228,7 @@ commands may also set some value by side-effect, e.g., by setting the
 value of some variable.
 
 
-File: doc86VDRD.info,  Node: Aborting and Resuming Transients,  Next: Common Suffix Commands,  Prev: Invoking Transients,  Up: Usage
+File: doc9FYvkp.info,  Node: Aborting and Resuming Transients,  Next: Common Suffix Commands,  Prev: Invoking Transients,  Up: Usage
 
 2.2 Aborting and Resuming Transients
 ====================================
@@ -284,7 +285,7 @@ Key: M-x transient-resume
      if any.
 
 
-File: doc86VDRD.info,  Node: Common Suffix Commands,  Next: Saving Values,  Prev: Aborting and Resuming Transients,  Up: Usage
+File: doc9FYvkp.info,  Node: Common Suffix Commands,  Next: Saving Values,  Prev: Aborting and Resuming Transients,  Up: Usage
 
 2.3 Common Suffix Commands
 ==========================
@@ -320,7 +321,7 @@ User Option: transient-show-common-commands
 one of the following sections.
 
 
-File: doc86VDRD.info,  Node: Saving Values,  Next: Using History,  Prev: Common Suffix Commands,  Up: Usage
+File: doc9FYvkp.info,  Node: Saving Values,  Next: Using History,  Prev: Common Suffix Commands,  Up: Usage
 
 2.4 Saving Values
 =================
@@ -362,7 +363,7 @@ their handling of buffer-local values is actually a bit more complicated
 than outlined above and even customizable.
 
 
-File: doc86VDRD.info,  Node: Using History,  Next: Getting Help for Suffix Commands,  Prev: Saving Values,  Up: Usage
+File: doc9FYvkp.info,  Node: Using History,  Next: Getting Help for Suffix Commands,  Prev: Saving Values,  Up: Usage
 
 2.5 Using History
 =================
@@ -409,7 +410,7 @@ User Option: transient-history-limit
      the history is saved in ‘transient-history-file’.
 
 
-File: doc86VDRD.info,  Node: Getting Help for Suffix Commands,  Next: Enabling and Disabling Suffixes,  Prev: Using History,  Up: Usage
+File: doc9FYvkp.info,  Node: Getting Help for Suffix Commands,  Next: Enabling and Disabling Suffixes,  Prev: Using History,  Up: Usage
 
 2.6 Getting Help for Suffix Commands
 ====================================
@@ -437,7 +438,7 @@ supported.  The fallback is to show the command’s documentation string,
 for non-infix suffixes this is usually appropriate.
 
 
-File: doc86VDRD.info,  Node: Enabling and Disabling Suffixes,  Next: Other Commands,  Prev: Getting Help for Suffix Commands,  Up: Usage
+File: doc9FYvkp.info,  Node: Enabling and Disabling Suffixes,  Next: Other Commands,  Prev: Getting Help for Suffix Commands,  Up: Usage
 
 2.7 Enabling and Disabling Suffixes
 ===================================
@@ -508,8 +509,47 @@ Key: C-x a (transient-toggle-level-limit)
      the level specified by ‘transient-default-level’ are temporarily
      available anyway.
 
+Function: transient-set-default-level suffix level
+     This function sets the default level of the suffix COMMAND to
+     LEVEL.
+
+     If a suffix command appears in multiple menus, it may make sense to
+     consistently change its level in all those menus at once.  For
+     example, the ‘--gpg-sign’ argument (which is implemented using the
+     command ‘magit:--gpg-sign’), is bound in all of Magit’s menu which
+     create commits.  Users who sometimes sign their commits would want
+     that argument to be available in all of these menus, while for
+     users who never sign it is just unnecessary noise in any menus.
+
+     To always make ‘--gpg-sign’ available, use:
+
+          (transient-set-default-level 'magit:--gpg-sign 1)
+
+     To never make ‘--gpg-sign’ available, use:
+
+          (transient-set-default-level 'magit:--gpg-sign 0)
+
+     This sets the level in the suffix prototype object for this
+     command.  Commands only have a suffix prototype if they were
+     defined using one of ‘transient-define-argument’,
+     ‘transient-define-infix’ and ‘transient-define-suffix’.  For all
+     other commands this would signal an error.  (This is one of the
+     reasons why package authors should use one of these functions to
+     define shared suffix commands, and especially shared arguments.)
+
+     If the user changes the level of a suffix in a particular menu,
+     using ‘C-x l’ as shown above, then that obviously shadows the
+     default.
+
+     It is also possible to set the level of a suffix binding in a
+     particular menu, either when defining the menu using
+     ‘transient-define-prefix,’ or later using
+     ‘transient-insert-suffix’.  If such bindings specify a level, then
+     that also overrides the default.  (Per-suffix default levels is a
+     new feature, so you might encounter this quite often.)
+
 
-File: doc86VDRD.info,  Node: Other Commands,  Next: Configuration,  Prev: Enabling and Disabling Suffixes,  Up: Usage
+File: doc9FYvkp.info,  Node: Other Commands,  Next: Configuration,  Prev: Enabling and Disabling Suffixes,  Up: Usage
 
 2.8 Other Commands
 ==================
@@ -546,7 +586,7 @@ Command: transient-toggle-docstrings
      is used when displaying docstrings.
 
 
-File: doc86VDRD.info,  Node: Configuration,  Prev: Other Commands,  Up: Usage
+File: doc9FYvkp.info,  Node: Configuration,  Prev: Other Commands,  Up: Usage
 
 2.9 Configuration
 =================
@@ -678,6 +718,11 @@ User Option: transient-display-buffer-action
      This displays the window at the bottom of the selected frame.  For
      alternatives see *note (elisp)Buffer Display Action Functions::,
      and *note (elisp)Buffer Display Action Alists::.
+
+     When you switch to a different ACTION, you should keep the ALIST
+     entries for ‘dedicated’ and ‘inhibit-same-window’ in most cases.
+     Do not drop them because you are unsure whether they are needed; if
+     you are unsure, then keep them.
 
      Note that the buffer that was current before the transient buffer
      is shown should remain the current buffer.  Many suffix commands
@@ -843,7 +888,7 @@ Variable: transient-setup-buffer-hook
      buffer is current and empty when this hook is runs.
 
 
-File: doc86VDRD.info,  Node: Modifying Existing Transients,  Next: Defining New Commands,  Prev: Usage,  Up: Top
+File: doc9FYvkp.info,  Node: Modifying Existing Transients,  Next: Defining New Commands,  Prev: Usage,  Up: Top
 
 3 Modifying Existing Transients
 *******************************
@@ -904,8 +949,11 @@ Function: transient-append-suffix prefix loc suffix &optional keep-other
      Predicate Slots::.
 
      Unfortunately both false-positives and false-negatives are
-     possible.  To deal with the former use non-‘nil’ KEEP-OTHER.  To
-     deal with the latter remove the conflicting binding explicitly.
+     possible.  To deal with the former use non-‘nil’ KEEP-OTHER.  The
+     symbol ‘always’ prevents the removal of a false-positive in some
+     cases where other non-‘nil’ values would fail.  To deal with
+     false-negatives remove the conflicting binding separately, using
+     ‘transient-remove-suffix’.
 
 Function: transient-replace-suffix prefix loc suffix
      This function replaces the suffix or group at LOC in PREFIX with
@@ -932,7 +980,7 @@ functions only ‘transient-get-suffix’ and ‘transient-suffix-put’ may
 signal an error.
 
 
-File: doc86VDRD.info,  Node: Defining New Commands,  Next: Classes and Methods,  Prev: Modifying Existing Transients,  Up: Top
+File: doc9FYvkp.info,  Node: Defining New Commands,  Next: Classes and Methods,  Prev: Modifying Existing Transients,  Up: Top
 
 4 Defining New Commands
 ***********************
@@ -944,12 +992,13 @@ File: doc86VDRD.info,  Node: Defining New Commands,  Next: Classes and Methods, 
 * Binding Suffix and Infix Commands::
 * Defining Suffix and Infix Commands::
 * Using Infix Arguments::
+* Using Prefix Scope::
 * Current Suffix Command::
 * Current Prefix Command::
 * Transient State::
 
 
-File: doc86VDRD.info,  Node: Technical Introduction,  Next: Defining Transients,  Up: Defining New Commands
+File: doc9FYvkp.info,  Node: Technical Introduction,  Next: Defining Transients,  Up: Defining New Commands
 
 4.1 Technical Introduction
 ==========================
@@ -1049,7 +1098,7 @@ incomplete key sequences, and those cannot be interrupted with prefix
 commands.)
 
 
-File: doc86VDRD.info,  Node: Defining Transients,  Next: Binding Suffix and Infix Commands,  Prev: Technical Introduction,  Up: Defining New Commands
+File: doc9FYvkp.info,  Node: Defining Transients,  Next: Binding Suffix and Infix Commands,  Prev: Technical Introduction,  Up: Defining New Commands
 
 4.2 Defining Transients
 =======================
@@ -1103,7 +1152,7 @@ Macro: transient-define-prefix name arglist [docstring] [keyword value]... group
      the branch whose variables are being configured.
 
 
-File: doc86VDRD.info,  Node: Binding Suffix and Infix Commands,  Next: Defining Suffix and Infix Commands,  Prev: Defining Transients,  Up: Defining New Commands
+File: doc9FYvkp.info,  Node: Binding Suffix and Infix Commands,  Next: Defining Suffix and Infix Commands,  Prev: Defining Transients,  Up: Defining New Commands
 
 4.3 Binding Suffix and Infix Commands
 =====================================
@@ -1125,7 +1174,7 @@ used in ‘transient-define-prefix’.
 * Suffix Specifications::
 
 
-File: doc86VDRD.info,  Node: Group Specifications,  Next: Suffix Specifications,  Up: Binding Suffix and Infix Commands
+File: doc9FYvkp.info,  Node: Group Specifications,  Next: Suffix Specifications,  Up: Binding Suffix and Infix Commands
 
 4.3.1 Group Specifications
 --------------------------
@@ -1244,6 +1293,13 @@ constructor of that class.
      suffixes contained in a group are right padded, effectively
      aligning the descriptions.
 
+   • If a keyword argument accepts a function as value, you an use a
+     ‘lambda’ expression.  As a special case, the ‘##’ macro (which
+     returns a ‘lambda’ expression and is implemented in the ‘llama’
+     package) is also supported.  Inside group specifications, the use
+     of ‘##’ is not supported anywhere but directly following a keyword
+     symbol.
+
    The ELEMENTs are either all subgroups, or all suffixes and strings.
 (At least currently no group type exists that would allow mixing
 subgroups with commands at the same level, though in principle there is
@@ -1263,7 +1319,7 @@ This feature is experimental and should be avoided.
    The form of suffix specifications is documented in the next node.
 
 
-File: doc86VDRD.info,  Node: Suffix Specifications,  Prev: Group Specifications,  Up: Binding Suffix and Infix Commands
+File: doc9FYvkp.info,  Node: Suffix Specifications,  Prev: Group Specifications,  Up: Binding Suffix and Infix Commands
 
 4.3.2 Suffix Specifications
 ---------------------------
@@ -1356,8 +1412,14 @@ Each keyword has to be a keyword symbol, either ‘:class’ or a keyword
 argument supported by the constructor of that class.  See *note Suffix
 Slots::.
 
+   If a keyword argument accepts a function as value, you an use a
+‘lambda’ expression.  As a special case, the ‘##’ macro (which returns a
+‘lambda’ expression and is implemented in the ‘llama’ package) is also
+supported.  Inside suffix bindings, the use of ‘##’ is not supported
+anywhere but directly following a keyword symbol.
+
 
-File: doc86VDRD.info,  Node: Defining Suffix and Infix Commands,  Next: Using Infix Arguments,  Prev: Binding Suffix and Infix Commands,  Up: Defining New Commands
+File: doc9FYvkp.info,  Node: Defining Suffix and Infix Commands,  Next: Using Infix Arguments,  Prev: Binding Suffix and Infix Commands,  Up: Defining New Commands
 
 4.4 Defining Suffix and Infix Commands
 ======================================
@@ -1420,7 +1482,7 @@ Macro: transient-define-argument name arglist [docstring] [keyword value]...
      ‘transient-define-infix’ instead.
 
 
-File: doc86VDRD.info,  Node: Using Infix Arguments,  Next: Current Suffix Command,  Prev: Defining Suffix and Infix Commands,  Up: Defining New Commands
+File: doc9FYvkp.info,  Node: Using Infix Arguments,  Next: Using Prefix Scope,  Prev: Defining Suffix and Infix Commands,  Up: Defining New Commands
 
 4.5 Using Infix Arguments
 =========================
@@ -1472,9 +1534,56 @@ Function: transient-suffixes prefix
      if the current command is not being invoked from PREFIX.
 
 
-File: doc86VDRD.info,  Node: Current Suffix Command,  Next: Current Prefix Command,  Prev: Using Infix Arguments,  Up: Defining New Commands
+File: doc9FYvkp.info,  Node: Using Prefix Scope,  Next: Current Suffix Command,  Prev: Using Infix Arguments,  Up: Defining New Commands
 
-4.6 Current Suffix Command
+4.6 Using Prefix Scope
+======================
+
+Some transients have a sort of secondary value, called a scope.  A
+prefix’s scope can be accessed using ‘transient-scope’; similar to how
+its value can be accessed using ‘transient-args’.
+
+Function: transient-scope prefixes classes
+     This function returns the scope of the active or current transient
+     prefix command.
+
+     If optional PREFIXES and CLASSES are both nil, return the scope of
+     the prefix currently being setup, making this variation useful,
+     e.g., in ‘:if*’ predicates.  If no prefix is being setup, but the
+     current command was invoked from some prefix, then return the scope
+     of that.
+
+     If PREFIXES is non-nil, it must be a prefix command or a list of
+     such commands.  If CLASSES is non-nil, it must be a prefix class or
+     a list of such classes.  When this function is called from the body
+     or the ‘interactive’ form of a suffix command, PREFIXES and/or
+     CLASSES should be non-nil.  If either is non-nil, try the following
+     in order:
+
+        • If the current suffix command was invoked from a prefix, which
+          appears in PREFIXES, return the scope of that prefix.
+
+        • If the current suffix command was invoked from a prefix, and
+          its class derives from one of the CLASSES, return the scope of
+          that prefix.
+
+        • If a prefix is being setup and it appears in PREFIXES, return
+          its scope.
+
+        • If a prefix is being setup and its class derives from one of
+          the CLASSES, return its scope.
+
+        • Finally try to return the default scope of the first command
+          in PREFIXES.  This only works if that slot is set in the
+          respective class definition or using its
+          ‘transient-init-scope’ method.
+
+     If no prefix matches, return nil.
+
+
+File: doc9FYvkp.info,  Node: Current Suffix Command,  Next: Current Prefix Command,  Prev: Using Prefix Scope,  Up: Defining New Commands
+
+4.7 Current Suffix Command
 ==========================
 
 Function: transient-suffix-object command
@@ -1525,9 +1634,9 @@ Variable: transient-current-suffixes
      the value.
 
 
-File: doc86VDRD.info,  Node: Current Prefix Command,  Next: Transient State,  Prev: Current Suffix Command,  Up: Defining New Commands
+File: doc9FYvkp.info,  Node: Current Prefix Command,  Next: Transient State,  Prev: Current Suffix Command,  Up: Defining New Commands
 
-4.7 Current Prefix Command
+4.8 Current Prefix Command
 ==========================
 
 Function: transient-prefix-object
@@ -1580,9 +1689,9 @@ Function: transient-active-prefix &optional prefixes
      object is only returned if it matches one of the PREFIXES.
 
 
-File: doc86VDRD.info,  Node: Transient State,  Prev: Current Prefix Command,  Up: Defining New Commands
+File: doc9FYvkp.info,  Node: Transient State,  Prev: Current Prefix Command,  Up: Defining New Commands
 
-4.8 Transient State
+4.9 Transient State
 ===================
 
 Invoking a transient prefix command “activates” the respective
@@ -1665,15 +1774,8 @@ call ‘transient-export’, ‘transient--stack-zap’ or
    • While a sub-prefix is active we nearly always want ‘C-g’ to take
      the user back to the “super-prefix”, even when the other suffixes
      don’t do that.  However, in rare cases this may not be desirable,
-     and that makes the following complication necessary:
-
-     For ‘transient-suffix’ objects the ‘transient’ slot is unbound.  We
-     can ignore that for the most part because ‘nil’ and the slot being
-     unbound are treated as equivalent, and mean “do exit”.  That isn’t
-     actually true for suffixes that are sub-prefixes though.  For such
-     suffixes unbound means “do exit but allow going back”, which is the
-     default, while ‘nil’ means “do exit permanently”, which requires
-     that slot to be explicitly set to that value.
+     in which case ‘replace’ can be used as the value of the
+     sub-prefix’s ‘transient’ slot.
 
 Pre-commands for Infixes
 ------------------------
@@ -1713,7 +1815,7 @@ predicate is automatically picked based on the value of the ‘transient’
 slot for the sub-prefix itself.
 
 Function: transient–do-recurse
-     Call the transient prefix command, preparing for return to active
+     Call the transient prefix command, preparing for return to outer
      transient.
 
      Whether we actually return to the parent transient is ultimately
@@ -1795,7 +1897,7 @@ Function: transient–do-suspend
      This is used when the user pressed ‘C-z’.
 
 
-File: doc86VDRD.info,  Node: Classes and Methods,  Next: FAQ,  Prev: Defining New Commands,  Up: Top
+File: doc9FYvkp.info,  Node: Classes and Methods,  Next: FAQ,  Prev: Defining New Commands,  Up: Top
 
 5 Classes and Methods
 *********************
@@ -1848,7 +1950,7 @@ This happens in two ways.
 * Predicate Slots::
 
 
-File: doc86VDRD.info,  Node: Group Classes,  Next: Group Methods,  Up: Classes and Methods
+File: doc9FYvkp.info,  Node: Group Classes,  Next: Group Methods,  Up: Classes and Methods
 
 5.1 Group Classes
 =================
@@ -1896,7 +1998,7 @@ beginning of the class specification, e.g., ‘[:class transient-columns
      their elements.
 
 
-File: doc86VDRD.info,  Node: Group Methods,  Next: Prefix Classes,  Prev: Group Classes,  Up: Classes and Methods
+File: doc9FYvkp.info,  Node: Group Methods,  Next: Prefix Classes,  Prev: Group Classes,  Up: Classes and Methods
 
 5.2 Group Methods
 =================
@@ -1926,7 +2028,7 @@ Function: transient–insert-group group
      buffer.
 
 
-File: doc86VDRD.info,  Node: Prefix Classes,  Next: Suffix Classes,  Prev: Group Methods,  Up: Classes and Methods
+File: doc9FYvkp.info,  Node: Prefix Classes,  Next: Suffix Classes,  Prev: Group Methods,  Up: Classes and Methods
 
 5.3 Prefix Classes
 ==================
@@ -1944,7 +2046,7 @@ is active, a clone of that object is stored in the variable
 to the active transient’s object should not affect later invocations.
 
 
-File: doc86VDRD.info,  Node: Suffix Classes,  Next: Prefix Methods,  Prev: Prefix Classes,  Up: Classes and Methods
+File: doc9FYvkp.info,  Node: Suffix Classes,  Next: Prefix Methods,  Prev: Prefix Classes,  Up: Classes and Methods
 
 5.4 Suffix Classes
 ==================
@@ -2027,7 +2129,7 @@ classes will likely get generalized and added to Transient.  For now
 they are very much subject to change and not documented.
 
 
-File: doc86VDRD.info,  Node: Prefix Methods,  Next: Suffix Methods,  Prev: Suffix Classes,  Up: Classes and Methods
+File: doc9FYvkp.info,  Node: Prefix Methods,  Next: Suffix Methods,  Prev: Suffix Classes,  Up: Classes and Methods
 
 5.5 Prefix Methods
 ==================
@@ -2082,7 +2184,7 @@ prefix commands.  The default method effectively describes the command
 using ‘describe-function’.
 
 
-File: doc86VDRD.info,  Node: Suffix Methods,  Next: Prefix Slots,  Prev: Prefix Methods,  Up: Classes and Methods
+File: doc9FYvkp.info,  Node: Suffix Methods,  Next: Prefix Slots,  Prev: Prefix Methods,  Up: Classes and Methods
 
 5.6 Suffix Methods
 ==================
@@ -2096,7 +2198,7 @@ functions use ‘describe-function’.
 * Suffix Format Methods::
 
 
-File: doc86VDRD.info,  Node: Suffix Value Methods,  Next: Suffix Format Methods,  Up: Suffix Methods
+File: doc9FYvkp.info,  Node: Suffix Value Methods,  Next: Suffix Format Methods,  Up: Suffix Methods
 
 5.6.1 Suffix Value Methods
 --------------------------
@@ -2174,7 +2276,7 @@ Function: transient-init-scope obj
      default implementation, which is a noop.
 
 
-File: doc86VDRD.info,  Node: Suffix Format Methods,  Prev: Suffix Value Methods,  Up: Suffix Methods
+File: doc9FYvkp.info,  Node: Suffix Format Methods,  Prev: Suffix Value Methods,  Up: Suffix Methods
 
 5.6.2 Suffix Format Methods
 ---------------------------
@@ -2244,7 +2346,7 @@ Function: transient-show-summary obj &optional return
      of showing it.  This is used when a tooltip is needed.
 
 
-File: doc86VDRD.info,  Node: Prefix Slots,  Next: Suffix Slots,  Prev: Suffix Methods,  Up: Classes and Methods
+File: doc9FYvkp.info,  Node: Prefix Slots,  Next: Suffix Slots,  Prev: Suffix Methods,  Up: Classes and Methods
 
 5.7 Prefix Slots
 ================
@@ -2314,8 +2416,9 @@ Appearance
    • ‘mode-line-format’ is this prefix’s mode line format, overriding
      ‘transient-mode-line-format’.  It should have the same type.
 
-   • ‘column-width’ is only respected inside ‘transient-columns’ groups
-     and allows aligning columns across separate instances of that.
+   • ‘column-widths’ is only respected inside ‘transient-columns’ groups
+     and allows aligning columns across separate instances of that.  A
+     list of integers.
 
    • ‘variable-pitch’ controls whether alignment is done pixel-wise to
      account for use of variable-pitch characters, which is useful,
@@ -2368,7 +2471,7 @@ set in calls to ‘transient-define-prefix’.
      properly exited, even in case of an error.
 
 
-File: doc86VDRD.info,  Node: Suffix Slots,  Next: Predicate Slots,  Prev: Prefix Slots,  Up: Classes and Methods
+File: doc9FYvkp.info,  Node: Suffix Slots,  Next: Predicate Slots,  Prev: Prefix Slots,  Up: Classes and Methods
 
 5.8 Suffix Slots
 ================
@@ -2384,8 +2487,9 @@ Slots of ‘transient-child’
 
 This is the abstract superclass of ‘transient-suffix’ and
 ‘transient-group’.  This is where the shared ‘if*’ and ‘inapt-if*’ slots
-(see *note Predicate Slots::) and the ‘level’ slot (see *note Enabling
-and Disabling Suffixes::) are defined.
+(see *note Predicate Slots::), the ‘level’ slot (see *note Enabling and
+Disabling Suffixes::), and the ‘advice’ and ‘advice*’ slots (see *note
+Slots of transient-suffix::) are defined.
 
    • ‘parent’ The object for the parent group.
 
@@ -2427,6 +2531,21 @@ Slots of ‘transient-suffix’
 
    • ‘definition’ A command, which is used if the body is omitted when
      defining a command using ‘transient-define-suffix’.
+
+   The following two slots are experimental.  They can also be set for a
+group, in which case they apply to all suffixes in that group, except
+for suffixes that set the same slot to a non-nil value.
+
+   • ‘advice’ A function used to advise the command.  The advise is
+     called using ‘(apply advice command args)’, i.e., it behaves like
+     an "around" advice.
+
+   • ‘advice*’ A function used to advise the command.  Unlike ‘advice’,
+     this advises not only the command body but also its ‘interactive’
+     spec.  If both slots are non-nil, ‘advice’ is used for the body and
+     ‘advice*’ is used for the ‘interactive’ form.  When advising the
+     ‘interactive’ spec, called using ‘(funcall advice
+     #'advice-eval-interactive-spec spec)’.
 
 Slots of ‘transient-infix’
 --------------------------
@@ -2518,7 +2637,7 @@ Slots of ‘transient-switches’
      E.g., ‘\\(--\\(topo\\|author-date\\|date\\)-order\\)’.
 
 
-File: doc86VDRD.info,  Node: Predicate Slots,  Prev: Suffix Slots,  Up: Classes and Methods
+File: doc9FYvkp.info,  Node: Predicate Slots,  Prev: Suffix Slots,  Up: Classes and Methods
 
 5.9 Predicate Slots
 ===================
@@ -2567,7 +2686,7 @@ depending on user preference.  See *note Enabling and Disabling
 Suffixes::.
 
 
-File: doc86VDRD.info,  Node: FAQ,  Next: Keystroke Index,  Prev: Classes and Methods,  Up: Top
+File: doc9FYvkp.info,  Node: FAQ,  Next: Keystroke Index,  Prev: Classes and Methods,  Up: Top
 
 Appendix A FAQ
 **************
@@ -2680,25 +2799,25 @@ have implemented a function, ‘transient-bind-q-to-quit’ that makes the
 necessary changes.  See its documentation string for more information.
 
 
-File: doc86VDRD.info,  Node: Keystroke Index,  Next: Command and Function Index,  Prev: FAQ,  Up: Top
+File: doc9FYvkp.info,  Node: Keystroke Index,  Next: Command and Function Index,  Prev: FAQ,  Up: Top
 
 Appendix B Keystroke Index
 **************************
 
 
-File: doc86VDRD.info,  Node: Command and Function Index,  Next: Variable Index,  Prev: Keystroke Index,  Up: Top
+File: doc9FYvkp.info,  Node: Command and Function Index,  Next: Variable Index,  Prev: Keystroke Index,  Up: Top
 
 Appendix C Command and Function Index
 *************************************
 
 
-File: doc86VDRD.info,  Node: Variable Index,  Next: Concept Index,  Prev: Command and Function Index,  Up: Top
+File: doc9FYvkp.info,  Node: Variable Index,  Next: Concept Index,  Prev: Command and Function Index,  Up: Top
 
 Appendix D Variable Index
 *************************
 
 
-File: doc86VDRD.info,  Node: Concept Index,  Next: GNU General Public License,  Prev: Variable Index,  Up: Top
+File: doc9FYvkp.info,  Node: Concept Index,  Next: GNU General Public License,  Prev: Variable Index,  Up: Top
 
 Appendix E Concept Index
 ************************
@@ -2743,7 +2862,7 @@ Appendix E Concept Index
 * value history:                         Using History.        (line  6)
 
 
-File: doc86VDRD.info,  Node: GNU General Public License,  Prev: Concept Index,  Up: Top
+File: doc9FYvkp.info,  Node: GNU General Public License,  Prev: Concept Index,  Up: Top
 
 Appendix F GNU General Public License
 *************************************
@@ -3462,77 +3581,78 @@ please read <https://www.gnu.org/licenses/why-not-lgpl.html>.
 
 Tag Table:
 Node: Top763
-Node: Introduction3049
-Ref: Some things that Transient can do3577
-Ref: Complexity in CLI programs3930
-Ref: Using Transient for composing interactive commands4531
-Node: Usage6773
-Node: Invoking Transients7141
-Node: Aborting and Resuming Transients8310
-Node: Common Suffix Commands10903
-Node: Saving Values12599
-Ref: Saving Values-Footnote-113978
-Node: Using History14171
-Node: Getting Help for Suffix Commands15851
-Node: Enabling and Disabling Suffixes17222
-Node: Other Commands20488
-Node: Configuration22149
-Ref: Essential Options22429
-Ref: Accessibility Options29235
-Ref: Auxiliary Options29554
-Ref: Developer Options34108
-Ref: Hook Variables35348
-Node: Modifying Existing Transients35627
-Node: Defining New Commands39776
-Node: Technical Introduction40193
-Node: Defining Transients45893
-Node: Binding Suffix and Infix Commands48346
-Node: Group Specifications49204
-Node: Suffix Specifications55755
-Node: Defining Suffix and Infix Commands59968
-Node: Using Infix Arguments62974
-Node: Current Suffix Command65351
-Node: Current Prefix Command67703
-Node: Transient State70243
-Ref: Pre-commands for Infixes75059
-Ref: Pre-commands for Suffixes75576
-Ref: Pre-commands for Non-Suffixes78009
-Ref: Special Pre-Commands79136
-Node: Classes and Methods79635
-Node: Group Classes81722
-Node: Group Methods83649
-Node: Prefix Classes84902
-Node: Suffix Classes85747
-Node: Prefix Methods89727
-Node: Suffix Methods92104
-Node: Suffix Value Methods92425
-Node: Suffix Format Methods95746
-Node: Prefix Slots98720
-Ref: Value and Scope98870
-Ref: Behavior100349
-Ref: Appearance101690
-Ref: Documentation102349
-Ref: Internal102969
-Node: Suffix Slots104324
-Ref: Slots of transient-child104692
-Ref: Slots of transient-suffix105067
-Ref: Slots of transient-infix106640
-Ref: Slots of transient-variable109936
-Ref: Slots of transient-switches110038
-Node: Predicate Slots110401
-Node: FAQ112746
-Ref: Can I control how the popup buffer is displayed?112875
-Ref: How can I copy text from the popup buffer?113202
-Ref: How can I autoload prefix and suffix commands?113696
-Ref: How does Transient compare to prefix keys and universal arguments?114170
-Ref: How does Transient compare to Magit-Popup and Hydra?114413
-Ref: Why did some of the key bindings change?114607
-Ref: Why does q not quit popups anymore?116960
-Node: Keystroke Index118063
-Node: Command and Function Index118223
-Node: Variable Index118416
-Node: Concept Index118583
-Node: GNU General Public License121319
+Node: Introduction3072
+Ref: Some things that Transient can do3600
+Ref: Complexity in CLI programs3953
+Ref: Using Transient for composing interactive commands4554
+Node: Usage6796
+Node: Invoking Transients7164
+Node: Aborting and Resuming Transients8333
+Node: Common Suffix Commands10926
+Node: Saving Values12622
+Ref: Saving Values-Footnote-114001
+Node: Using History14194
+Node: Getting Help for Suffix Commands15874
+Node: Enabling and Disabling Suffixes17245
+Node: Other Commands22393
+Node: Configuration24054
+Ref: Essential Options24334
+Ref: Accessibility Options31399
+Ref: Auxiliary Options31718
+Ref: Developer Options36272
+Ref: Hook Variables37512
+Node: Modifying Existing Transients37791
+Node: Defining New Commands42122
+Node: Technical Introduction42562
+Node: Defining Transients48262
+Node: Binding Suffix and Infix Commands50715
+Node: Group Specifications51573
+Node: Suffix Specifications58509
+Node: Defining Suffix and Infix Commands63073
+Node: Using Infix Arguments66079
+Node: Using Prefix Scope68452
+Node: Current Suffix Command70454
+Node: Current Prefix Command72803
+Node: Transient State75343
+Ref: Pre-commands for Infixes79694
+Ref: Pre-commands for Suffixes80211
+Ref: Pre-commands for Non-Suffixes82643
+Ref: Special Pre-Commands83770
+Node: Classes and Methods84269
+Node: Group Classes86356
+Node: Group Methods88283
+Node: Prefix Classes89536
+Node: Suffix Classes90381
+Node: Prefix Methods94361
+Node: Suffix Methods96738
+Node: Suffix Value Methods97059
+Node: Suffix Format Methods100380
+Node: Prefix Slots103354
+Ref: Value and Scope103504
+Ref: Behavior104983
+Ref: Appearance106324
+Ref: Documentation107010
+Ref: Internal107630
+Node: Suffix Slots108985
+Ref: Slots of transient-child109353
+Ref: Slots of transient-suffix109811
+Ref: Slots of transient-infix112179
+Ref: Slots of transient-variable115475
+Ref: Slots of transient-switches115577
+Node: Predicate Slots115940
+Node: FAQ118285
+Ref: Can I control how the popup buffer is displayed?118414
+Ref: How can I copy text from the popup buffer?118741
+Ref: How can I autoload prefix and suffix commands?119235
+Ref: How does Transient compare to prefix keys and universal arguments?119709
+Ref: How does Transient compare to Magit-Popup and Hydra?119952
+Ref: Why did some of the key bindings change?120146
+Ref: Why does q not quit popups anymore?122499
+Node: Keystroke Index123602
+Node: Command and Function Index123762
+Node: Variable Index123955
+Node: Concept Index124122
+Node: GNU General Public License126858
 
 End Tag Table
 
