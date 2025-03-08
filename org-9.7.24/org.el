@@ -9,7 +9,7 @@
 ;; URL: https://orgmode.org
 ;; Package-Requires: ((emacs "26.1"))
 
-;; Version: 9.7.19
+;; Version: 9.7.24
 
 ;; This file is part of GNU Emacs.
 ;;
@@ -8607,7 +8607,7 @@ When point is a footnote definition, move to the first reference
 found.  If it is on a reference, move to the associated
 definition.
 
-When point is on a src-block of inline src-block, open its result.
+When point is on a src-block or inline src-block, open its result.
 
 When point is on a citation, follow it.
 
@@ -18548,17 +18548,22 @@ object (e.g., within a comment).  In these case, you need to use
      ;; if `org-return-follows-link' allows it.  Tolerate fuzzy
      ;; locations, e.g., in a comment, as `org-open-at-point'.
      ((and org-return-follows-link
-	   (or (and (eq 'link element-type)
-		    ;; Ensure point is not on the white spaces after
-		    ;; the link.
-		    (let ((origin (point)))
-		      (org-with-point-at (org-element-end context)
-			(skip-chars-backward " \t")
-			(> (point) origin))))
-	       (org-in-regexp org-ts-regexp-both nil t)
-	       (org-in-regexp org-tsr-regexp-both nil  t)
-               (org-element-lineage context '(citation citation-reference) 'include-self)
-	       (org-in-regexp org-link-any-re nil t)))
+	   (or
+            (let ((context
+                   (org-element-lineage
+                    context
+                    '(citation citation-reference link)
+                    'include-self)))
+              (and context
+                   ;; Ensure point is not on the white spaces after
+                   ;; the link.
+                   (let ((origin (point)))
+                     (org-with-point-at (org-element-end context)
+                       (skip-chars-backward " \t")
+                       (> (point) origin)))))
+            (org-in-regexp org-ts-regexp-both nil t)
+            (org-in-regexp org-tsr-regexp-both nil  t)
+            (org-in-regexp org-link-any-re nil t)))
       (call-interactively #'org-open-at-point))
      ;; Insert newline in heading, but preserve tags.
      ((and (not (bolp))
