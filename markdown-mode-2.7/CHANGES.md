@@ -1,6 +1,59 @@
-# Markdown Mode 2.6
+# Markdown Mode 2.7
 
-*Under development*
+*   New Features:
+    - Variable `markdown-follow-link-functions` extends
+      `markdown-follow-link-at-point` similarly to Org's
+      `org-open-at-point-functions`, allowing other libraries to
+      handle links specially. [GH-780][]
+    - Support media handler for images and drag and drop images [GH-804][]
+    - Add functions to move to the beginning and end of lines
+      (`markdown-beginning-of-line` and `markdown-end-of-line`), and the
+      variable `markdown-special-ctrl-a/e`, like Org mode.
+    - Trailing whitespace characters for line breaks are hidden when using
+      `markdown-hide-markup`
+    - `fill-paragraph` considers GFM alert syntax [GH-838][]
+    - Add new flag `markdown-wiki-link-retain-case` [GH-839][]
+
+*   Bug fixes:
+    - Don't highlight superscript/subscript in math inline/block [GH-802][]
+    - Fix table alignment when a column has a seperator in code block [GH-817][]
+    - Fix the regexp in the download languages script [GH-827][]
+    - Don't hide backslashes in code blocks when using `markdown-hide-markup`
+      and `markdown-fontify-code-blocks-natively` together [GH-766][]
+    - Fix `markdown-fontify-whole-heading-line` regression [GH-848][]
+    - Fix using fundamental-mode issue when editting code block [GH-868][]
+    - Fix highlighting URL in angle brackes[GH-822][]
+
+*   Improvements:
+    - Apply url-unescape against URL in an inline link [GH-805][]
+    - Show mode toggle message only if it is called interactively
+    - Copy `markdown-css-paths` in the output buffer [GH-834][]
+    - Change temporary buffer name according to the Emacs naming convention [GH-848][]
+    - Mark `markdown-css-paths` safe as file local variables [GH-834][]
+    - Resolve style sheets in `markdown-css-paths` relative to the Markdown file
+      (if the path starts with `./` or `../`) [GH-855][] [GH-870][]
+    - Don't insert list item in code block [GH-841][]
+    - Don't set mouse face if `markdown-mouse-follow-link` is nil [GH-879][]
+
+  [gh-780]: https://github.com/jrblevin/markdown-mode/issues/780
+  [gh-802]: https://github.com/jrblevin/markdown-mode/issues/802
+  [gh-804]: https://github.com/jrblevin/markdown-mode/issues/804
+  [gh-805]: https://github.com/jrblevin/markdown-mode/issues/805
+  [gh-817]: https://github.com/jrblevin/markdown-mode/issues/817
+  [gh-822]: https://github.com/jrblevin/markdown-mode/issues/822
+  [gh-827]: https://github.com/jrblevin/markdown-mode/issues/827
+  [gh-834]: https://github.com/jrblevin/markdown-mode/issues/834
+  [gh-838]: https://github.com/jrblevin/markdown-mode/issues/838
+  [gh-839]: https://github.com/jrblevin/markdown-mode/issues/839
+  [gh-841]: https://github.com/jrblevin/markdown-mode/issues/841
+  [gh-845]: https://github.com/jrblevin/markdown-mode/issues/845
+  [gh-848]: https://github.com/jrblevin/markdown-mode/issues/848
+  [gh-855]: https://github.com/jrblevin/markdown-mode/issues/855
+  [gh-868]: https://github.com/jrblevin/markdown-mode/issues/868
+  [gh-870]: https://github.com/jrblevin/markdown-mode/issues/870
+  [gh-879]: https://github.com/jrblevin/markdown-mode/issues/879
+
+# Markdown Mode 2.6
 
 *   **Breaking changes:**
     - GNU Emacs 27.1 or later is required.
@@ -29,6 +82,8 @@
     - Consider `major-mode-remap-alist` to determine major-mode for code blocks [GH-787][]
     - Set marker after footnote reference [GH-793][]
     - Improve putting text attribute for indented blocks [GH-794][]
+    - Some sources of pathological behavior of markdown-match-bold and markdown-match-italic
+      on large blocks have been mitigated
 
 *   Bug fixes:
     - Don't override table faces by link faces [GH-716][]
