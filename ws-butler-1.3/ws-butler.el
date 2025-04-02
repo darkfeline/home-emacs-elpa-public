@@ -6,7 +6,7 @@
 ;; Author: Le Wang <l26wang@gmail.com>
 ;; Maintainer: Sean Whitton <spwhitton@spwhitton.name>
 ;; Package-Requires: ((emacs "24.1"))
-;; Version: 1.2
+;; Version: 1.3
 ;; URL: https://elpa.nongnu.org/nongnu/ws-butler.html
 ;; Keywords: text
 
@@ -33,6 +33,10 @@
 
 ;;; News:
 
+;; Ver 1.3 2025/03/10 Sean Whitton
+;;     Replace a use of `always' to retain compatibility with older Emacs.
+;;     Thanks to Chris Rayner for the reporting the problem.
+;;
 ;; Ver 1.2 2025/02/25 Sean Whitton
 ;;     When `special-mode' is in `ws-butler-global-exempt-modes', also check
 ;;     whether a mode has a `mode-class' of `special', and don't activate
@@ -92,7 +96,8 @@ not activate in all modes with a `mode-class' of `special'."
   :type '(repeat (symbol :tag "Major mode"))
   :group 'ws-butler)
 
-(defcustom ws-butler-trim-predicate #'always
+(defcustom ws-butler-trim-predicate
+  (lambda (_beg _end) t)
   "Function to exclude regions from whitespace trimming.
 Called with two arguments delimiting a region of the current buffer.
 If the function returns non-nil, trailing whitespace in that region will be
