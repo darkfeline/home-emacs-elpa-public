@@ -9,7 +9,7 @@
 ;; URL: https://orgmode.org
 ;; Package-Requires: ((emacs "26.1"))
 
-;; Version: 9.7.24
+;; Version: 9.7.27
 
 ;; This file is part of GNU Emacs.
 ;;
@@ -3160,16 +3160,16 @@ There are multiple ways to set the category.  One way is to set
 it in the document property drawer.  For example:
 
 :PROPERTIES:
-:CATEGORY: ELisp
+:CATEGORY: Elisp
 :END:
 
 Other ways to define it is as an Emacs file variable, for example
 
-#   -*- mode: org; org-category: \"ELisp\"
+#   -*- mode: org; org-category: \"Elisp\"
 
 or for the file to contain a special line:
 
-#+CATEGORY: ELisp
+#+CATEGORY: Elisp
 
 If the file does not specify a category, then file's base name
 is used instead.")
@@ -4926,6 +4926,10 @@ This is for getting out of special buffers like capture.")
     st)
   "Syntax table including \"@\" and \"_\" as word constituents.")
 
+(defun org--set-tab-width (&rest _)
+  "Set `tab-width' to be 8."
+  (setq-local tab-width 8))
+
 ;;;###autoload
 (define-derived-mode org-mode outline-mode "Org"
   "Outline-based notes management and organizer, alias
@@ -4948,7 +4952,16 @@ The following commands are available:
   (setq-local org-mode-loading t)
   ;; Force tab width - indentation is significant in lists, so we need
   ;; to make sure that it is consistent across configurations.
-  (setq-local tab-width 8)
+  (org--set-tab-width)
+  ;; Really force it, even if dir-locals or file-locals set it - we
+  ;; need tab-width = 8 as a part of Org syntax.
+  (add-hook 'hack-local-variables-hook
+            #'org--set-tab-width 90 'local)
+  ;; In Emacs <30, editorconfig-mode uses advices, so we cannot rely
+  ;; upon `hack-local-variables-hook' to run after editorconfig
+  ;; tab-width settings are applied.
+  (add-hook 'editorconfig-after-apply-functions
+            #'org--set-tab-width 90 'local)
   (org-load-modules-maybe)
   (when org-agenda-file-menu-enabled
     (org-install-agenda-files-menu))
@@ -9443,7 +9456,7 @@ With numeric prefix arg, switch to the Nth state.
 With a numeric prefix arg of 0, inhibit note taking for the change.
 With a numeric prefix arg of -1, cancel repeater to allow marking as DONE.
 
-When called through ELisp, arg is also interpreted in the following way:
+When called through Elisp, arg is also interpreted in the following way:
 `none'        -> empty state
 \"\"            -> switch to empty state
 `done'        -> switch to DONE
@@ -11430,6 +11443,7 @@ headlines matching this string."
 		 'todo-state todo
                  'ts-date ts-date
 		 'priority priority
+                 'urgency priority
                  'type (concat "tagsmatch" ts-date-type))
 	       (push txt rtn))
 	      ((functionp action)
@@ -18054,7 +18068,7 @@ context.  See the individual commands for more information."
    (if (org-at-table-p) #'org-table-cut-region #'org-cut-subtree)))
 
 (defun org-paste-special (arg)
-  "Paste rectangular region into table, or past subtree relative to level.
+  "Paste rectangular region into table, or paste subtree relative to level.
 Calls `org-table-paste-rectangle' or `org-paste-subtree', depending on context.
 See the individual commands for more information."
   (interactive "P")
