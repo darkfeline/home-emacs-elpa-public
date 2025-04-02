@@ -7,7 +7,7 @@
 #+texinfo_dir_category: Emacs misc features
 #+texinfo_dir_title: Transient: (transient).
 #+texinfo_dir_desc: Transient Commands
-#+subtitle: for version 0.8.5
+#+subtitle: for version 0.8.7
 
 #+setupfile: .orgconfig
 
@@ -20,7 +20,7 @@ resource to get over that hurdle is Psionic K's interactive tutorial,
 available at https://github.com/positron-solutions/transient-showcase.
 
 #+texinfo: @noindent
-This manual is for Transient version 0.8.5.
+This manual is for Transient version 0.8.7.
 
 #+texinfo: @insertcopying
 :END:
@@ -802,7 +802,13 @@ These options are mainly intended for developers.
 
 - Variable: transient-exit-hook ::
 
-  This hook is run after a transient is exited.
+  This hook is run after a transient menu is exited, even if another
+  transient menu becomes active at the same time.
+
+- Variable: transient-post-exit-hook ::
+
+  This hook is run after a transient menu is exited, provided no other
+  transient menu becomes active at the same time.
 
 - Variable: transient-setup-buffer-hook ::
 
@@ -892,15 +898,6 @@ that tree are not objects but have the form {{{codevar((LEVEL CLASS PLIST))}}}, 
 
   This function edits the suffix or group at {{{var(LOC)}}} in {{{var(PREFIX)}}}, by setting
   the {{{var(PROP)}}} of its plist to {{{var(VALUE)}}}.
-
-Most of these functions do not signal an error if they cannot perform
-the requested modification.  The functions that insert new suffixes
-show a warning if {{{var(LOC)}}} cannot be found in {{{var(PREFIX,)}}} without signaling an
-error.  The reason for doing it like this is that establishing a key
-binding (and that is what we essentially are trying to do here) should
-not prevent the rest of the configuration from loading.  Among these
-functions only ~transient-get-suffix~ and ~transient-suffix-put~ may
-signal an error.
 
 * Defining New Commands
 ** Technical Introduction
