@@ -34,6 +34,29 @@ Perform diff between marked and current buffer state.
 Displays in a separate diff buffer with name based on
 the original buffer name." t)
 (register-definition-prefixes "vundo-diff" '("vundo-diff-"))
+
+
+;;; Generated autoloads from vundo-popup.el
+
+(autoload 'vundo-popup-mode "vundo-popup" "\
+Display a vundo popup when using any ordinary undo command.
+
+This is a minor mode.  If called interactively, toggle the `Vundo-Popup
+mode' mode.  If the prefix argument is positive, enable the mode, and if
+it is zero or negative, disable the mode.
+
+If called from Lisp, toggle the mode if ARG is `toggle'.  Enable the
+mode if ARG is nil, omitted, or is a positive number.  Disable the mode
+if ARG is a negative number.
+
+To check whether the minor mode is enabled in the current buffer,
+evaluate the variable `vundo-popup-mode'.
+
+The mode's hook is called both when the mode is enabled and when it is
+disabled.
+
+(fn &optional ARG)" t)
+(register-definition-prefixes "vundo-popup" '("vundo-"))
 
 ;;; End of scraped data
 
