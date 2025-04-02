@@ -5,7 +5,7 @@
 ;; Author: Daniel Mendler and Consult contributors
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2020
-;; Version: 2.0
+;; Version: 2.1
 ;; Package-Requires: ((emacs "28.1") (compat "30"))
 ;; URL: https://github.com/minad/consult
 ;; Keywords: matching, files, completion
@@ -214,6 +214,7 @@ for navigation commands like `consult-line'."
 (defcustom consult-buffer-filter
   '("\\` "
     "\\`\\*Completions\\*\\'"
+    "\\`\\*Multiple Choice Help\\*\\'"
     "\\`\\*Flymake log\\*\\'"
     "\\`\\*Semantic SymRef\\*\\'"
     "\\`\\*vc\\*\\'"
@@ -357,7 +358,8 @@ function `buffer-match-p'."
   :type 'sexp)
 
 (defcustom consult-preview-excluded-files
-  '("\\`/[^/|:]+:") ;; Do not preview remote files
+  ;; Do not preview remote and gpg files
+  '("\\`/[^/|:]+:" "\\.gpg\\'")
   "List of regexps matched against names of files, which are not previewed."
   :type '(repeat regexp))
 
@@ -818,9 +820,7 @@ asked for the directories or files to search via
                       ;; such that `consult-customize' continues to work.
                       (let ((this-command this-command)
                             (def (abbreviate-file-name default-directory))
-                            ;; TODO: `minibuffer-completing-file-name' is
-                            ;; mostly deprecated, but still in use. Packages
-                            ;; should instead use the completion metadata.
+                            ;; bug#75910: category instead of `minibuffer-completing-file-name'
                             (minibuffer-completing-file-name t)
                             (ignore-case read-file-name-completion-ignore-case))
                         (minibuffer-with-setup-hook
@@ -1345,10 +1345,8 @@ ORIG is the original function, HOOKS the arguments."
 
 (defun consult--find-file-temporarily-1 (name)
   "Open file NAME, helper function for `consult--find-file-temporarily'."
-  (when-let (((not (seq-find (lambda (x) (string-match-p x name))
-                             consult-preview-excluded-files)))
-             ;; file-attributes may throw permission denied error
-             (attrs (ignore-errors (file-attributes name)))
+  ;; file-attributes may throw permission denied error
+  (when-let ((attrs (ignore-errors (file-attributes name)))
              (size (file-attribute-size attrs)))
     (let* ((partial (>= size consult-preview-partial-size))
            (buffer (if partial
@@ -1444,7 +1442,8 @@ ORIG is the original function, HOOKS the arguments."
     (lambda (&optional name)
       (if name
           (let ((default-directory dir))
-            (setq name (abbreviate-file-name (expand-file-name name)))
+            (setq name (let (file-name-handler-alist)
+                         (abbreviate-file-name (expand-file-name name))))
             (or
              ;; Find existing fully initialized buffer (non-previewed).  We have
              ;; to check for fully initialized buffer before accessing the
@@ -1454,15 +1453,17 @@ ORIG is the original function, HOOKS the arguments."
              ;; one fully initialized.  In this case we prefer the fully
              ;; initialized buffer.  For directories `get-file-buffer' returns nil,
              ;; therefore we have to special case Dired.
-             (if (and (fboundp 'dired-find-buffer-nocreate) (file-directory-p name))
-                 (dired-find-buffer-nocreate name)
-               (get-file-buffer name))
+             (let (file-name-handler-alist)
+               (if (and (fboundp 'dired-find-buffer-nocreate) (file-directory-p name))
+                   (dired-find-buffer-nocreate name)
+                 (get-file-buffer name)))
              ;; Find existing previewed buffer.  Previewed buffers are not fully
              ;; initialized (hooks are delayed) in order to ensure fast preview.
              (cdr (assoc name temporary-buffers))
-             ;; Finally, if no existing buffer has been found, open the file for
-             ;; preview.
-             (when-let (buf (consult--find-file-temporarily name))
+             ;; If no existing buffer has been found, open the file for preview.
+             (when-let (((not (seq-find (lambda (x) (string-match-p x name))
+                                        consult-preview-excluded-files)))
+                        (buf (consult--find-file-temporarily name)))
                ;; Only add new buffer if not already in the list
                (unless (or (rassq buf temporary-buffers) (memq buf orig-buffers))
                  (add-hook 'window-selection-change-functions hook)
@@ -2030,35 +2031,6 @@ PLIST is the splitter configuration, including the separator."
                 completion-category-overrides nil)))
 
 ;;;; Asynchronous pipeline
-
-(defun consult--async-deprecation (&rest _)
-  "Show API deprecation error."
-  (message
-   "%s"
-   (string-fill
-    (format "%s `%S' uses the old async API convention and must be updated.
-The `consult--async-*' API has been updated in a backward-incompatible
-way.  For details, please see the Consult CHANGELOG, the relevant git
-commit message and the docstring of the `consult--async-pipeline' macro,
-which describes the updated API."
-            (propertize "CONSULT ERROR:" 'face 'error)
-            this-command)
-    70))
-  (sit-for 30)
-  (keyboard-quit))
-
-(define-obsolete-function-alias 'consult--async-split-initial #'consult--async-deprecation
-  "Not needed anymore, use INITIAL string directly.")
-(define-obsolete-function-alias 'consult--async-split-thingatpt #'consult--async-deprecation
-  "Not needed anymore, use `thing-at-point' instead.")
-(define-obsolete-function-alias 'consult--async-refresh-timer #'consult--async-deprecation
-  "Use `consult--async-refresh' instead.")
-(define-obsolete-function-alias 'consult--async-refresh-immediate #'consult--async-deprecation
-  "Use `consult--async-refresh' instead.")
-(define-obsolete-function-alias 'consult--dynamic-compute #'consult--async-deprecation
-  "Use `consult--async-dynamic' instead.")
-(define-obsolete-function-alias 'consult--async-command #'consult--async-deprecation
-  "Use `consult--process-collection' instead.")
 
 (defun consult--async-pipeline (&rest async)
   "Compose ASYNC pipeline.
@@ -2824,9 +2796,7 @@ PREVIEW-KEY are the preview keys."
                                  preview-key sort lookup group inherit-input-method async-wrap)
   "See `consult--read' for the documentation of the arguments."
   (when (and async-wrap (consult--async-p table))
-    (condition-case nil
-        (setq table (funcall (funcall async-wrap table) (consult--async-sink)))
-      (error (consult--async-deprecation))))
+    (setq table (funcall (funcall async-wrap table) (consult--async-sink))))
   (minibuffer-with-setup-hook
       (:append (lambda ()
                  (add-hook 'after-change-functions #'consult--tofu-hide-in-minibuffer nil 'local)
@@ -3312,83 +3282,83 @@ of functions and in `consult-completion-in-region'."
           ;; Use the `before-string' property since the overlay might be empty.
           (overlay-put ov 'before-string cand)))))))
 
-;;;###autoload
-(defun consult-completion-in-region (start end collection &optional predicate)
-  "Use minibuffer completion as the UI for `completion-at-point'.
-
-The function is called with 4 arguments: START END COLLECTION
-PREDICATE.  The arguments and expected return value are as
-specified for `completion-in-region'.  Use this function as a
-value for `completion-in-region-function'."
+(defun consult--in-region (start end collection predicate)
+  "Internal `completion-in-region-function'.
+The arguments START, END, COLLECTION and PREDICATE and
+expected return value are as specified for `completion-in-region'."
   (barf-if-buffer-read-only)
   (let* ((initial (buffer-substring-no-properties start end))
          (metadata (completion-metadata initial collection predicate))
-         ;; TODO: `minibuffer-completing-file-name' is mostly deprecated, but
-         ;; still in use. Packages should instead use the completion metadata.
-         (minibuffer-completing-file-name
-          (eq 'file (completion-metadata-get metadata 'category)))
          (threshold (completion--cycle-threshold metadata))
-         (all (completion-all-completions initial collection predicate (length initial)))
-         ;; Wrap all annotation functions to ensure that they are executed
-         ;; in the original buffer.
-         (exit-fun (plist-get completion-extra-properties :exit-function))
-         (ann-fun (plist-get completion-extra-properties :annotation-function))
-         (aff-fun (plist-get completion-extra-properties :affixation-function))
-         (docsig-fun (plist-get completion-extra-properties :company-docsig))
-         (completion-extra-properties
-          `(,@(and ann-fun (list :annotation-function (consult--in-buffer ann-fun)))
-            ,@(and aff-fun (list :affixation-function (consult--in-buffer aff-fun)))
-            ;; Provide `:annotation-function' if `:company-docsig' is specified.
-            ,@(and docsig-fun (not ann-fun) (not aff-fun)
-                   (list :annotation-function
-                         (consult--in-buffer
-                          (lambda (cand)
-                            (concat (propertize " " 'display '(space :align-to center))
-                                    (funcall docsig-fun cand)))))))))
-    ;; error if `threshold' is t or the improper list `all' is too short
-    (if (and threshold
-             (or (not (consp (ignore-errors (nthcdr threshold all))))
-                 (and completion-cycling completion-all-sorted-completions)))
+         (all (completion-all-completions initial collection predicate (length initial))))
+    ;; Normalize improper list
+    (when-let ((last (last all)))
+      (setcdr last nil))
+    (if (or (eq threshold t) (length< all (1+ (or threshold 1)))
+            (and completion-cycling completion-all-sorted-completions))
         (completion--in-region start end collection predicate)
       (let* ((this-command #'consult-completion-in-region)
+             ;; bug#75910: category instead of `minibuffer-completing-file-name'
+             (minibuffer-completing-file-name
+              (eq 'file (completion-metadata-get metadata 'category)))
+             ;; Wrap all annotation functions to ensure that they are executed
+             ;; in the original buffer.
+             (exit-fun (plist-get completion-extra-properties :exit-function))
+             (ann-fun (plist-get completion-extra-properties :annotation-function))
+             (aff-fun (plist-get completion-extra-properties :affixation-function))
+             (docsig-fun (plist-get completion-extra-properties :company-docsig))
+             (completion-extra-properties
+              `(,@(and ann-fun (list :annotation-function (consult--in-buffer ann-fun)))
+                ,@(and aff-fun (list :affixation-function (consult--in-buffer aff-fun)))
+                ;; Provide `:annotation-function' if `:company-docsig' is specified.
+                ,@(and docsig-fun (not ann-fun) (not aff-fun)
+                       (list :annotation-function
+                             (consult--in-buffer
+                              (lambda (cand)
+                                (concat (propertize " " 'display '(space :align-to center))
+                                        (funcall docsig-fun cand))))))))
              (completion
-              (cond
-               ((atom all) nil)
-               ((and (consp all) (atom (cdr all)))
-                (concat (substring initial 0 (cdr all)) (car all)))
-               (t
-                (consult--local-let ((enable-recursive-minibuffers t))
-                  ;; Evaluate completion table in the original buffer.
-                  ;; This is a reasonable thing to do and required by
-                  ;; some completion tables in particular by lsp-mode.
-                  ;; See gh:minad/vertico#61.
-                  (consult--read
-                   (consult--completion-table-in-buffer collection)
-                   :prompt (if (minibufferp)
-                               ;; Use existing minibuffer prompt and input
-                               (let ((prompt (buffer-substring (point-min) start)))
-                                 (put-text-property
-                                  (max 0 (1- (minibuffer-prompt-end))) (length prompt)
-                                  'face 'shadow prompt)
-                                 prompt)
-                             "Complete: ")
-                   :state (consult--insertion-preview start end)
-                   :predicate predicate
-                   :initial initial))))))
-        (if completion
-            (progn
-              ;; bug#55205: completion--replace removes properties!
-              (completion--replace start end (setq completion (concat completion)))
-              (when exit-fun
-                (funcall exit-fun completion
-                         ;; If completion is finished and cannot be further
-                         ;; completed, return `finished'.  Otherwise return
-                         ;; `exact'.
-                         (if (eq (try-completion completion collection predicate) t)
-                             'finished 'exact)))
-              t)
-          (message "No completion")
-          nil)))))
+              (consult--local-let ((enable-recursive-minibuffers t))
+                ;; Evaluate completion table in the original buffer.
+                ;; This is a reasonable thing to do and required by
+                ;; some completion tables in particular by lsp-mode.
+                ;; See gh:minad/vertico#61.
+                (consult--read
+                 (consult--completion-table-in-buffer collection)
+                 :prompt (if (minibufferp)
+                             ;; Use existing minibuffer prompt and input
+                             (let ((prompt (buffer-substring (point-min) start)))
+                               (put-text-property
+                                (max 0 (1- (minibuffer-prompt-end))) (length prompt)
+                                'face 'shadow prompt)
+                               prompt)
+                           "Complete: ")
+                 :state (consult--insertion-preview start end)
+                 :predicate predicate
+                 :initial initial))))
+        ;; bug#55205: completion--replace removes properties!
+        (completion--replace start end (setq completion (concat completion)))
+        (when exit-fun
+          (funcall exit-fun completion
+                   ;; If completion is finished and cannot be further
+                   ;; completed, return `finished'.  Otherwise return
+                   ;; `exact'.
+                   (if (eq (try-completion completion collection predicate) t)
+                       'finished 'exact)))
+        t))))
+
+;;;###autoload
+(defun consult-completion-in-region (start end collection predicate)
+  "Use minibuffer completion as the UI for `completion-at-point'.
+
+The arguments START, END, COLLECTION and PREDICATE and expected return
+value are as specified for `completion-in-region'.  Use this function as
+a value for `completion-in-region-function'."
+  (if (and (eq completing-read-function #'completing-read-default)
+           (not (bound-and-true-p vertico-mode))
+           (not (bound-and-true-p icomplete-mode)))
+      (completion--in-region start end collection predicate)
+    (consult--in-region start end collection predicate)))
 
 ;;;;; Command: consult-outline
 
@@ -4186,6 +4156,7 @@ If no MODES are specified, use currently active major and minor modes."
     :sort nil
     :category 'kill-ring
     :require-match t
+    :lookup #'consult--lookup-member
     :state
     (consult--insertion-preview
      (point)
@@ -4418,6 +4389,7 @@ of the prompt.  See also `cape-history' from the Cape package."
                               ('file-name-history 'file)))
                        :sort nil
                        :initial (buffer-substring-no-properties beg end)
+                       :lookup #'consult--lookup-member
                        :state (consult--insertion-preview beg end)))))
     (delete-region beg end)
     (when index
