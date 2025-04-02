@@ -34,19 +34,19 @@ on buffers using Org as their major mode.
 See the documentation in URL `https://github.com/federicotdn/verb' for
 more details on how to use it.
 
-This is a minor mode.  If called interactively, toggle the `Verb
-mode' mode.  If the prefix argument is positive, enable the mode,
-and if it is zero or negative, disable the mode.
+This is a minor mode.  If called interactively, toggle the `Verb mode'
+mode.  If the prefix argument is positive, enable the mode, and if it is
+zero or negative, disable the mode.
 
-If called from Lisp, toggle the mode if ARG is `toggle'.  Enable
-the mode if ARG is nil, omitted, or is a positive number.
-Disable the mode if ARG is a negative number.
+If called from Lisp, toggle the mode if ARG is `toggle'.  Enable the
+mode if ARG is nil, omitted, or is a positive number.  Disable the mode
+if ARG is a negative number.
 
 To check whether the minor mode is enabled in the current buffer,
-evaluate `verb-mode'.
+evaluate the variable `verb-mode'.
 
-The mode's hook is called both when the mode is enabled and when
-it is disabled.
+The mode's hook is called both when the mode is enabled and when it is
+disabled.
 
 (fn &optional ARG)" t)
 (autoload 'verb-send-request-on-point-other-window "verb" "\
