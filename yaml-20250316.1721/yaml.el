@@ -3,8 +3,8 @@
 ;; Copyright © 2021-2025  Free Software Foundation, Inc.
 
 ;; Author: Zachary Romero <zkry@posteo.org>
-;; Package-Version: 20250208.1534
-;; Package-Revision: 09e46d563f1f
+;; Package-Version: 20250316.1721
+;; Package-Revision: f99ef76c80e6
 ;; Homepage: https://github.com/zkry/yaml.el
 ;; Package-Requires: ((emacs "25.1"))
 ;; Keywords: tools
@@ -45,6 +45,9 @@
 (require 'cl-lib)
 
 (defconst yaml-parser-version "0.5.1")
+
+(defvar yaml--encode-use-flow-sequence t
+  "Turn on encoding sequence of scalars as flow sequence.")
 
 (defvar yaml--parse-debug nil
   "Turn on debugging messages when parsing YAML when non-nil.
@@ -2673,7 +2676,8 @@ auto-detecting the indentation"
            (yaml--encode-hash-table ht indent auto-indent))
           ((zerop (length l))
            (insert "[]"))
-          ((seq-every-p #'yaml--scalarp l)
+          ((and yaml--encode-use-flow-sequence
+                (seq-every-p #'yaml--scalarp l))
            (insert "[")
            (yaml--encode-object (car l) 0)
            (seq-do (lambda (object)
