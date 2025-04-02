@@ -5,7 +5,7 @@
 ;; Author: Daniel Mendler <mail@daniel-mendler.de>
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2021
-;; Version: 1.11
+;; Version: 2.0
 ;; Package-Requires: ((emacs "28.1") (compat "30"))
 ;; URL: https://github.com/minad/vertico
 ;; Keywords: convenience, files, matching, completion
@@ -323,7 +323,7 @@ The function is configured by BY, BSIZE, BINDEX, BPRED and PRED."
                            (completion-boundaries before table pred after)
                          (t (cons 0 (length after)))))
                (field (substring content (car bounds) (+ pt (cdr bounds))))
-               ;; `minibuffer-completing-file-name' has been obsoleted by the completion category
+               ;; bug#75910: category instead of `minibuffer-completing-file-name'
                (completing-file (eq 'file (vertico--metadata-get 'category)))
                (`(,all . ,hl) (vertico--filter-completions content table pred pt vertico--metadata))
                (base (or (when-let ((z (last all))) (prog1 (cdr z) (setcdr z nil))) 0))
@@ -622,7 +622,9 @@ The function is configured by BY, BSIZE, BINDEX, BPRED and PRED."
 
 (cl-defgeneric vertico--prepare ()
   "Ensure that the state is prepared before running the next command."
-  (when (and (symbolp this-command) (string-prefix-p "vertico-" (symbol-name this-command)))
+  (when-let ((cmd (and (symbolp this-command) (symbol-name this-command)))
+             ((string-prefix-p "vertico-" cmd))
+             ((not (and vertico--metadata (string-prefix-p "vertico-directory-" cmd)))))
     (vertico--update)))
 
 (cl-defgeneric vertico--setup ()
@@ -752,7 +754,7 @@ When the prefix argument is 0, the group order is reset."
 (dolist (sym '( vertico-next vertico-next-group vertico-previous vertico-previous-group
                 vertico-scroll-down vertico-scroll-up vertico-exit vertico-insert
                 vertico-exit-input vertico-save vertico-first vertico-last
-                vertico-repeat-previous ;; autoloads in vertico-repeat.el
+                vertico-repeat-next ;; autoloads in vertico-repeat.el
                 vertico-quick-jump vertico-quick-exit vertico-quick-insert ;; autoloads in vertico-quick.el
                 vertico-directory-up vertico-directory-enter ;; autoloads in vertico-directory.el
                 vertico-directory-delete-char vertico-directory-delete-word))

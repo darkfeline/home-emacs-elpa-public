@@ -1,4 +1,4 @@
-This is docUx8DgD.info, produced by makeinfo version 6.8 from
+This is docpEiSKC.info, produced by makeinfo version 6.8 from
 vertico.texi.
 
 INFO-DIR-SECTION Emacs misc features
@@ -7,7 +7,7 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
 
-File: docUx8DgD.info,  Node: Top,  Next: Features,  Up: (dir)
+File: docpEiSKC.info,  Node: Top,  Next: Features,  Up: (dir)
 
 vertico.el - VERTical Interactive COmpletion
 ********************************************
@@ -45,6 +45,7 @@ Configuration
 
 * Completion styles and TAB completion::
 * Completion-at-point and completion-in-region::
+* Completing-read-multiple::
 
 Extensions
 
@@ -62,7 +63,7 @@ Problematic completion commands
 
 
 
-File: docUx8DgD.info,  Node: Features,  Next: Installation,  Prev: Top,  Up: Top
+File: docpEiSKC.info,  Node: Features,  Next: Installation,  Prev: Top,  Up: Top
 
 1 Features
 **********
@@ -86,7 +87,7 @@ File: docUx8DgD.info,  Node: Features,  Next: Installation,  Prev: Top,  Up: Top
    <https://github.com/minad/vertico/blob/screenshots/vertico-mx.png?raw=true>
 
 
-File: docUx8DgD.info,  Node: Installation,  Next: Key bindings,  Prev: Features,  Up: Top
+File: docpEiSKC.info,  Node: Installation,  Next: Key bindings,  Prev: Features,  Up: Top
 
 2 Installation
 **************
@@ -97,7 +98,7 @@ directly via ‘M-x package-install RET vertico RET’.  After installation,
 activate the global minor mode with ‘M-x vertico-mode RET’.
 
 
-File: docUx8DgD.info,  Node: Key bindings,  Next: Configuration,  Prev: Installation,  Up: Top
+File: docpEiSKC.info,  Node: Key bindings,  Next: Configuration,  Prev: Installation,  Up: Top
 
 3 Key bindings
 **************
@@ -134,7 +135,7 @@ pressing ‘M-RET’, move the selection up to the input prompt by pressing
 the ‘up’ arrow key and then press ‘RET’.
 
 
-File: docUx8DgD.info,  Node: Configuration,  Next: Extensions,  Prev: Key bindings,  Up: Top
+File: docpEiSKC.info,  Node: Configuration,  Next: Extensions,  Prev: Key bindings,  Up: Top
 
 4 Configuration
 ***************
@@ -143,7 +144,7 @@ In order to configure Vertico and other packages in your init.el, you
 may want to take advantage of ‘use-package’.  Here is an example
 configuration:
 
-     ;; Enable vertico
+     ;; Enable Vertico.
      (use-package vertico
        :custom
        ;; (vertico-scroll-margin 0) ;; Different scroll margin
@@ -158,7 +159,7 @@ configuration:
        :init
        (savehist-mode))
 
-     ;; A few more useful configurations...
+     ;; Emacs minibuffer configurations.
      (use-package emacs
        :custom
        ;; Support opening new minibuffers from inside existing minibuffers.
@@ -167,22 +168,9 @@ configuration:
        ;; commands are hidden in normal buffers. This setting is useful beyond
        ;; Vertico.
        (read-extended-command-predicate #'command-completion-default-include-p)
-       :init
-       ;; Add prompt indicator to `completing-read-multiple'.
-       ;; We display [CRM<separator>], e.g., [CRM,] if the separator is a comma.
-       (defun crm-indicator (args)
-         (cons (format "[CRM%s] %s"
-                       (replace-regexp-in-string
-                        "\\`\\[.*?]\\*\\|\\[.*?]\\*\\'" ""
-                        crm-separator)
-                       (car args))
-               (cdr args)))
-       (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
-
        ;; Do not allow the cursor in the minibuffer prompt
-       (setq minibuffer-prompt-properties
-             '(read-only t cursor-intangible t face minibuffer-prompt))
-       (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode))
+       (minibuffer-prompt-properties
+        '(read-only t cursor-intangible t face minibuffer-prompt)))
 
    I recommend to give Orderless completion a try, which is more
 flexible and powerful than the default completion styles.
@@ -221,9 +209,10 @@ documentation about completion in the Elisp manual
 
 * Completion styles and TAB completion::
 * Completion-at-point and completion-in-region::
+* Completing-read-multiple::
 
 
-File: docUx8DgD.info,  Node: Completion styles and TAB completion,  Next: Completion-at-point and completion-in-region,  Up: Configuration
+File: docpEiSKC.info,  Node: Completion styles and TAB completion,  Next: Completion-at-point and completion-in-region,  Up: Configuration
 
 4.1 Completion styles and TAB completion
 ========================================
@@ -272,7 +261,7 @@ completion styles are used:
            completion-ignore-case t)
 
 
-File: docUx8DgD.info,  Node: Completion-at-point and completion-in-region,  Prev: Completion styles and TAB completion,  Up: Configuration
+File: docpEiSKC.info,  Node: Completion-at-point and completion-in-region,  Next: Completing-read-multiple,  Prev: Completion styles and TAB completion,  Up: Configuration
 
 4.2 Completion-at-point and completion-in-region
 ================================================
@@ -284,14 +273,7 @@ Vertico to show the completion candidates of ‘completion-at-point’ and
 ‘completion-in-region’, you can use the function
 ‘consult-completion-in-region’ provided by the Consult package.
 
-     ;; Use `consult-completion-in-region' if Vertico is enabled.
-     ;; Otherwise use the default `completion--in-region' function.
-     (setq completion-in-region-function
-           (lambda (&rest args)
-             (apply (if vertico-mode
-                        #'consult-completion-in-region
-                      #'completion--in-region)
-                    args)))
+     (setq completion-in-region-function #'consult-completion-in-region)
 
    You may also want to look into my Corfu
 (https://github.com/minad/corfu) package, which provides a minimal
@@ -300,7 +282,31 @@ Corfu is a narrowly focused package and developed in the same spirit as
 Vertico.  You can even use Corfu in the minibuffer.
 
 
-File: docUx8DgD.info,  Node: Extensions,  Next: Complementary packages,  Prev: Configuration,  Up: Top
+File: docpEiSKC.info,  Node: Completing-read-multiple,  Prev: Completion-at-point and completion-in-region,  Up: Configuration
+
+4.3 Completing-read-multiple
+============================
+
+The function ‘completing-read-multiple’ is similar to ‘completing-read’
+but returns a list of completed strings.  The strings are separated by
+‘crm-separator’ in the minibuffer.  However ‘completing-read-multiple’
+does not indicate to the user that multiple strings can be completed.  I
+have contributed a patch to Emacs 31, which fixes this minor issue.  See
+the variable ‘crm-prompt’ and bug#76028
+(https://debbugs.gnu.org/cgi/bugreport.cgi?bug=76028).  On older Emacs
+versions you can use the following:
+
+     ;; Prompt indicator for `completing-read-multiple'.
+     (when (< emacs-major-version 31)
+       (advice-add #'completing-read-multiple :filter-args
+                   (lambda (args)
+                     (cons (format "[CRM%s] %s"
+                                   (string-replace "[ \t]*" "" crm-separator)
+                                   (car args))
+                           (cdr args))))))
+
+
+File: docpEiSKC.info,  Node: Extensions,  Next: Complementary packages,  Prev: Configuration,  Up: Top
 
 5 Extensions
 ************
@@ -383,7 +389,7 @@ according to the buffer height.
 * Configure Vertico per command or completion category::
 
 
-File: docUx8DgD.info,  Node: Configure Vertico per command or completion category,  Up: Extensions
+File: docpEiSKC.info,  Node: Configure Vertico per command or completion category,  Up: Extensions
 
 5.1 Configure Vertico per command or completion category
 ========================================================
@@ -485,7 +491,7 @@ when they scroll off-screen to the left.
            '((buffer flat (vertico-cycle . t))))
 
 
-File: docUx8DgD.info,  Node: Complementary packages,  Next: Child frames and Popups,  Prev: Extensions,  Up: Top
+File: docpEiSKC.info,  Node: Complementary packages,  Next: Child frames and Popups,  Prev: Extensions,  Up: Top
 
 6 Complementary packages
 ************************
@@ -532,7 +538,7 @@ functionality not present in Emacs already (e.g., ‘consult-line’) and
 some are substitutes (e.g., ‘consult-buffer’ for ‘switch-to-buffer’).
 
 
-File: docUx8DgD.info,  Node: Child frames and Popups,  Next: Alternatives,  Prev: Complementary packages,  Up: Top
+File: docpEiSKC.info,  Node: Child frames and Popups,  Next: Alternatives,  Prev: Complementary packages,  Up: Top
 
 7 Child frames and Popups
 *************************
@@ -559,7 +565,7 @@ a try and judge for yourself.
      posframe library.
 
 
-File: docUx8DgD.info,  Node: Alternatives,  Next: Resources,  Prev: Child frames and Popups,  Up: Top
+File: docpEiSKC.info,  Node: Alternatives,  Next: Resources,  Prev: Child frames and Popups,  Up: Top
 
 8 Alternatives
 **************
@@ -614,7 +620,7 @@ philosophy:
      flexibility thanks to its *note extensions: Extensions.
 
 
-File: docUx8DgD.info,  Node: Resources,  Next: Contributions,  Prev: Alternatives,  Up: Top
+File: docpEiSKC.info,  Node: Resources,  Next: Contributions,  Prev: Alternatives,  Up: Top
 
 9 Resources
 ***********
@@ -652,7 +658,7 @@ out the following resources:
           (2024-03-06) by Marie-Hélène Burle.
 
 
-File: docUx8DgD.info,  Node: Contributions,  Next: Debugging Vertico,  Prev: Resources,  Up: Top
+File: docpEiSKC.info,  Node: Contributions,  Next: Debugging Vertico,  Prev: Resources,  Up: Top
 
 10 Contributions
 ****************
@@ -662,7 +668,7 @@ Since this package is part of GNU ELPA
 copyright assignment to the FSF.
 
 
-File: docUx8DgD.info,  Node: Debugging Vertico,  Next: Problematic completion commands,  Prev: Contributions,  Up: Top
+File: docpEiSKC.info,  Node: Debugging Vertico,  Next: Problematic completion commands,  Prev: Contributions,  Up: Top
 
 11 Debugging Vertico
 ********************
@@ -684,7 +690,7 @@ that the hooks are executed after every command.
      (advice-add #'vertico--exhibit :around #'force-debug)
 
 
-File: docUx8DgD.info,  Node: Problematic completion commands,  Prev: Debugging Vertico,  Up: Top
+File: docpEiSKC.info,  Node: Problematic completion commands,  Prev: Debugging Vertico,  Up: Top
 
 12 Problematic completion commands
 **********************************
@@ -705,7 +711,7 @@ require minor workarounds.
 * Tramp hostname and username completion::
 
 
-File: docUx8DgD.info,  Node: org-refile,  Next: org-agenda-filter and org-tags-view,  Up: Problematic completion commands
+File: docpEiSKC.info,  Node: org-refile,  Next: org-agenda-filter and org-tags-view,  Up: Problematic completion commands
 
 12.1 ‘org-refile’
 =================
@@ -749,7 +755,7 @@ much more cluttered.
            org-outline-path-complete-in-steps nil)
 
 
-File: docUx8DgD.info,  Node: org-agenda-filter and org-tags-view,  Next: tmm-menubar,  Prev: org-refile,  Up: Problematic completion commands
+File: docpEiSKC.info,  Node: org-agenda-filter and org-tags-view,  Next: tmm-menubar,  Prev: org-refile,  Up: Problematic completion commands
 
 12.2 ‘org-agenda-filter’ and ‘org-tags-view’
 ============================================
@@ -771,7 +777,7 @@ separately.  Ideally this issue would be fixed in Org.
      (advice-add #'org-agenda-filter :around #'vertico-enforce-basic-completion)
 
 
-File: docUx8DgD.info,  Node: tmm-menubar,  Next: ffap-menu,  Prev: org-agenda-filter and org-tags-view,  Up: Problematic completion commands
+File: docpEiSKC.info,  Node: tmm-menubar,  Next: ffap-menu,  Prev: org-agenda-filter and org-tags-view,  Up: Problematic completion commands
 
 12.3 ‘tmm-menubar’
 ==================
@@ -792,7 +798,7 @@ overwrite the default F10 keybinding.
      (advice-add #'tmm-add-prompt :after #'minibuffer-hide-completions)
 
 
-File: docUx8DgD.info,  Node: ffap-menu,  Next: completion-table-dynamic,  Prev: tmm-menubar,  Up: Problematic completion commands
+File: docpEiSKC.info,  Node: ffap-menu,  Next: completion-table-dynamic,  Prev: tmm-menubar,  Up: Problematic completion commands
 
 12.4 ‘ffap-menu’
 ================
@@ -814,7 +820,7 @@ completions buffer can be disabled as follows.
                      (apply args))))
 
 
-File: docUx8DgD.info,  Node: completion-table-dynamic,  Next: Submitting the empty string,  Prev: ffap-menu,  Up: Problematic completion commands
+File: docpEiSKC.info,  Node: completion-table-dynamic,  Next: Submitting the empty string,  Prev: ffap-menu,  Up: Problematic completion commands
 
 12.5 ‘completion-table-dynamic’
 ===============================
@@ -839,7 +845,7 @@ Orderless documentation because of ‘completion-table-dynamic’.
                                (concat str "3")))))
 
 
-File: docUx8DgD.info,  Node: Submitting the empty string,  Next: Tramp hostname and username completion,  Prev: completion-table-dynamic,  Up: Problematic completion commands
+File: docpEiSKC.info,  Node: Submitting the empty string,  Next: Tramp hostname and username completion,  Prev: completion-table-dynamic,  Up: Problematic completion commands
 
 12.6 Submitting the empty string
 ================================
@@ -866,7 +872,7 @@ and Vertico preselects the prompt, such that exiting with the empty
 string is possible by pressing ‘RET’ only.
 
 
-File: docUx8DgD.info,  Node: Tramp hostname and username completion,  Prev: Submitting the empty string,  Up: Problematic completion commands
+File: docpEiSKC.info,  Node: Tramp hostname and username completion,  Prev: Submitting the empty string,  Up: Problematic completion commands
 
 12.7 Tramp hostname and username completion
 ===========================================
@@ -910,28 +916,29 @@ preferred style for non-remote files.
 
 Tag Table:
 Node: Top212
-Node: Features1772
-Node: Installation2796
-Node: Key bindings3163
-Node: Configuration5364
-Node: Completion styles and TAB completion9309
-Node: Completion-at-point and completion-in-region11717
-Node: Extensions13055
-Node: Configure Vertico per command or completion category16974
-Node: Complementary packages21564
-Node: Child frames and Popups23821
-Node: Alternatives25198
-Node: Resources28073
-Node: Contributions29806
-Node: Debugging Vertico30083
-Node: Problematic completion commands30895
-Node: org-refile31508
-Node: org-agenda-filter and org-tags-view33451
-Node: tmm-menubar34715
-Node: ffap-menu35601
-Node: completion-table-dynamic36458
-Node: Submitting the empty string37665
-Node: Tramp hostname and username completion39122
+Node: Features1801
+Node: Installation2825
+Node: Key bindings3192
+Node: Configuration5393
+Node: Completion styles and TAB completion8775
+Node: Completion-at-point and completion-in-region11183
+Node: Completing-read-multiple12253
+Node: Extensions13375
+Node: Configure Vertico per command or completion category17294
+Node: Complementary packages21884
+Node: Child frames and Popups24141
+Node: Alternatives25518
+Node: Resources28393
+Node: Contributions30126
+Node: Debugging Vertico30403
+Node: Problematic completion commands31215
+Node: org-refile31828
+Node: org-agenda-filter and org-tags-view33771
+Node: tmm-menubar35035
+Node: ffap-menu35921
+Node: completion-table-dynamic36778
+Node: Submitting the empty string37985
+Node: Tramp hostname and username completion39442
 
 End Tag Table
 
