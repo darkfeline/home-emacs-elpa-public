@@ -5,7 +5,7 @@
 ;; Author: Daniel Mendler and Consult contributors
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2020
-;; Version: 2.1
+;; Version: 2.4
 ;; Package-Requires: ((emacs "28.1") (compat "30"))
 ;; URL: https://github.com/minad/consult
 ;; Keywords: matching, files, completion
@@ -573,7 +573,7 @@ We use invalid characters outside the Unicode range.")
 (defvar consult--gc-threshold (* 64 1024 1024)
   "Large GC threshold for temporary increase.")
 
-(defvar consult--gc-percentage 0.5
+(defvar consult--gc-percentage 0.2
   "Large GC percentage for temporary increase.")
 
 (defvar consult--process-chunk (* 1024 1024)
@@ -585,6 +585,16 @@ We use invalid characters outside the Unicode range.")
 
 (defvar-local consult--focus-lines-overlays nil
   "Overlays used by `consult-focus-lines'.")
+
+(defvar consult--focus-lines-indicator
+  (propertize
+   "FOCUS" 'face 'highlight
+   'help-echo
+   "`consult-focus-lines': \\`mouse-1' or \\[consult-focus-lines] \\`RET' to reveal."
+   'local-map
+   (define-keymap "<mode-line> <down-mouse-1>"
+     (lambda () (interactive) (consult-focus-lines nil 'reveal))))
+  "Mode line indicator displayed if `consult-focus-lines' is active.")
 
 ;;;; Miscellaneous helper functions
 
@@ -656,7 +666,7 @@ Turn ARG into a list, and for each element either:
 
 (defmacro consult--keep! (list form)
   "Evaluate FORM for every element of LIST and keep the non-nil results."
-  (declare (indent 1))
+  (declare (indent 1) (debug (gv-place body)))
   (cl-with-gensyms (head prev result)
     `(let* ((,head (cons nil ,list))
             (,prev ,head))
@@ -666,7 +676,7 @@ Turn ARG into a list, and for each element either:
                (pop ,prev)
                (setcar ,prev ,result))
            (setcdr ,prev (cddr ,prev))))
-       (setq ,list (cdr ,head))
+       (setf ,list (cdr ,head))
        nil)))
 
 (defun consult--completion-filter (pattern cands category highlight)
@@ -710,7 +720,7 @@ HIGHLIGHT."
   "Iterate over each line.
 
 The line beginning/ending BEG/END is bound in BODY."
-  (declare (indent 2))
+  (declare (indent 2) (debug (symbolp symbolp body)))
   (cl-with-gensyms (max)
     `(save-excursion
        (let ((,beg (point-min)) (,max (point-max)) ,end)
@@ -745,7 +755,7 @@ The line beginning/ending BEG/END is bound in BODY."
 
 (defmacro consult--local-let (binds &rest body)
   "Buffer local let BINDS of dynamic variables in BODY."
-  (declare (indent 1))
+  (declare (indent 1) (debug let))
   (let ((buffer (gensym "buffer"))
         (local (mapcar (lambda (x) (cons (gensym "local") (car x))) binds)))
     `(let ((,buffer (current-buffer))
@@ -950,6 +960,7 @@ always return an appropriate non-minibuffer window."
 
 (defmacro consult--with-increased-gc (&rest body)
   "Temporarily increase the GC limit in BODY to optimize for throughput."
+  (declare (indent 0) (debug t))
   (cl-with-gensyms (overwrite)
     `(let* ((,overwrite (> consult--gc-threshold gc-cons-threshold))
             (gc-cons-threshold (if ,overwrite consult--gc-threshold gc-cons-threshold))
@@ -959,7 +970,7 @@ always return an appropriate non-minibuffer window."
 (defmacro consult--slow-operation (message &rest body)
   "Show delayed MESSAGE if BODY takes too long.
 Also temporarily increase the GC limit via `consult--with-increased-gc'."
-  (declare (indent 1))
+  (declare (indent 1) (debug t))
   `(with-delayed-message (1 ,message)
      (consult--with-increased-gc ,@body)))
 
@@ -1706,10 +1717,8 @@ The result can be passed as :state argument to `consult--read'." type)
                  (list hook)
                  (and (memq t post-command-hook) '(t))))))
 
-(defun consult--with-preview-1 (preview-key state transform candidate save-input fun)
-  "Add preview support for FUN.
-See `consult--with-preview' for the arguments
-PREVIEW-KEY, STATE, TRANSFORM, CANDIDATE and SAVE-INPUT."
+(defun consult--with-preview-f (preview-key state transform candidate save-input body)
+  "See `consult--with-preview' for documentation."
   (let ((mb-input "") (timer (timer-create)) mb-narrow selected previewed)
     (minibuffer-with-setup-hook
         (if (and state preview-key)
@@ -1794,7 +1803,7 @@ PREVIEW-KEY, STATE, TRANSFORM, CANDIDATE and SAVE-INPUT."
                (setq mb-input (minibuffer-contents-no-properties)
                      mb-narrow consult--narrow)))))
       (unwind-protect
-          (setq selected (when-let (result (funcall fun))
+          (setq selected (when-let (result (funcall body))
                            (when-let ((save-input)
                                       (list (symbol-value save-input))
                                       ((equal (car list) result)))
@@ -1849,8 +1858,8 @@ argument is the continuation of `consult--read'.  Via `unwind-protect' it
 is guaranteed, that if the `setup' action of a state function is
 invoked, the state function will also be called with `exit' and
 `return'."
-  (declare (indent 5))
-  `(consult--with-preview-1 ,preview-key ,state ,transform ,candidate ,save-input (lambda () ,@body)))
+  (declare (indent 5) (debug t))
+  `(consult--with-preview-f ,preview-key ,state ,transform ,candidate ,save-input (lambda () ,@body)))
 
 ;;;; Narrowing and grouping
 
@@ -2113,50 +2122,54 @@ The default pipeline provides `consult--async-split',
 (defmacro consult--with-async (async &rest body)
   "Setup asynchronous completion in BODY.
 ASYNC is the asynchronous function or completion table."
-  (declare (indent 1))
-  `(let (new-chunk orig-chunk)
-     (minibuffer-with-setup-hook
-         ;; Append such that we overwrite the completion style setting of
-         ;; `fido-mode'.  See `consult--async-split' and `consult--split-setup'.
-         (:append
-          (lambda ()
-            (when (consult--async-p ,async)
-              (setq new-chunk (max read-process-output-max consult--process-chunk)
-                    orig-chunk read-process-output-max
-                    read-process-output-max new-chunk)
-              (funcall ,async 'setup)
-              (let* ((mb (current-buffer))
-                     (fun (lambda ()
-                            (when-let (win (active-minibuffer-window))
-                              (when (eq (window-buffer win) mb)
-                                (with-current-buffer mb
-                                  (let ((inhibit-modification-hooks t))
-                                    ;; Push input string to request refresh.
-                                    (funcall ,async (minibuffer-contents-no-properties))))))))
-                     ;; We use a symbol in order to avoid adding lambdas to
-                     ;; the hook variable.  Symbol indirection because of
-                     ;; bug#46407.
-                     (hook (make-symbol "consult--async-after-change-hook"))
-                     (timer (timer-create)))
-                (timer-set-function timer fun)
-                ;; Delay modification hook to ensure that minibuffer is still
-                ;; alive after the change, such that we don't restart a new
-                ;; asynchronous search right before exiting the minibuffer.
-                (fset hook (lambda (&rest _)
-                             (unless (memq timer timer-list)
-                               (timer-set-time timer (current-time))
-                               (timer-activate timer))))
-                (add-hook 'after-change-functions hook nil 'local)
-                ;; Immediately start asynchronous computation. This may lead
-                ;; to problems unnecessary work if content is inserted shortly
-                ;; afterwards.
-                (funcall fun)))))
-       (let ((,async (if (consult--async-p ,async) ,async (lambda (_) ,async))))
-         (unwind-protect
-             ,(macroexp-progn body)
-           (funcall ,async 'destroy)
-           (when (and orig-chunk (eq read-process-output-max new-chunk))
-             (setq read-process-output-max orig-chunk)))))))
+  (declare (indent 1) (debug (symbolp body)))
+  `(consult--with-async-f ,async (lambda (,async) ,@body)))
+
+(defun consult--with-async-f (async body)
+  "See `consult--with-async' for documentation."
+  (let (new-chunk orig-chunk)
+    (minibuffer-with-setup-hook
+        ;; Append such that we overwrite the completion style setting of
+        ;; `fido-mode'.  See `consult--async-split' and `consult--split-setup'.
+        (:append
+         (lambda ()
+           (when (consult--async-p async)
+             (setq new-chunk (max read-process-output-max consult--process-chunk)
+                   orig-chunk read-process-output-max
+                   read-process-output-max new-chunk)
+             (funcall async 'setup)
+             (let* ((mb (current-buffer))
+                    (fun (lambda ()
+                           (when-let (win (active-minibuffer-window))
+                             (when (eq (window-buffer win) mb)
+                               (with-current-buffer mb
+                                 (let ((inhibit-modification-hooks t))
+                                   ;; Push input string to request refresh.
+                                   (funcall async (minibuffer-contents-no-properties))))))))
+                    ;; We use a symbol in order to avoid adding lambdas to
+                    ;; the hook variable.  Symbol indirection because of
+                    ;; bug#46407.
+                    (hook (make-symbol "consult--async-after-change-hook"))
+                    (timer (timer-create)))
+               (timer-set-function timer fun)
+               ;; Delay modification hook to ensure that minibuffer is still
+               ;; alive after the change, such that we don't restart a new
+               ;; asynchronous search right before exiting the minibuffer.
+               (fset hook (lambda (&rest _)
+                            (unless (memq timer timer-list)
+                              (timer-set-time timer (current-time))
+                              (timer-activate timer))))
+               (add-hook 'after-change-functions hook nil 'local)
+               ;; Immediately start asynchronous computation. This may lead
+               ;; to problems unnecessary work if content is inserted shortly
+               ;; afterwards.
+               (funcall fun)))))
+      (let ((async (if (consult--async-p async) async (lambda (_) async))))
+        (unwind-protect
+            (funcall body async)
+          (funcall async 'destroy)
+          (when (and orig-chunk (eq read-process-output-max new-chunk))
+            (setq read-process-output-max orig-chunk)))))))
 
 (defun consult--async-sink ()
   "Asynchronous sink function."
@@ -2493,7 +2506,7 @@ PROPS are optional properties passed to `make-process'."
                                      `(,@props
                                        :connection-type pipe
                                        :name ,(car args)
-                                     ;;; XXX tramp bug, the stderr buffer must be empty
+                                       ;;; XXX tramp bug, the stderr buffer must be empty
                                        :stderr ,proc-buf
                                        :noquery t
                                        :command ,args
@@ -2794,7 +2807,7 @@ PREVIEW-KEY are the preview keys."
                                  prompt predicate require-match history default keymap category
                                  initial narrow initial-narrow add-history annotate state
                                  preview-key sort lookup group inherit-input-method async-wrap)
-  "See `consult--read' for the documentation of the arguments."
+  "See `consult--read' for documentation."
   (when (and async-wrap (consult--async-p table))
     (setq table (funcall (funcall async-wrap table) (consult--async-sink))))
   (minibuffer-with-setup-hook
@@ -2899,14 +2912,6 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the
 input method.
 ASYNC-WRAP wraps asynchronous functions and defaults to
 `consult--async-wrap'."
-  ;; supported types
-  (cl-assert (or (functionp table)     ;; dynamic table or asynchronous function
-                 (obarrayp table)      ;; obarray
-                 (hash-table-p table)  ;; hash table
-                 (not table)           ;; empty list
-                 (stringp (car table)) ;; string list
-                 (and (consp (car table)) (stringp (caar table)))   ;; string alist
-                 (and (consp (car table)) (symbolp (caar table))))) ;; symbol alist
   (ignore prompt predicate require-match history default keymap category
           initial narrow initial-narrow add-history annotate state
           preview-key sort lookup group inherit-input-method async-wrap)
@@ -3289,8 +3294,15 @@ expected return value are as specified for `completion-in-region'."
   (barf-if-buffer-read-only)
   (let* ((initial (buffer-substring-no-properties start end))
          (metadata (completion-metadata initial collection predicate))
+         ;; bug#75910: category instead of `minibuffer-completing-file-name'
+         (minibuffer-completing-file-name
+          (eq 'file (completion-metadata-get metadata 'category)))
          (threshold (completion--cycle-threshold metadata))
-         (all (completion-all-completions initial collection predicate (length initial))))
+         (all (completion-all-completions initial collection predicate
+                                          (if (<= start (point) end)
+                                              (- (point) start)
+                                            (length initial))
+                                          metadata)))
     ;; Normalize improper list
     (when-let ((last (last all)))
       (setcdr last nil))
@@ -3298,9 +3310,6 @@ expected return value are as specified for `completion-in-region'."
             (and completion-cycling completion-all-sorted-completions))
         (completion--in-region start end collection predicate)
       (let* ((this-command #'consult-completion-in-region)
-             ;; bug#75910: category instead of `minibuffer-completing-file-name'
-             (minibuffer-completing-file-name
-              (eq 'file (completion-metadata-get metadata 'category)))
              ;; Wrap all annotation functions to ensure that they are executed
              ;; in the original buffer.
              (exit-fun (plist-get completion-extra-properties :exit-function))
@@ -3790,15 +3799,18 @@ to `consult--buffer-query'."
 
 ;;;###autoload
 (defun consult-keep-lines (filter &optional initial)
-  "Select a subset of the lines in the current buffer with live preview.
+  "Filter a subset of the lines in the current buffer with live preview.
 
-The selected lines are kept and the other lines are deleted.  When called
-interactively, the lines selected are those that match the minibuffer input.  In
-order to match the inverse of the input, prefix the input with `! '.  When
-called from Elisp, the filtering is performed by a FILTER function.  This
-command obeys narrowing.
+The filtered lines are kept and the other lines are deleted.  When
+called interactively, the lines selected are those that match the
+minibuffer input.  In order to match the inverse of the input, prefix
+the input with `! '.  When called from Elisp, the filtering is performed
+by a FILTER function.  If the buffer is narrowed to a region, the
+command only acts on this region.  See also `consult-focus-lines' which
+uses overlays to display only matching lines, but does not modify the
+buffer.
 
-FILTER is the filter function.
+FILTER is the filter function, called for each line.
 INITIAL is the initial input."
   (interactive
    (list (lambda (pattern cands)
@@ -3895,8 +3907,7 @@ INITIAL is the initial input."
           (goto-char pt-orig))
          (t
           ;; Successfully terminated -> Remember invisible overlays
-          (setq consult--focus-lines-overlays
-                (nconc consult--focus-lines-overlays overlays))
+          (cl-callf nconc consult--focus-lines-overlays overlays)
           ;; move point past invisible
           (goto-char (if-let (ov (and (invisible-p pt-orig)
                                       (seq-find (lambda (ov) (overlay-get ov 'invisible))
@@ -3906,16 +3917,20 @@ INITIAL is the initial input."
 
 ;;;###autoload
 (defun consult-focus-lines (filter &optional show initial)
-  "Hide or show lines using overlays.
+  "Show only matching lines using overlays.
 
-The selected lines are shown and the other lines hidden.  When called
-interactively, the lines selected are those that match the minibuffer input.  In
-order to match the inverse of the input, prefix the input with `! '.  With
-optional prefix argument SHOW reveal the hidden lines.  Alternatively the
-command can be restarted to reveal the lines.  When called from Elisp, the
-filtering is performed by a FILTER function.  This command obeys narrowing.
+In contrast to `consult-keep-lines' the buffer is not modified.  The
+FILTER selects the lines which are shown.  When called interactively,
+the lines selected are those that match the minibuffer input.  In order
+to match the inverse of the input, prefix the input with `! '.  With
+optional prefix argument SHOW reveal the hidden lines.  Alternatively
+rerun the command and exit the minibuffer directly without input to
+reveal the lines.  When called from Elisp, the filtering is performed by
+a FILTER function.  If the buffer is narrowed to a region, the command
+only acts on this region.
 
-FILTER is the filter function.
+FILTER is the filter function, called for each line.
+SHOW is the prefix argument, if non-nil reveal all hidden lines.
 INITIAL is the initial input."
   (interactive
    (list (lambda (pattern cands)
@@ -3937,7 +3952,11 @@ INITIAL is the initial input."
         "Focus on lines: ")
       :initial initial
       :history 'consult--line-history
-      :state (consult--focus-lines-state filter)))))
+      :state (consult--focus-lines-state filter))))
+  (cl-callf2 assq-delete-all 'consult--focus-lines-overlays mode-line-misc-info)
+  (when (and consult--focus-lines-overlays consult--focus-lines-indicator)
+    (push `(consult--focus-lines-overlays ,consult--focus-lines-indicator)
+          mode-line-misc-info)))
 
 ;;;;; Command: consult-goto-line
 
@@ -4498,7 +4517,7 @@ starts a new Isearch session otherwise."
                   (lambda (cand) (= (consult--tofu-get cand) consult--narrow))
                   :keys consult--isearch-history-narrow))
            isearch-new-message
-           (mapconcat 'isearch-text-char-description isearch-new-string "")))
+           (mapconcat #'isearch-text-char-description isearch-new-string "")))
     ;; Setting `isearch-regexp' etc only works outside of `with-isearch-suspended'.
     (unless (plist-member (text-properties-at 0 isearch-string) 'isearch-regexp-function)
       (setq isearch-regexp t
@@ -4602,9 +4621,11 @@ The command supports previewing the currently selected theme."
   (unless (eq theme (car custom-enabled-themes))
     (mapc #'disable-theme custom-enabled-themes)
     (when theme
+      (unless (custom-theme-p theme)
+        (load-theme theme 'no-confirm 'no-enable))
       (if (custom-theme-p theme)
           (enable-theme theme)
-        (load-theme theme :no-confirm)))))
+        (consult--minibuffer-message "%s is not a valid theme")))))
 
 ;;;;; Command: consult-buffer
 
@@ -4956,21 +4977,23 @@ configuration of the virtual buffer sources."
 
 (defmacro consult--with-project (&rest body)
   "Ensure that BODY is executed with a project root."
-  ;; We have to work quite hard here to ensure that the project root is
-  ;; only overridden at the current recursion level.  When entering a
-  ;; recursive minibuffer session, we should be able to still switch the
-  ;; project.  But who does that? Working on the first level on project A
-  ;; and on the second level on project B and on the third level on project C?
-  ;; You mustn't be afraid to dream a little bigger, darling.
-  `(let ((consult-project-function
-          (let ((root (or (consult--project-root t) (user-error "No project found")))
-                (depth (recursion-depth))
-                (orig consult-project-function))
-            (lambda (may-prompt)
-              (if (= depth (recursion-depth))
-                  root
-                (funcall orig may-prompt))))))
-     ,@body))
+  (declare (indent 0) (debug t))
+  `(consult--with-project-f (lambda () ,@body)))
+
+(defun consult--with-project-f (body)
+  "See `consult--with-project' for documentation."
+  ;; We have to work quite hard here to ensure that the project root is only
+  ;; overridden at the current recursion level.  When entering a recursive
+  ;; minibuffer session, we should be able to still switch the project.
+  (let ((consult-project-function
+         (let ((root (or (consult--project-root t) (user-error "No project found")))
+               (depth (recursion-depth))
+               (orig consult-project-function))
+           (lambda (may-prompt)
+             (if (= depth (recursion-depth))
+                 root
+               (funcall orig may-prompt))))))
+    (funcall body)))
 
 ;;;###autoload
 (defun consult-project-buffer ()
@@ -5014,10 +5037,7 @@ BUILDER is the command line builder function."
           (let ((file "") (file-len 0) result)
             (save-match-data
               (dolist (str cands (nreverse result))
-                (when (and (string-match consult--grep-match-regexp str)
-                           ;; Filter out empty context lines
-                           (or (/= (aref str (match-beginning 3)) ?-)
-                               (/= (match-end 0) (length str))))
+                (when (string-match consult--grep-match-regexp str)
                   ;; We share the file name across candidates to reduce
                   ;; the amount of allocated memory.
                   (unless (and (= file-len (- (match-end 1) (match-beginning 1)))

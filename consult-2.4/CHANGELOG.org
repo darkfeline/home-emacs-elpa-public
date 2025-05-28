@@ -2,6 +2,25 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Version 2.4 (2025-05-21)
+
+- ~consult-register-store~: Add =M-b= action to store the buffer in a register.
+- ~consult-compile~: Ignore messages without a location.
+- ~consult-compile~: Introduce key =g= for grep locations.
+
+* Version 2.3 (2025-04-19)
+
+- Bugfix: ~consult--read~ accepts list of symbols.
+- Bugfix: ~consult-theme~ handles invalid themes gracefully.
+
+* Version 2.2 (2025-04-02)
+
+- Add ~consult-info-define~ to conveniently define custom ~consult-info-*~ commands
+  to search through a subset of info manuals.
+- ~consult-focus-lines~: Add mode line indicator if active.
+- ~consult-grep~: Preserve empty context lines.
+- ~consult-register-store~: Support Dired buffers.
+
 * Version 2.1 (2025-03-11)
 
 - Remove obsolete ~consult--async-*~ APIs.
