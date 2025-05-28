@@ -1,0 +1,2 @@
+;; Generated package description from .el  -*- trampno-byte-compile: t -*-
+(define-package "tramp" "2.7.2.3.1" "Transparent Remote Access, Multiple Protocol" '((emacs "27.1")) :commit "7ccd3818b74245cb0b4ffe1aac8b71ad2aef79a9" :authors '(("Kai Großjohann" . "kai.grossjohann@gmx.net") ("Michael Albinus" . "michael.albinus@gmx.de")) :maintainer '("Michael Albinus" . "michael.albinus@gmx.de") :keywords '("comm" "processes") :url "https://www.gnu.org/software/tramp/")

@@ -13,7 +13,7 @@
 
  (when (featurep 'tramp-compat)
   (load "tramp-compat" 'noerror 'nomessage))
-(defvar tramp-mode (not (eq system-type 'ms-dos)) "\
+(defvar tramp-mode (fboundp 'make-process) "\
 Whether Tramp is enabled.
 If it is set to nil, all remote file names are used literally.")
 (custom-autoload 'tramp-mode "tramp" t)
