@@ -1,11 +1,11 @@
 ;;; yasnippet.el --- Yet another snippet extension for Emacs  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2008-2024 Free Software Foundation, Inc.
+;; Copyright (C) 2008-2025 Free Software Foundation, Inc.
 ;; Authors: pluskid <pluskid@gmail.com>,
 ;;          João Távora <joaotavora@gmail.com>,
 ;;          Noam Postavsky <npostavs@gmail.com>
 ;; Maintainer: Noam Postavsky <npostavs@gmail.com>
-;; Version: 0.14.1
+;; Version: 0.14.2
 ;; X-URL: http://github.com/joaotavora/yasnippet
 ;; Keywords: convenience, emulation
 ;; URL: http://github.com/joaotavora/yasnippet
@@ -824,6 +824,10 @@ which decides on the snippet to expand.")
                             ;; Prevent sharing the tail.
                             (append lists '(()) )))))))
 
+(defun yas--flush-all-parents (mode)
+  (if (get mode 'yas--all-parents)
+      (put mode 'yas--all-parents nil)))
+
 (defun yas--all-parents (mode)
   "Like `derived-mode-all-parents' but obeying `yas--parents'."
   (or (get mode 'yas--all-parents) ;; FIXME: Use `with-memoization'?
@@ -844,17 +848,19 @@ which decides on the snippet to expand.")
                             (cons (if (eq mode 'fundamental-mode) ()
                                     (append (cdr ap) '(fundamental-mode)))
                                   extras))))
-                 (cons mode
-                       (yas--merge-ordered-lists
-                        (mapcar #'yas--all-parents
-                                (remq nil
-                                      `(,(or (get mode 'derived-mode-parent)
-                                             ;; Consider `fundamental-mode'
-                                             ;; as ultimate ancestor.
-                                             'fundamental-mode)
-                                        ,(let ((alias (symbol-function mode)))
-                                           (when (symbolp alias) alias))
-                                        ,@(gethash mode yas--parents)))))))))
+                 (delete-dups
+                  (cons mode
+                        (yas--merge-ordered-lists
+                         (mapcar #'yas--all-parents
+                                 (remq nil
+                                       `(,(or (get mode 'derived-mode-parent)
+                                              ;; Consider `fundamental-mode'
+                                              ;; as ultimate ancestor.
+                                              'fundamental-mode)
+                                         ,(let ((alias (symbol-function mode)))
+                                            (when (symbolp alias) alias))
+                                         ,@(get mode 'derived-mode-extra-parents)
+                                         ,@(gethash mode yas--parents))))))))))
           (dolist (parent all-parents)
             (cl-pushnew mode (get parent 'yas--cached-children)))
           (put mode 'yas--all-parents all-parents)))))
@@ -885,18 +891,10 @@ which decides on the snippet to expand.")
 
 ;;;###autoload
 (define-minor-mode yas-minor-mode
-  "Toggle YASnippet mode.
+  "YASnippet minor mode.
 
 When YASnippet mode is enabled, `yas-expand', normally bound to
-the TAB key, expands snippets of code depending on the major
-mode.
-
-With no argument, this command toggles the mode.
-positive prefix argument turns on the mode.
-Negative prefix argument turns off the mode.
-
-Key bindings:
-\\{yas-minor-mode-map}"
+the TAB key, expands snippets of code depending on the major mode."
   :lighter " yas" ;; The indicator for the mode line.
   (cond ((and yas-minor-mode (featurep 'yasnippet))
          ;; Install the direct keymaps in `emulation-mode-map-alists'
@@ -994,7 +992,7 @@ Honour `yas-dont-activate-functions', which see."
 ;;; Major mode stuff
 
 (defvar yas--font-lock-keywords
-  (append '(("^#.*$" . font-lock-comment-face))
+  (append '(("^#.*$" (0 'font-lock-comment-face)))
           (with-temp-buffer
             (let ((prog-mode-hook nil)
                   (emacs-lisp-mode-hook nil))
@@ -1005,14 +1003,14 @@ Honour `yas-dont-activate-functions', which see."
                 (cadr font-lock-keywords)
               font-lock-keywords))
           '(("\\$\\([0-9]+\\)"
-             (0 font-lock-keyword-face)
-             (1 font-lock-string-face t))
+             (0 'font-lock-keyword-face)
+             (1 'font-lock-string-face t))
             ("\\${\\([0-9]+\\):?"
-             (0 font-lock-keyword-face)
-             (1 font-lock-warning-face t))
-            ("\\(\\$(\\)" 1 font-lock-preprocessor-face)
+             (0 'font-lock-keyword-face)
+             (1 'font-lock-warning-face t))
+            ("\\(\\$(\\)" 1 'font-lock-preprocessor-face)
             ("}"
-             (0 font-lock-keyword-face)))))
+             (0 'font-lock-keyword-face)))))
 
 (defvar snippet-mode-map
   (let ((map (make-sparse-keymap)))
@@ -1457,7 +1455,7 @@ Returns (TEMPLATES START END). This function respects
 (defun yas--remove-misc-free-from-undo (old-undo-list)
   "Tries to work around Emacs Bug#30931.
 Helper function for `yas--save-restriction-and-widen'."
-  ;; If Bug#30931 is unfixed, we get (#<Lisp_Misc_Free> . INTEGER)
+  ;; If Bug#30931 is unfixed (Emacs<26.2), we get (#<Lisp_Misc_Free> . INTEGER)
   ;; entries in the undo list.  If we call `type-of' on the
   ;; Lisp_Misc_Free object then Emacs aborts, so try to find it by
   ;; checking that its type is none of the expected ones.
@@ -1481,15 +1479,16 @@ Helper function for `yas--save-restriction-and-widen'."
 
 (defmacro yas--save-restriction-and-widen (&rest body)
   "Equivalent to (save-restriction (widen) BODY).
-Also tries to work around Emacs Bug#30931."
+Also tries to work around Emacs Bug#30931, fixed in Emacs-26.2."
   (declare (debug (body)) (indent 0))
-  ;; Disable garbage collection, since it could cause an abort.
-  `(let ((gc-cons-threshold most-positive-fixnum)
-         (old-undo-list buffer-undo-list))
-     (prog1 (save-restriction
-              (widen)
-              ,@body)
-       (yas--remove-misc-free-from-undo old-undo-list))))
+  (let ((main `(save-restriction (widen) ,@body)))
+    (if (< emacs-major-version 27)
+        ;; Disable garbage collection, since it could cause an abort.
+        `(let ((gc-cons-threshold most-positive-fixnum)
+               (old-undo-list buffer-undo-list))
+           (prog1 ,main
+            (yas--remove-misc-free-from-undo old-undo-list)))
+      main)))
 
 (defun yas--eval-for-string (form)
   "Evaluate FORM and convert the result to string."
@@ -1833,10 +1832,17 @@ the current buffers contents."
         (insert "\n\n"))
     ;; Normal case.
     (let ((snippet-table (yas--table-get-create mode))
+          (uuids nil)
           (template nil))
       (dolist (snippet snippets)
         (setq template (yas--define-snippets-1 snippet
-                                               snippet-table)))
+                                               snippet-table))
+        (let ((uuid (yas--template-uuid template)))
+          (if (member uuid uuids)
+              ;; It's normal for a snippet to override another one
+              ;; in `snippet-table`, but not one in `snippets`.
+              (message "Multiple snippets with same identity: %S" uuid)
+            (push uuid uuids))))
       template)))
 
 
@@ -2002,6 +2008,9 @@ prefix argument."
                                (with-current-buffer buffer
                                  yas--editing-template))
                              (buffer-list))))
+
+      (mapatoms #'yas--flush-all-parents)
+
       ;; Warn if there are buffers visiting snippets, since reloading will break
       ;; any on-line editing of those buffers.
       ;;
@@ -2768,18 +2777,20 @@ Return the `yas--template' object created"
 
 (defun yas-maybe-load-snippet-buffer ()
   "Added to `after-save-hook' in `snippet-mode'."
-  (let* ((mode (intern (file-name-sans-extension
-                        (file-name-nondirectory
-                         (directory-file-name default-directory)))))
-         (current-snippet
-          (apply #'yas--define-snippets-2 (yas--table-get-create mode)
-                 (yas--parse-template buffer-file-name)))
-         (uuid (yas--template-uuid current-snippet)))
-    (unless (equal current-snippet
-                   (if uuid (yas--get-template-by-uuid mode uuid)
-                     (yas--lookup-snippet-1
-                      (yas--template-name current-snippet) mode)))
-      (yas-load-snippet-buffer mode t))))
+  (save-excursion ;; Issue #1146.  Here or in `yas--parse-template`?
+    (let* ((mode (intern (file-name-sans-extension
+                          (file-name-nondirectory
+                           (directory-file-name default-directory)))))
+           (current-snippet
+            (apply #'yas--define-snippets-2 (yas--table-get-create mode)
+                   ;; FIXME: `yas-load-snippet-buffer' will *re*parse!
+                   (yas--parse-template buffer-file-name)))
+           (uuid (yas--template-uuid current-snippet)))
+      (unless (equal current-snippet
+                     (if uuid (yas--get-template-by-uuid mode uuid)
+                       (yas--lookup-snippet-1
+                        (yas--template-name current-snippet) mode)))
+        (yas-load-snippet-buffer mode t)))))
 
 (defun yas-load-snippet-buffer-and-close (table &optional kill)
   "Load and save the snippet, then `quit-window' if saved.
@@ -3994,7 +4005,7 @@ SNIPPET may be a snippet structure (e.g., as returned by
 `yas-lookup-snippet'), or just a snippet body (which is a string
 for normal snippets, and a list for command snippets)."
   (cl-assert (and yas-minor-mode
-                  (memq 'yas--post-command-handler post-command-hook))
+                  (memq #'yas--post-command-handler post-command-hook))
              nil
              "[yas] `yas-expand-snippet' needs properly setup `yas-minor-mode'")
   (run-hooks 'yas-before-expand-snippet-hook)
@@ -4112,39 +4123,41 @@ Returns the newly created snippet."
       (yas--letenv expand-env
         ;; Put a single undo action for the expanded snippet's
         ;; content.
-        (let ((buffer-undo-list t))
-          (goto-char begin)
-          (if (> emacs-major-version 29)
-              ;; Don't use the workaround for CC-mode's cache,
-              ;; since it was presumably a bug in CC-mode, so either
-              ;; it's fixed already, or it should get fixed.
-              (progn
-                (insert content)
-                (narrow-to-region begin (point))
-                (goto-char (point-min))
-                (yas--snippet-parse-create snippet))
-            ;; Call before and after change functions manually,
-            ;; otherwise cc-mode's cache can get messed up.  Don't use
-            ;; `inhibit-modification-hooks' for that, that blocks
-            ;; overlay and text property hooks as well!  FIXME: Maybe
-            ;; use `combine-change-calls'?  (Requires Emacs 27+ though.)
-            (run-hook-with-args 'before-change-functions begin end)
-            (let ((before-change-functions nil)
-                  (after-change-functions nil))
-              ;; Some versions of cc-mode (might be the one with Emacs
-              ;; 24.3 only) fail when inserting snippet content in a
-              ;; narrowed buffer, so make sure to insert before
-              ;; narrowing.
-              (insert content)
-              (narrow-to-region begin (point))
-              (goto-char (point-min))
-              (yas--snippet-parse-create snippet))
-            (run-hook-with-args 'after-change-functions
-                                (point-min) (point-max)
-                                (- end begin))))
-        (when (listp buffer-undo-list)
-          (push (cons (point-min) (point-max))
-                buffer-undo-list))
+        (unwind-protect
+            (let ((buffer-undo-list t))
+              (goto-char begin)
+              (if (< emacs-major-version 27)
+                  ;; Don't use the workaround for CC-mode's cache,
+                  ;; since it was presumably a bug in CC-mode, so either
+                  ;; it's fixed already, or it should get fixed.
+                  (progn
+                    (insert content)
+                    (narrow-to-region begin (point))
+                    (goto-char (point-min))
+                    (yas--snippet-parse-create snippet))
+                ;; Call before and after change functions manually,
+                ;; otherwise cc-mode's cache can get messed up.  Don't use
+                ;; `inhibit-modification-hooks' for that, that blocks
+                ;; overlay and text property hooks as well!  FIXME: Maybe
+                ;; use `combine-change-calls'?  (Requires Emacs 27+ though.)
+                (run-hook-with-args 'before-change-functions begin end)
+                (let ((before-change-functions nil)
+                      (after-change-functions nil))
+                  ;; Some versions of cc-mode (might be the one with Emacs
+                  ;; 24.3 only) fail when inserting snippet content in a
+                  ;; narrowed buffer, so make sure to insert before
+                  ;; narrowing.
+                  (insert content)
+                  (narrow-to-region begin (point))
+                  (goto-char (point-min))
+                  (yas--snippet-parse-create snippet))
+                (run-hook-with-args 'after-change-functions
+                                    (point-min) (point-max)
+                                    (- end begin))))
+          ;; FIXME: Use `undo-amalgamate-change-group'?
+          (when (listp buffer-undo-list)
+            (push (cons (point-min) (point-max))
+                  buffer-undo-list)))
 
         ;; Indent, collecting undo information normally.
         (yas--indent snippet)
@@ -4715,20 +4728,22 @@ When multiple expressions are found, only the last one counts."
                                  (point)))
              (number (and (match-string-no-properties 1)
                           (string-to-number (match-string-no-properties 1))))
-             (brand-new-field (and real-match-end-0
-                                   ;; break if on "$(" immediately
-                                   ;; after the ":", this will be
-                                   ;; caught as a mirror with
-                                   ;; transform later.
-                                   (not (string-match-p "\\`\\$[ \t\n]*("
-                                                        (match-string-no-properties 2)))
-                                   ;; allow ${0: some exit text}
-                                   ;; (not (and number (zerop number)))
-                                   (yas--make-field number
-                                                   (yas--make-marker (match-beginning 2))
-                                                   (yas--make-marker (1- real-match-end-0))
-                                                   parent-field))))
-        (when brand-new-field
+             (field2 (match-string-no-properties 2))
+             (simple-fom (string-match-p "\\`[0-9]+\\'" field2))
+             (brand-new-field
+              (and ;; break if on "$(" immediately after the ":", this
+               ;; will be caught as a mirror with transform later.
+               (not (string-match-p "\\`\\$[ \t\n]*(" field2))
+               ;; allow ${0: some exit text}
+               ;; (not (and number (zerop number)))
+               (yas--make-field number
+                                (yas--make-marker (match-beginning 2))
+                                (yas--make-marker (1- real-match-end-0))
+                                parent-field))))
+        (cond
+         ((and (not number) simple-fom)
+          (yas--one-simple-fom snippet field2))
+         (brand-new-field
           (goto-char real-match-end-0)
           (push (cons (1- real-match-end-0) real-match-end-0)
                 yas--dollar-regions)
@@ -4737,9 +4752,11 @@ When multiple expressions are found, only the last one counts."
           (push brand-new-field (yas--snippet-fields snippet))
           (save-excursion
             (save-restriction
-              (narrow-to-region (yas--field-start brand-new-field) (yas--field-end brand-new-field))
+              (narrow-to-region (yas--field-start brand-new-field)
+                                (yas--field-end brand-new-field))
               (goto-char (point-min))
-              (yas--field-parse-create snippet brand-new-field)))))))
+              (yas--field-parse-create snippet brand-new-field))))))))
+
   ;; if we entered from a parent field, now search for the
   ;; `yas--multi-dollar-lisp-expression-regexp'. This is used for
   ;; primary field transformations
@@ -4796,31 +4813,35 @@ When multiple expressions are found, only the last one counts."
 (defun yas--simple-fom-create (snippet)
   "Parse the simple \"$n\" fields/mirrors/exitmarkers in SNIPPET."
   (while (re-search-forward yas--simple-mirror-regexp nil t)
-    (let ((number (string-to-number (match-string-no-properties 1))))
-      (cond ((zerop number)
-             (setf (yas--snippet-exit snippet)
-                   (yas--make-exit (yas--make-marker (match-end 0))))
-             (push (cons (match-beginning 0) (yas--exit-marker (yas--snippet-exit snippet)))
-                   yas--dollar-regions))
-            (t
-             (let ((field (yas--snippet-find-field snippet number))
-                   (fom))
-               (if field
-                   (push
-                    (setq fom (yas--make-mirror
-                               (yas--make-marker (match-beginning 0))
-                               (yas--make-marker (match-beginning 0))
-                               nil))
-                    (yas--field-mirrors field))
+    (yas--one-simple-fom snippet (match-string-no-properties 1))))
+
+(defun yas--one-simple-fom (snippet numstring)
+  (let ((number (string-to-number numstring)))
+    (cond ((zerop number)
+           (setf (yas--snippet-exit snippet)
+                 (yas--make-exit (yas--make-marker (match-end 0))))
+           (push (cons (match-beginning 0)
+                       (yas--exit-marker (yas--snippet-exit snippet)))
+                 yas--dollar-regions))
+          (t
+           (let ((field (yas--snippet-find-field snippet number))
+                 (fom))
+             (if field
                  (push
-                  (setq fom (yas--make-field number
-                                             (yas--make-marker (match-beginning 0))
-                                             (yas--make-marker (match-beginning 0))
-                                             nil))
-                  (yas--snippet-fields snippet)))
-               (yas--calculate-simple-fom-parentage snippet fom))
-             (push (cons (match-beginning 0) (match-end 0))
-                   yas--dollar-regions))))))
+                  (setq fom (yas--make-mirror
+                             (yas--make-marker (match-beginning 0))
+                             (yas--make-marker (match-beginning 0))
+                             nil))
+                  (yas--field-mirrors field))
+               (push
+                (setq fom (yas--make-field number
+                                           (yas--make-marker (match-beginning 0))
+                                           (yas--make-marker (match-beginning 0))
+                                           nil))
+                (yas--snippet-fields snippet)))
+             (yas--calculate-simple-fom-parentage snippet fom))
+           (push (cons (match-beginning 0) (match-end 0))
+                 yas--dollar-regions)))))
 
 (defun yas--delete-regions (regions)
   "Sort disjuct REGIONS by start point, then delete from the back."
@@ -5029,7 +5050,7 @@ object satisfying `yas--field-p' to restrict the expansion to.")))
 (define-button-type 'help-snippet-def
   :supertype 'help-xref
   'help-function (lambda (template) (yas--visit-snippet-file-1 template))
-  'help-echo (purecopy "mouse-2, RET: find snippets's definition"))
+  'help-echo "mouse-2, RET: find snippets's definition")
 
 (defun yas--snippet-description-finish-runonce ()
   "Final adjustments for the help buffer when snippets are concerned."
