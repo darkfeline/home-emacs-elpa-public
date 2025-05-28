@@ -5,7 +5,7 @@
 ;; Author: Daniel Mendler <mail@daniel-mendler.de>
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2021
-;; Version: 2.0
+;; Version: 2.2
 ;; Package-Requires: ((emacs "28.1") (compat "30"))
 ;; URL: https://github.com/minad/vertico
 ;; Keywords: convenience, files, matching, completion
@@ -92,14 +92,15 @@ The value should lie between 0 and vertico-count/2."
   "Replacements for multiline strings."
   :type '(cons (string :tag "Newline") (string :tag "Truncation")))
 
-(defcustom vertico-sort-function #'vertico-sort-history-length-alpha
+(defcustom vertico-sort-function
+  (and (fboundp 'vertico-sort-history-length-alpha) 'vertico-sort-history-length-alpha)
   "Default sorting function, used if no `display-sort-function' is specified."
-  :type `(choice
+  :type '(choice
           (const :tag "No sorting" nil)
-          (const :tag "By history, length and alpha" ,#'vertico-sort-history-length-alpha)
-          (const :tag "By history and alpha" ,#'vertico-sort-history-alpha)
-          (const :tag "By length and alpha" ,#'vertico-sort-length-alpha)
-          (const :tag "Alphabetically" ,#'vertico-sort-alpha)
+          (const :tag "By history, length and alpha" vertico-sort-history-length-alpha)
+          (const :tag "By history and alpha" vertico-sort-history-alpha)
+          (const :tag "By length and alpha" vertico-sort-length-alpha)
+          (const :tag "Alphabetically" vertico-sort-alpha)
           (function :tag "Custom function")))
 
 (defcustom vertico-sort-override-function nil
@@ -146,9 +147,6 @@ The value should lie between 0 and vertico-count/2."
 (defvar-local vertico--hilit #'identity
   "Lazy candidate highlighting function.")
 
-(defvar-local vertico--history-hash nil
-  "History hash table and corresponding base string.")
-
 (defvar-local vertico--candidates-ov nil
   "Overlay showing the candidates.")
 
@@ -190,65 +188,6 @@ The value should lie between 0 and vertico-count/2."
 
 (defvar-local vertico--allow-prompt nil
   "Prompt selection is allowed.")
-
-(defun vertico--history-hash ()
-  "Recompute history hash table and return it."
-  (or (and (equal (car vertico--history-hash) vertico--base) (cdr vertico--history-hash))
-      (let* ((base vertico--base)
-             (base-len (length base))
-             (hist (and (not (eq minibuffer-history-variable t)) ;; Disabled for `t'.
-                        (symbol-value minibuffer-history-variable)))
-             (hash (make-hash-table :test #'equal :size (length hist)))
-             (file-p (and (> base-len 0) ;; Step-wise completion, unlike `project-find-file'
-                          (eq minibuffer-history-variable 'file-name-history)))
-             (curr-file (when-let ((win (and file-p (minibuffer-selected-window)))
-                                   (file (buffer-file-name (window-buffer win))))
-                          (abbreviate-file-name file))))
-        (cl-loop for elem in hist for index from 0 do
-                 (when (and (not (equal curr-file elem)) ;; Deprioritize current file
-                            (or (= base-len 0)
-                                (and (>= (length elem) base-len)
-                                     (eq t (compare-strings base 0 base-len elem 0 base-len)))))
-                   (let ((file-sep (and file-p (string-search "/" elem base-len))))
-                     ;; Drop base string from history elements & special file handling.
-                     (when (or (> base-len 0) file-sep)
-                       (setq elem (substring elem base-len (and file-sep (1+ file-sep)))))
-                     (unless (gethash elem hash) (puthash elem index hash)))))
-        (cdr (setq vertico--history-hash (cons base hash))))))
-
-(defun vertico--length-string< (x y)
-  "Sorting predicate which compares X and Y first by length then by `string<'."
-  (or (< (length x) (length y)) (and (= (length x) (length y)) (string< x y))))
-
-(defun vertico--sort-decorated (list)
-  "Sort decorated LIST and remove decorations."
-  (setq list (sort list #'car-less-than-car))
-  (cl-loop for item on list do (setcar item (cdar item)))
-  list)
-
-(defmacro vertico--define-sort (by bsize bindex bpred pred)
-  "Generate optimized sorting function.
-The function is configured by BY, BSIZE, BINDEX, BPRED and PRED."
-  `(defun ,(intern (mapconcat #'symbol-name `(vertico sort ,@by) "-")) (candidates)
-     ,(concat "Sort candidates by " (mapconcat #'symbol-name by ", ") ".")
-     (let* ((buckets (make-vector ,bsize nil))
-            ,@(and (eq (car by) 'history) '((hhash (vertico--history-hash)) (hcands))))
-       (dolist (% candidates)
-         ;; Find recent candidate in history or fill bucket
-         (,@(if (not (eq (car by) 'history)) `(progn)
-              `(if-let ((idx (gethash % hhash))) (push (cons idx %) hcands)))
-          (let ((idx (min ,(1- bsize) ,bindex)))
-            (aset buckets idx (cons % (aref buckets idx))))))
-       (nconc ,@(and (eq (car by) 'history) '((vertico--sort-decorated hcands)))
-              (mapcan (lambda (bucket) (sort bucket #',bpred))
-                      (nbutlast (append buckets nil)))
-              ;; Last bucket needs special treatment
-              (sort (aref buckets ,(1- bsize)) #',pred)))))
-
-(vertico--define-sort (history length alpha) 32 (length %) string< vertico--length-string<)
-(vertico--define-sort (history alpha) 32 (if (equal % "") 0 (/ (aref % 0) 4)) string< string<)
-(vertico--define-sort (length alpha) 32 (length %) string< vertico--length-string<)
-(vertico--define-sort (alpha) 32 (if (equal % "") 0 (/ (aref % 0) 4)) string< string<)
 
 (defun vertico--affixate (cands)
   "Annotate CANDS with annotation function."
@@ -367,6 +306,12 @@ The function is configured by BY, BSIZE, BINDEX, BPRED and PRED."
                                           (test-completion content table pred)))
                                  -1 0))))))
 
+(defun vertico--hilit (cand)
+  "Highlight CAND string with lazy highlighting."
+  ;; bug#77754: Highlight unquoted string.
+  (funcall vertico--hilit (substring (or (get-text-property
+                                          0 'completion--unquoted cand) cand))))
+
 (defun vertico--cycle (list n)
   "Rotate LIST to position N."
   (nconc (copy-sequence (nthcdr n list)) (seq-take list n)))
@@ -480,11 +425,12 @@ The function is configured by BY, BSIZE, BINDEX, BPRED and PRED."
 
 (defun vertico--format-group-title (title cand)
   "Format group TITLE given the current CAND."
+  ;; Copy candidate highlighting if title is a prefix of the candidate.
   (when (string-prefix-p title cand)
-    ;; Highlight title if title is a prefix of the candidate
-    (setq cand (propertize cand 'face 'vertico-group-title)
-          title (substring (funcall vertico--hilit cand) 0 (length title)))
+    (setq title (substring cand 0 (length title)))
     (vertico--remove-face 0 (length title) 'completions-first-difference title))
+  (setq title (substring title))
+  (add-face-text-property 0 (length title) 'vertico-group-title t title)
   (format (concat vertico-group-format "\n") title))
 
 (defun vertico--format-count ()
@@ -517,14 +463,45 @@ The function is configured by BY, BSIZE, BINDEX, BPRED and PRED."
         (put-text-property beg next 'face (remq face (ensure-list val)) obj))
       (setq beg next))))
 
+(defun vertico--debug (&rest _)
+  "Debugger used by `vertico--protect'."
+  (let ((inhibit-message t))
+    (require 'backtrace)
+    (declare-function backtrace-to-string "backtrace")
+    (message "Vertico detected an error:\n%s" (backtrace-to-string)))
+  (let (message-log-max)
+    (message "%s %s"
+             (propertize "Vertico detected an error:" 'face 'error)
+             (substitute-command-keys "Press \\[view-echo-area-messages] to see the stack trace")))
+  nil)
+
+(defun vertico--protect (fun)
+  "Protect FUN such that errors are caught.
+If an error occurs, the FUN is retried with `debug-on-error' enabled and
+the stack trace is shown in the *Messages* buffer."
+  (static-if (>= emacs-major-version 30)
+      (ignore-errors
+        (handler-bind ((error #'vertico--debug))
+          (funcall fun)))
+    (when (or debug-on-error (condition-case nil
+                                 (progn (funcall fun) nil)
+                               (error t)))
+      (let ((debug-on-error t)
+            (debugger #'vertico--debug))
+        (condition-case nil
+            (funcall fun)
+          ((debug error) nil))))))
+
 (defun vertico--exhibit ()
   "Exhibit completion UI."
-  (let ((buffer-undo-list t)) ;; Overlays affect point position and undo list!
-    (vertico--update 'interruptible)
-    (vertico--prompt-selection)
-    (vertico--display-count)
-    (vertico--display-candidates (vertico--arrange-candidates))
-    (vertico--resize)))
+  (vertico--protect
+   (lambda ()
+     (let ((buffer-undo-list t)) ;; Overlays affect point position and undo list!
+       (vertico--update 'interruptible)
+       (vertico--prompt-selection)
+       (vertico--display-count)
+       (vertico--display-candidates (vertico--arrange-candidates))
+       (vertico--resize)))))
 
 (defun vertico--goto (index)
   "Go to candidate with INDEX."
@@ -535,7 +512,7 @@ The function is configured by BY, BSIZE, BINDEX, BPRED and PRED."
 
 (defun vertico--candidate (&optional hl)
   "Return current candidate string with optional highlighting if HL is non-nil."
-  (let ((content (substring (or (car-safe vertico--input) (minibuffer-contents-no-properties)))))
+  (let ((content (or (car-safe vertico--input) (minibuffer-contents-no-properties))))
     (cond
      ((>= vertico--index 0)
       (let ((cand (substring (nth vertico--index vertico--candidates))))
@@ -543,7 +520,7 @@ The function is configured by BY, BSIZE, BINDEX, BPRED and PRED."
         ;; `completion--twq-all' hack.  This should better be fixed in Emacs
         ;; itself, the corresponding code is already marked as fixme.
         (vertico--remove-face 0 (length cand) 'completions-common-part cand)
-        (concat vertico--base (if hl (funcall vertico--hilit cand) cand))))
+        (concat vertico--base (if hl (vertico--hilit cand) cand))))
      ((and (equal content "") (or (car-safe minibuffer-default) minibuffer-default)))
      (t content))))
 
@@ -574,7 +551,7 @@ The function is configured by BY, BSIZE, BINDEX, BPRED and PRED."
            (candidates
             (vertico--affixate
              (cl-loop repeat vertico-count for c in (nthcdr index vertico--candidates)
-                      collect (funcall vertico--hilit (substring c))))))
+                      collect (vertico--hilit c)))))
       (pcase-dolist ((and cand `(,str . ,_)) candidates)
         (when-let ((new-title (and group-fun (funcall group-fun str nil))))
           (unless (equal title new-title)

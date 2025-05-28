@@ -5,8 +5,8 @@
 ;; Author: Daniel Mendler <mail@daniel-mendler.de>
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2021
-;; Version: 2.0
-;; Package-Requires: ((emacs "28.1") (compat "30") (vertico "2.0"))
+;; Version: 2.2
+;; Package-Requires: ((emacs "28.1") (compat "30") (vertico "2.2"))
 ;; URL: https://github.com/minad/vertico
 
 ;; This file is part of GNU Emacs.
@@ -131,7 +131,7 @@ When scrolling beyond this limit, candidates may be truncated."
          (width (- (/ (vertico--window-width) vertico-grid--columns) sep))
          (cands (funcall (if (> vertico-grid-annotate 0) #'vertico--affixate #'identity)
                          (cl-loop repeat count for c in (nthcdr start vertico--candidates)
-                                  collect (funcall vertico--hilit (substring c)))))
+                                  collect (vertico--hilit c))))
          (cands (cl-loop
                  for cand in cands for index from 0 collect
                  (let (prefix suffix)
