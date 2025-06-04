@@ -1,2 +1,0 @@
-;; Generated package description from mode: lisp-data; .el  -*- keycastno-byte-compile: t -*-
-(define-package "keycast" "1.4.3" "Show current command and its binding" '((emacs "28.1") (compat "30.0.2.0")) :commit "83216f97b3dd99dbb1d4dbc781e863f205b6d5d9" :authors '(("Jonas Bernoulli" . "emacs.keycast@jonas.bernoulli.dev")) :maintainer '("Jonas Bernoulli" . "emacs.keycast@jonas.bernoulli.dev") :keywords '("multimedia") :url "https://github.com/tarsius/keycast")
