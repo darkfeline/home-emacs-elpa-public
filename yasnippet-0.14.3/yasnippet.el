@@ -5,7 +5,7 @@
 ;;          João Távora <joaotavora@gmail.com>,
 ;;          Noam Postavsky <npostavs@gmail.com>
 ;; Maintainer: Noam Postavsky <npostavs@gmail.com>
-;; Version: 0.14.2
+;; Version: 0.14.3
 ;; X-URL: http://github.com/joaotavora/yasnippet
 ;; Keywords: convenience, emulation
 ;; URL: http://github.com/joaotavora/yasnippet
@@ -587,8 +587,6 @@ can be useful."
 
 
 ;;; Internal variables
-
-(defconst yas--version "0.14.0")
 
 (defvar yas--menu-table (make-hash-table)
   "A hash table of MAJOR-MODE symbols to menu keymaps.")
@@ -1672,8 +1670,9 @@ Here's a list of currently recognized directives:
                 (directory-files directory t)))
 
 (defun yas--make-menu-binding (template)
-  (let ((mode (yas--table-mode (yas--template-table template))))
-    `(lambda () (interactive) (yas--expand-or-visit-from-menu ',mode ,(yas--template-uuid template)))))
+  (let ((mode (yas--table-mode (yas--template-table template)))
+        (uuid (yas--template-uuid template)))
+    (lambda () (interactive) (yas--expand-or-visit-from-menu mode uuid))))
 
 (defun yas--expand-or-visit-from-menu (mode uuid)
   (let* ((table (yas--table-get-create mode))
@@ -1934,16 +1933,18 @@ With prefix argument USE-JIT do jit-loading of snippets."
       (let ((output-file (expand-file-name ".yas-compiled-snippets.el"
                                            directory)))
         (with-temp-file output-file
-          (insert (format ";;; Compiled snippets and support files for `%s'\n"
+          (insert (format ";;; \"Compiled\" snippets and support files for `%S'  -*- lexical-binding:t -*-\n"
                           mode-sym))
           (yas--load-directory-2 directory mode-sym)
           (insert (format ";;; Do not edit! File generated at %s\n"
                           (current-time-string)))))
     ;; Normal case.
     (unless (file-exists-p (expand-file-name ".yas-skip" directory))
-      (unless (and (load (expand-file-name ".yas-compiled-snippets" directory)
-                         'noerror (<= yas-verbosity 3))
-                   (progn (yas--message 4 "Loaded compiled snippets from %s" directory) t))
+      (if (let ((warning-inhibit-types
+                 '((files missing-lexbind-cookie))))
+            (load (expand-file-name ".yas-compiled-snippets" directory)
+                  'noerror (<= yas-verbosity 3)))
+          (yas--message 4 "Loaded compiled snippets from %s" directory)
         (yas--message 4 "Loading snippet files from %s" directory)
         (yas--load-directory-2 directory mode-sym)))))
 
@@ -2120,27 +2121,23 @@ This works by stubbing a few functions, then calling
 (defun yas-about ()
   (interactive)
   (message "yasnippet (version %s) -- pluskid/joaotavora/npostavs"
-           (or (ignore-errors (car (let ((default-directory yas--loaddir))
-                                     (process-lines "git" "describe"
-                                                    "--tags" "--dirty"))))
-               (eval-when-compile
+           (or (eval-when-compile
                  (and (fboundp 'package-get-version)
                       (package-get-version)))
-               (when (and (featurep 'package)
+               (when (and (boundp 'package-alist)
                           (fboundp 'package-desc-version)
                           (fboundp 'package-version-join))
-                 (defvar package-alist)
                  (ignore-errors
-                   (let* ((yas-pkg (cdr (assq 'yasnippet package-alist)))
-                          (version (package-version-join
-                                    (package-desc-version (car yas-pkg)))))
-                     ;; Special case for MELPA's bogus version numbers.
-                     (if (string-match "\\`20..[01][0-9][0-3][0-9][.][0-9]\\{3,4\\}\\'"
-                                       version)
-                         (concat yas--version "-snapshot" version)
-                       version))))
-               yas--version)))
-
+                   (let* ((yas-pkg (cdr (assq 'yasnippet package-alist))))
+                     (when yas-pkg
+                       (package-version-join
+                        (package-desc-version (car yas-pkg)))))))
+               ;; The Git description can be misleading, for lack of
+               ;; recent tags, so we prefer package version info.
+               (ignore-errors (car (let ((default-directory yas--loaddir))
+                                     (process-lines "git" "describe"
+                                                    "--tags" "--dirty"))))
+               "unknown")))
 
 ;;; Apropos snippet menu:
 ;;
@@ -3205,12 +3202,13 @@ ENV is a lisp expression that evaluates to list of elements with
 the form (VAR FORM), where VAR is a symbol and FORM is a lisp
 expression that evaluates to its value."
   (declare (debug (form body)) (indent 1))
-  (let ((envvar (make-symbol "envvar")))
-    `(let ((,envvar ,env))
-       (cl-progv
-           (mapcar #'car ,envvar)
-           (mapcar (lambda (v-f) (eval (cadr v-f) t)) ,envvar)
-         ,@body))))
+  `(yas--letenv-f ,env (lambda () ,@body)))
+
+(defun yas--letenv-f (env body-fun)
+  (cl-progv
+      (mapcar #'car env)
+      (mapcar (lambda (v-f) (eval (cadr v-f) t)) env)
+    (funcall body-fun)))
 
 (defun yas--snippet-map-markers (fun snippet)
   "Apply FUN to all marker (sub)fields in SNIPPET.
