@@ -2,6 +2,12 @@
 #+author: Omar Antolín Camarena, Daniel Mendler
 #+language: en
 
+* Version 2.1 (2025-06-04)
+
+- Rename =marginalia-annotator-registry= to =marginalia-annotators= for consistency
+  with =marginalia-classifiers=.
+- Add context menu in minibuffer. Enable =context-menu-mode= to try.
+
 * Version 2.0 (2025-03-17)
 
 - =marginalia--variable-value=: Add tool tip for integers with hexadecimal, octal
