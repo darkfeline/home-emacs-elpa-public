@@ -7,7 +7,7 @@
 #+texinfo_dir_category: Emacs misc features
 #+texinfo_dir_title: Transient: (transient).
 #+texinfo_dir_desc: Transient Commands
-#+subtitle: for version 0.9.1
+#+subtitle: for version 0.9.3
 
 #+setupfile: .orgconfig
 
@@ -20,7 +20,7 @@ resource to get over that hurdle is Psionic K's interactive tutorial,
 available at https://github.com/positron-solutions/transient-showcase.
 
 #+texinfo: @noindent
-This manual is for Transient version 0.9.1.
+This manual is for Transient version 0.9.3.
 
 #+texinfo: @insertcopying
 :END:
@@ -2694,6 +2694,14 @@ the transient menu, you will be able to yank it in another buffer.
   (keymap-set transient-predicate-map
               "<mouse-set-region>"
               #'transient--do-stay)
+#+end_src
+
+Copying the region while not seeing the region is a bit fiddly, so a
+dedicated command, ~transient-copy-menu-text~, was added.  You have to
+add a binding for this command in ~transient-map~.
+
+#+begin_src emacs-lisp
+  (keymap-set transient-map "C-c C-w" #'transient-copy-menu-text)
 #+end_src
 
 ** How can I autoload prefix and suffix commands?
