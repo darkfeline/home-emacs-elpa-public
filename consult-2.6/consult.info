@@ -1,4 +1,4 @@
-This is docMJ7Ey2.info, produced by makeinfo version 6.8 from
+This is docFQNTMq.info, produced by makeinfo version 6.8 from
 consult.texi.
 
 INFO-DIR-SECTION Emacs misc features
@@ -7,7 +7,7 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
 
-File: docMJ7Ey2.info,  Node: Top,  Next: Available commands,  Up: (dir)
+File: docFQNTMq.info,  Node: Top,  Next: Available commands,  Up: (dir)
 
 consult.el - Consulting completing-read
 ***************************************
@@ -109,7 +109,7 @@ Indices
 
 
 
-File: docMJ7Ey2.info,  Node: Available commands,  Next: Special features,  Prev: Top,  Up: Top
+File: docFQNTMq.info,  Node: Available commands,  Next: Special features,  Prev: Top,  Up: Top
 
 1 Available commands
 ********************
@@ -142,7 +142,7 @@ their descriptions.
 * Miscellaneous::                Various other useful commands
 
 
-File: docMJ7Ey2.info,  Node: Virtual Buffers,  Next: Editing,  Up: Available commands
+File: docFQNTMq.info,  Node: Virtual Buffers,  Next: Editing,  Up: Available commands
 
 1.1 Virtual Buffers
 ===================
@@ -156,7 +156,7 @@ File: docMJ7Ey2.info,  Node: Virtual Buffers,  Next: Editing,  Up: Available com
         • SPC Hidden buffers
         • * Modified buffers
         • f Files (Requires ‘recentf-mode’)
-        • r File registers
+        • r File and buffer registers
         • m Bookmarks
         • p Project
         • B Project buffers
@@ -181,7 +181,7 @@ File: docMJ7Ey2.info,  Node: Virtual Buffers,  Next: Editing,  Up: Available com
      ‘recentf-mode’ enables tracking of recent files.
 
 
-File: docMJ7Ey2.info,  Node: Editing,  Next: Register,  Prev: Virtual Buffers,  Up: Available commands
+File: docFQNTMq.info,  Node: Editing,  Next: Register,  Prev: Virtual Buffers,  Up: Available commands
 
 1.2 Editing
 ===========
@@ -199,7 +199,7 @@ File: docMJ7Ey2.info,  Node: Editing,  Next: Register,  Prev: Virtual Buffers,  
    • ‘consult-kmacro’: Select macro from the macro ring and execute it.
 
 
-File: docMJ7Ey2.info,  Node: Register,  Next: Navigation,  Prev: Editing,  Up: Available commands
+File: docFQNTMq.info,  Node: Register,  Next: Navigation,  Prev: Editing,  Up: Available commands
 
 1.3 Register
 ============
@@ -230,7 +230,7 @@ File: docMJ7Ey2.info,  Node: Register,  Next: Navigation,  Prev: Editing,  Up: A
         • ‘C-u 100 M-' x’: Store number in register ‘x’.
 
 
-File: docMJ7Ey2.info,  Node: Navigation,  Next: Search,  Prev: Register,  Up: Available commands
+File: docFQNTMq.info,  Node: Navigation,  Next: Search,  Prev: Register,  Up: Available commands
 
 1.4 Navigation
 ==============
@@ -254,7 +254,7 @@ File: docMJ7Ey2.info,  Node: Navigation,  Next: Search,  Prev: Register,  Up: Av
      imenu-anywhere (https://github.com/vspinu/imenu-anywhere).
 
 
-File: docMJ7Ey2.info,  Node: Search,  Next: Grep and Find,  Prev: Navigation,  Up: Available commands
+File: docFQNTMq.info,  Node: Search,  Next: Grep and Find,  Prev: Navigation,  Up: Available commands
 
 1.5 Search
 ==========
@@ -287,7 +287,7 @@ File: docMJ7Ey2.info,  Node: Search,  Next: Grep and Find,  Prev: Navigation,  U
      region restricts the filtering.
 
 
-File: docMJ7Ey2.info,  Node: Grep and Find,  Next: Compilation,  Prev: Search,  Up: Available commands
+File: docFQNTMq.info,  Node: Grep and Find,  Next: Compilation,  Prev: Search,  Up: Available commands
 
 1.6 Grep and Find
 =================
@@ -324,7 +324,7 @@ File: docMJ7Ey2.info,  Node: Grep and Find,  Next: Compilation,  Prev: Search,  
      ‘consult-find’ work just like those for the consult grep commands.
 
 
-File: docMJ7Ey2.info,  Node: Compilation,  Next: Histories,  Prev: Grep and Find,  Up: Available commands
+File: docFQNTMq.info,  Node: Compilation,  Next: Histories,  Prev: Grep and Find,  Up: Available commands
 
 1.7 Compilation
 ===============
@@ -339,7 +339,7 @@ File: docMJ7Ey2.info,  Node: Compilation,  Next: Histories,  Prev: Grep and Find
      ‘xref-show-xrefs-function’ and ‘xref-show-definitions-function’.
 
 
-File: docMJ7Ey2.info,  Node: Histories,  Next: Modes,  Prev: Compilation,  Up: Available commands
+File: docFQNTMq.info,  Node: Histories,  Next: Modes,  Prev: Compilation,  Up: Available commands
 
 1.8 Histories
 =============
@@ -362,7 +362,7 @@ File: docMJ7Ey2.info,  Node: Histories,  Next: Modes,  Prev: Compilation,  Up: A
      ‘isearch-edit-string’.
 
 
-File: docMJ7Ey2.info,  Node: Modes,  Next: Org Mode,  Prev: Histories,  Up: Available commands
+File: docFQNTMq.info,  Node: Modes,  Next: Org Mode,  Prev: Histories,  Up: Available commands
 
 1.9 Modes
 =========
@@ -375,7 +375,7 @@ File: docMJ7Ey2.info,  Node: Modes,  Next: Org Mode,  Prev: Histories,  Up: Avai
      local-minor/global-minor/major mode via the keys ‘l/g/m’.
 
 
-File: docMJ7Ey2.info,  Node: Org Mode,  Next: Help,  Prev: Modes,  Up: Available commands
+File: docFQNTMq.info,  Node: Org Mode,  Next: Help,  Prev: Modes,  Up: Available commands
 
 1.10 Org Mode
 =============
@@ -390,7 +390,7 @@ File: docMJ7Ey2.info,  Node: Org Mode,  Next: Help,  Prev: Modes,  Up: Available
      live preview and recursive editing.
 
 
-File: docMJ7Ey2.info,  Node: Help,  Next: Miscellaneous,  Prev: Org Mode,  Up: Available commands
+File: docFQNTMq.info,  Node: Help,  Next: Miscellaneous,  Prev: Org Mode,  Up: Available commands
 
 1.11 Help
 =========
@@ -415,7 +415,7 @@ File: docMJ7Ey2.info,  Node: Help,  Next: Miscellaneous,  Prev: Org Mode,  Up: A
      (consult-info-define "magit")
 
 
-File: docMJ7Ey2.info,  Node: Miscellaneous,  Prev: Help,  Up: Available commands
+File: docFQNTMq.info,  Node: Miscellaneous,  Prev: Help,  Up: Available commands
 
 1.12 Miscellaneous
 ==================
@@ -447,7 +447,7 @@ File: docMJ7Ey2.info,  Node: Miscellaneous,  Prev: Help,  Up: Available commands
      place directly in the original buffer.
 
 
-File: docMJ7Ey2.info,  Node: Special features,  Next: Configuration,  Prev: Available commands,  Up: Top
+File: docFQNTMq.info,  Node: Special features,  Next: Configuration,  Prev: Available commands,  Up: Top
 
 2 Special features
 ******************
@@ -471,7 +471,7 @@ advanced features.
 * Embark integration::           Actions, Grep/Occur-buffer export
 
 
-File: docMJ7Ey2.info,  Node: Live previews,  Next: Narrowing and grouping,  Up: Special features
+File: docFQNTMq.info,  Node: Live previews,  Next: Narrowing and grouping,  Up: Special features
 
 2.1 Live previews
 =================
@@ -552,7 +552,7 @@ experience.
                           :debounce 1 any))
 
 
-File: docMJ7Ey2.info,  Node: Narrowing and grouping,  Next: Asynchronous search,  Prev: Live previews,  Up: Special features
+File: docFQNTMq.info,  Node: Narrowing and grouping,  Next: Asynchronous search,  Prev: Live previews,  Up: Special features
 
 2.2 Narrowing and grouping
 ==========================
@@ -587,7 +587,7 @@ keys are automatically shown in the which-key window after pressing the
 ‘consult-narrow-key’.
 
 
-File: docMJ7Ey2.info,  Node: Asynchronous search,  Next: Multiple sources,  Prev: Narrowing and grouping,  Up: Special features
+File: docFQNTMq.info,  Node: Asynchronous search,  Next: Multiple sources,  Prev: Narrowing and grouping,  Up: Special features
 
 2.3 Asynchronous search
 =======================
@@ -653,7 +653,7 @@ status:
      provided.
 
 
-File: docMJ7Ey2.info,  Node: Multiple sources,  Next: Embark integration,  Prev: Asynchronous search,  Up: Special features
+File: docFQNTMq.info,  Node: Multiple sources,  Next: Embark integration,  Prev: Asynchronous search,  Up: Special features
 
 2.4 Multiple sources
 ====================
@@ -757,7 +757,7 @@ the internal ‘consult--multi’ API.  The function ‘consult--multi’ can be
 used to create new multi-source commands.
 
 
-File: docMJ7Ey2.info,  Node: Embark integration,  Prev: Multiple sources,  Up: Special features
+File: docFQNTMq.info,  Node: Embark integration,  Prev: Multiple sources,  Up: Special features
 
 2.5 Embark integration
 ======================
@@ -790,18 +790,19 @@ exported to an Occur buffer where they can be edited via the
 ‘occur-edit-mode’ (press key ‘e’).  Similarly, Embark supports exporting
 the matches found by ‘consult-grep’, ‘consult-ripgrep’ and
 ‘consult-git-grep’ to a Grep buffer, where the matches across files can
-be edited, if the wgrep (https://github.com/mhayashi1120/Emacs-wgrep)
-package is installed.  These three workflows are symmetric.
+be edited, via ‘grep-edit-mode’ on Emacs 31 (or via the wgrep
+(https://github.com/mhayashi1120/Emacs-wgrep) package).  These three
+workflows are symmetric.
 
    • ‘consult-line’ -> ‘embark-export’ to ‘occur-mode’ buffer ->
-     ‘occur-edit-mode’ for editing of matches in buffer.
-   • ‘consult-grep’ -> ‘embark-export’ to ‘grep-mode’ buffer -> ‘wgrep’
-     for editing of all matches.
+     ‘occur-edit-mode’ for editing of matches.
+   • ‘consult-grep’ -> ‘embark-export’ to ‘grep-mode’ buffer ->
+     ‘grep-edit-mode’ for editing of matches.
    • ‘consult-find’ -> ‘embark-export’ to ‘dired-mode’ buffer ->
      ‘wdired-change-to-wdired-mode’ for editing.
 
 
-File: docMJ7Ey2.info,  Node: Configuration,  Next: Recommended packages,  Prev: Special features,  Up: Top
+File: docFQNTMq.info,  Node: Configuration,  Next: Recommended packages,  Prev: Special features,  Up: Top
 
 3 Configuration
 ***************
@@ -828,7 +829,7 @@ lexical binding, since they use lambdas and closures.
 * Fine-tuning::                  Fine-grained configuration for special requirements
 
 
-File: docMJ7Ey2.info,  Node: Use-package example,  Next: Custom variables,  Up: Configuration
+File: docFQNTMq.info,  Node: Use-package example,  Next: Custom variables,  Up: Configuration
 
 3.1 Use-package example
 =======================
@@ -954,7 +955,7 @@ additional configuration examples.
      )
 
 
-File: docMJ7Ey2.info,  Node: Custom variables,  Next: Project support,  Prev: Use-package example,  Up: Configuration
+File: docFQNTMq.info,  Node: Custom variables,  Next: Project support,  Prev: Use-package example,  Up: Configuration
 
 3.2 Custom variables
 ====================
@@ -1011,7 +1012,7 @@ consult-themes                     List of themes to be presented for selection
 consult-widen-key                  Widening key during completion
 
 
-File: docMJ7Ey2.info,  Node: Project support,  Next: Fine-tuning,  Prev: Custom variables,  Up: Configuration
+File: docFQNTMq.info,  Node: Project support,  Next: Fine-tuning,  Prev: Custom variables,  Up: Configuration
 
 3.3 Project support
 ===================
@@ -1038,7 +1039,7 @@ possible to configure alternative methods via the customization variable
      (setq consult-project-function nil)
 
 
-File: docMJ7Ey2.info,  Node: Fine-tuning,  Prev: Project support,  Up: Configuration
+File: docFQNTMq.info,  Node: Fine-tuning,  Prev: Project support,  Up: Configuration
 
 3.4 Fine-tuning of individual commands
 ======================================
@@ -1108,7 +1109,7 @@ by the following techniques:
   5. Write or propose a patch.
 
 
-File: docMJ7Ey2.info,  Node: Recommended packages,  Next: Bug reports,  Prev: Configuration,  Up: Top
+File: docFQNTMq.info,  Node: Recommended packages,  Next: Bug reports,  Prev: Configuration,  Up: Top
 
 4 Recommended packages
 **********************
@@ -1124,8 +1125,9 @@ I use and recommend this combination of packages:
      Action commands, which can act on the completion candidates
    • orderless (https://github.com/oantolin/orderless): Completion style
      which offers flexible candidate filtering
-   • wgrep (https://github.com/mhayashi1120/Emacs-wgrep): Editing of
-     grep buffers.  Use with ‘consult-grep’ via ‘embark-export’.
+   • wgrep (https://github.com/mhayashi1120/Emacs-wgrep) (or
+     ‘grep-edit-mode’ on Emacs 31): Editing of grep buffers.  Use with
+     ‘consult-grep’ via ‘embark-export’.
 
    There exist multiple fine completion UIs beside Vertico, which are
 supported by Consult.  Give them a try and find out which interaction
@@ -1153,7 +1155,7 @@ Consult wiki.  These packages integrate Consult with special programs or
 with other packages in the wider Emacs ecosystem.
 
 
-File: docMJ7Ey2.info,  Node: Bug reports,  Next: Hacking,  Prev: Recommended packages,  Up: Top
+File: docFQNTMq.info,  Node: Bug reports,  Next: Hacking,  Prev: Recommended packages,  Up: Top
 
 5 Bug reports
 *************
@@ -1218,7 +1220,7 @@ lexical binding
 Consult often relies on lambdas and lexical closures.
 
 
-File: docMJ7Ey2.info,  Node: Hacking,  Next: Contributions,  Prev: Bug reports,  Up: Top
+File: docFQNTMq.info,  Node: Hacking,  Next: Contributions,  Prev: Bug reports,  Up: Top
 
 6 Hacking
 *********
@@ -1229,7 +1231,7 @@ File: docMJ7Ey2.info,  Node: Hacking,  Next: Contributions,  Prev: Bug reports, 
 * Live preview::
 
 
-File: docMJ7Ey2.info,  Node: Creating asynchronous completion commands,  Next: Live preview,  Up: Hacking
+File: docFQNTMq.info,  Node: Creating asynchronous completion commands,  Next: Live preview,  Up: Hacking
 
 6.1 Creating asynchronous completion commands
 =============================================
@@ -1281,7 +1283,7 @@ and ‘consult--process-collection’ can be used for ‘consult--multi’
 sources.  Specify them as ‘:async’ field of the source plist.
 
 
-File: docMJ7Ey2.info,  Node: Live preview,  Prev: Creating asynchronous completion commands,  Up: Hacking
+File: docFQNTMq.info,  Node: Live preview,  Prev: Creating asynchronous completion commands,  Up: Hacking
 
 6.2 Live preview
 ================
@@ -1314,7 +1316,7 @@ action argument.  Once defined, we can use this preview function in
       :state #'testibus--preview)
 
 
-File: docMJ7Ey2.info,  Node: Contributions,  Next: Acknowledgments,  Prev: Hacking,  Up: Top
+File: docFQNTMq.info,  Node: Contributions,  Next: Acknowledgments,  Prev: Hacking,  Up: Top
 
 7 Contributions
 ***************
@@ -1334,7 +1336,7 @@ contribute to the Consult wiki (https://github.com/minad/consult/wiki),
 in case you want to share small configuration or command snippets.
 
 
-File: docMJ7Ey2.info,  Node: Acknowledgments,  Next: Indices,  Prev: Contributions,  Up: Top
+File: docFQNTMq.info,  Node: Acknowledgments,  Next: Indices,  Prev: Contributions,  Up: Top
 
 8 Acknowledgments
 *****************
@@ -1385,7 +1387,7 @@ Manuel Uberti (https://github.com/manuel-uberti/), Stefan Monnier
 (https://protesilaos.com).
 
 
-File: docMJ7Ey2.info,  Node: Indices,  Prev: Acknowledgments,  Up: Top
+File: docFQNTMq.info,  Node: Indices,  Prev: Acknowledgments,  Up: Top
 
 9 Indices
 *********
@@ -1396,7 +1398,7 @@ File: docMJ7Ey2.info,  Node: Indices,  Prev: Acknowledgments,  Up: Top
 * Concept index::                List of all Consult-specific concepts
 
 
-File: docMJ7Ey2.info,  Node: Function index,  Next: Concept index,  Up: Indices
+File: docFQNTMq.info,  Node: Function index,  Next: Concept index,  Up: Indices
 
 9.1 Function index
 ==================
@@ -1455,7 +1457,7 @@ File: docMJ7Ey2.info,  Node: Function index,  Next: Concept index,  Up: Indices
 * consult-yank-replace:                  Editing.               (line 6)
 
 
-File: docMJ7Ey2.info,  Node: Concept index,  Prev: Function index,  Up: Indices
+File: docFQNTMq.info,  Node: Concept index,  Prev: Function index,  Up: Indices
 
 9.2 Concept index
 =================
@@ -1491,38 +1493,38 @@ Tag Table:
 Node: Top221
 Node: Available commands5204
 Node: Virtual Buffers6781
-Node: Editing8655
-Node: Register9511
-Node: Navigation11232
-Node: Search12475
-Node: Grep and Find14386
-Node: Compilation16662
-Node: Histories17360
-Node: Modes18580
-Node: Org Mode19060
-Node: Help19676
-Node: Miscellaneous20880
-Node: Special features22624
-Node: Live previews23753
-Node: Narrowing and grouping27894
-Node: Asynchronous search29897
-Node: Multiple sources32979
-Node: Embark integration37881
-Node: Configuration40076
-Node: Use-package example41226
-Node: Custom variables47719
-Node: Project support51580
-Node: Fine-tuning52845
-Node: Recommended packages55804
-Node: Bug reports57886
-Node: Hacking60967
-Node: Creating asynchronous completion commands61153
-Node: Live preview63118
-Node: Contributions64315
-Node: Acknowledgments65227
-Node: Indices67777
-Node: Function index68015
-Node: Concept index71736
+Node: Editing8666
+Node: Register9522
+Node: Navigation11243
+Node: Search12486
+Node: Grep and Find14397
+Node: Compilation16673
+Node: Histories17371
+Node: Modes18591
+Node: Org Mode19071
+Node: Help19687
+Node: Miscellaneous20891
+Node: Special features22635
+Node: Live previews23764
+Node: Narrowing and grouping27905
+Node: Asynchronous search29908
+Node: Multiple sources32990
+Node: Embark integration37892
+Node: Configuration40112
+Node: Use-package example41262
+Node: Custom variables47755
+Node: Project support51616
+Node: Fine-tuning52881
+Node: Recommended packages55840
+Node: Bug reports57965
+Node: Hacking61046
+Node: Creating asynchronous completion commands61232
+Node: Live preview63197
+Node: Contributions64394
+Node: Acknowledgments65306
+Node: Indices67856
+Node: Function index68094
+Node: Concept index71815
 
 End Tag Table
 

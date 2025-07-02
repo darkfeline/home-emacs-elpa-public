@@ -2,6 +2,21 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Version 2.6 (2025-06-28)
+
+- ~consult--read~, ~consult--prompt~: Accept a ~:command~ keyword argument which
+  specifies the current command symbol to lookup the customization (see
+  ~consult-customize~). This change fixes an issue in ~embark-consult~.
+
+* Version 2.5 (2025-06-05)
+
+- ~consult--source-buffer-register~: New source for buffer registers.
+- ~consult--jump-ensure-buffer~: Reuse window if possible.
+- ~consult-compile-error~: Add prefix argument to jump to error message in the
+  compilation buffer instead of error location.
+- ~consult--read~, ~consult--prompt~: Add ~:command~ keyword argument. Avoid
+  overriding ~this-command~ for ~consult-xref~ and ~consult-completion-in-region~.
+
 * Version 2.4 (2025-05-21)
 
 - ~consult-register-store~: Add =M-b= action to store the buffer in a register.

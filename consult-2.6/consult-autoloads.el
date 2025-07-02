@@ -294,9 +294,12 @@ the asynchronous search.
 (autoload 'consult-compile-error "consult-compile" "\
 Jump to a compilation error in the current buffer.
 
-This command collects entries from compilation buffers and grep
-buffers related to the current buffer.  The command supports
-preview of the currently selected error." t)
+This command collects entries from compilation buffers and grep buffers
+related to the current buffer.  The command supports preview of the
+currently selected error.  With prefix ARG, jump to the error message in
+the compilation buffer, instead of to the actual location of the error.
+
+(fn &optional ARG)" t)
 (register-definition-prefixes "consult-compile" '("consult-compile--"))
 
 
@@ -387,8 +390,9 @@ Enhanced drop-in replacement for `register-preview'.
 
 BUFFER is the window buffer.
 SHOW-EMPTY must be t if the window should be shown for an empty register list.
+Optional argument PRED specifies the types of register to show.
 
-(fn BUFFER &optional SHOW-EMPTY)")
+(fn BUFFER &optional SHOW-EMPTY PRED)")
 (autoload 'consult-register-format "consult-register" "\
 Enhanced preview of register REG.
 This function can be used as `register-preview-function'.
