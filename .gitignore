@@ -3,6 +3,9 @@
 
 *.elc
 
+/vterm-*/build/
+/vterm-*/vterm-module.so
+
 # VC packages
 /easydraw
 /go-mode
