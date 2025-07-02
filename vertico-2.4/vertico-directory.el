@@ -5,8 +5,8 @@
 ;; Author: Daniel Mendler <mail@daniel-mendler.de>
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2021
-;; Version: 2.2
-;; Package-Requires: ((emacs "28.1") (compat "30") (vertico "2.2"))
+;; Version: 2.4
+;; Package-Requires: ((emacs "28.1") (compat "30") (vertico "2.4"))
 ;; URL: https://github.com/minad/vertico
 
 ;; This file is part of GNU Emacs.
@@ -28,12 +28,21 @@
 
 ;; This package is a Vertico extension, which provides Ido-like
 ;; directory navigation commands.  The commands can be bound in the
-;; `vertico-map'.  Furthermore a cleanup function for shadowed file
-;; paths is provided.
+;; `vertico-map'.
 ;;
 ;; (keymap-set vertico-map "RET" #'vertico-directory-enter)
 ;; (keymap-set vertico-map "DEL" #'vertico-directory-delete-char)
 ;; (keymap-set vertico-map "M-DEL" #'vertico-directory-delete-word)
+;;
+;; Alternatively use `vertico-directory-map' together with
+;; `vertico-multiform-mode'.
+;;
+;; (setq vertico-multiform-categories
+;;       '((file (:keymap . vertico-directory-map)))
+;; (vertico-multiform-mode)
+;;
+;; Furthermore a cleanup function for shadowed file paths is provided.
+;;
 ;; (add-hook 'rfn-eshadow-update-overlay-hook #'vertico-directory-tidy)
 
 ;;; Code:
@@ -113,6 +122,15 @@ Exit with current input if prefix ARG is given."
                  (= (point) (point-max))
                  (> (point) (overlay-end ov)))
         (delete-region (overlay-start ov) (overlay-end ov))))))
+
+(defvar-keymap vertico-directory-map
+  :doc "File name editing map."
+  "RET" #'vertico-directory-enter
+  "DEL" #'vertico-directory-delete-char
+  "M-DEL" #'vertico-directory-delete-word)
+
+;;;###autoload (autoload 'vertico-directory-map "vertico-directory" nil t 'keymap)
+(defalias 'vertico-directory-map vertico-directory-map)
 
 (provide 'vertico-directory)
 ;;; vertico-directory.el ends here

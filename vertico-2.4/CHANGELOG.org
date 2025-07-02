@@ -2,6 +2,21 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Version 2.4 (2025-06-27)
+
+- New function =vertico-sort-directories-first= which sorts a list of file names,
+  with directories coming first.
+- =vertico-multiform-mode=: Add =:keymap= setting per command or completion
+  category. Either specify a list of key bindings or a keymap directly.
+- Disable =completion-eager-display= if Vertico is active.
+
+* Version 2.3 (2025-06-10)
+
+- =vertico-multiform-mode=: Add context menu to change display mode. First enable
+  =vertico-multiform-mode= and =context-menu-mode=. The menu will appear with a
+  right click in the Vertico minibuffer.
+- Hide fringe line truncation indicators in the minibuffer.
+
 * Version 2.2 (2025-05-26)
 
 - Guard Vertico hooks to automatically print stack traces in order to ease

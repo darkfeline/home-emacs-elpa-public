@@ -5,8 +5,8 @@
 ;; Author: Daniel Mendler <mail@daniel-mendler.de>
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2021
-;; Version: 2.2
-;; Package-Requires: ((emacs "28.1") (compat "30") (vertico "2.2"))
+;; Version: 2.4
+;; Package-Requires: ((emacs "28.1") (compat "30") (vertico "2.4"))
 ;; URL: https://github.com/minad/vertico
 
 ;; This file is part of GNU Emacs.
@@ -56,6 +56,7 @@
 (defvar-keymap vertico-mouse-map
   :doc "Additional keymap activated in mouse mode."
   "<mouse-1>" (vertico-mouse--click "RET")
+  "<mouse-2>" (vertico-mouse--click "TAB")
   "<mouse-3>" (vertico-mouse--click "TAB"))
 (fset 'vertico-mouse-map vertico-mouse-map)
 

@@ -5,7 +5,7 @@
 ;; Author: Daniel Mendler <mail@daniel-mendler.de>
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2021
-;; Version: 2.2
+;; Version: 2.4
 ;; Package-Requires: ((emacs "28.1") (compat "30"))
 ;; URL: https://github.com/minad/vertico
 ;; Keywords: convenience, files, matching, completion
@@ -479,7 +479,7 @@ The value should lie between 0 and vertico-count/2."
   "Protect FUN such that errors are caught.
 If an error occurs, the FUN is retried with `debug-on-error' enabled and
 the stack trace is shown in the *Messages* buffer."
-  (static-if (>= emacs-major-version 30)
+  (static-if (fboundp 'handler-bind) ;; Available on Emacs 30
       (ignore-errors
         (handler-bind ((error #'vertico--debug))
           (funcall fun)))
@@ -612,6 +612,7 @@ the stack trace is shown in the *Messages* buffer."
               vertico--input t
               completion-auto-help nil
               completion-show-inline-help nil
+              fringe-indicator-alist '((continuation) (truncation))
               vertico--candidates-ov (make-overlay (point-max) (point-max) nil t t)
               vertico--count-ov (make-overlay (point-min) (point-min) nil t t))
   (overlay-put vertico--count-ov 'priority 1) ;; For `minibuffer-depth-indicate-mode'
@@ -621,7 +622,8 @@ the stack trace is shown in the *Messages* buffer."
 
 (cl-defgeneric vertico--advice (&rest app)
   "Advice for completion function, apply APP."
-  (minibuffer-with-setup-hook #'vertico--setup (apply app)))
+  (dlet ((completion-eager-display nil)) ;; Available on Emacs 31
+    (minibuffer-with-setup-hook #'vertico--setup (apply app))))
 
 (defun vertico-first ()
   "Go to first candidate, or to the prompt when the first candidate is selected."

@@ -101,6 +101,9 @@ to take advantage of ~use-package~. Here is an example configuration:
 ;; Emacs minibuffer configurations.
 (use-package emacs
   :custom
+  ;; Enable context menu. `vertico-multiform-mode' adds a menu in the minibuffer
+  ;; to switch display modes.
+  (context-menu-mode t)
   ;; Support opening new minibuffers from inside existing minibuffers.
   (enable-recursive-minibuffers t)
   ;; Hide commands in M-x which do not work in the current mode.  Vertico
@@ -210,10 +213,10 @@ even use Corfu in the minibuffer.
 
 The function ~completing-read-multiple~ is similar to ~completing-read~ but returns
 a list of completed strings. The strings are separated by ~crm-separator~ in the
-minibuffer. However ~completing-read-multiple~ does not indicate to the user that
-multiple strings can be completed. I have contributed a patch to Emacs 31, which
-fixes this minor issue. See the variable ~crm-prompt~ and [[https://debbugs.gnu.org/cgi/bugreport.cgi?bug=76028][bug#76028]]. On older
-Emacs versions you can use the following:
+minibuffer. On Emacs 30 and older, ~completing-read-multiple~ does not indicate to
+the user that multiple strings can be completed. I have contributed a patch to
+Emacs 31, which fixes this issue. See the variable ~crm-prompt~ and [[https://debbugs.gnu.org/cgi/bugreport.cgi?bug=76028][bug#76028]]. On
+older Emacs versions you can use the following advice:
 
 #+begin_src emacs-lisp
 ;; Prompt indicator for `completing-read-multiple'.
@@ -337,17 +340,26 @@ Furthermore you can tune buffer-local settings per command or category.
 ;; Change the default sorting function.
 ;; See `vertico-sort-function' and `vertico-sort-override-function'.
 (setq vertico-multiform-commands
-      '((describe-symbol (vertico-sort-function . vertico-sort-alpha))))
+      '((describe-symbol (vertico-sort-function . vertico-sort-alpha))
+        (execute-extended-command (:keymap "X" execute-extended-command-cycle))))
 
 (setq vertico-multiform-categories
       '((symbol (vertico-sort-function . vertico-sort-alpha))
-        (file (vertico-sort-function . sort-directories-first))))
+        (file (vertico-sort-function . vertico-sort-directories-first)
+              (:keymap . vertico-directory-map))))
+#+end_src
 
-;; Sort directories before files
-(defun sort-directories-first (files)
-  (setq files (vertico-sort-history-length-alpha files))
-  (nconc (seq-filter (lambda (x) (string-suffix-p "/" x)) files)
-         (seq-remove (lambda (x) (string-suffix-p "/" x)) files)))
+Key maps or key bindings can be set per command or category.
+
+#+begin_src emacs-lisp
+;; Bind "X" to `execute-extended-command-cycle' in M-x.
+(setq vertico-multiform-commands
+      '((execute-extended-command (:keymap "X" execute-extended-command-cycle))))
+
+;; Bind directory commands for all commands in file category.
+(setq vertico-multiform-categories
+      '((file (vertico-sort-function . vertico-sort-directories-first)
+              (:keymap . vertico-directory-map))))
 #+end_src
 
 Combining these features allows us to fine-tune the completion display even more
@@ -570,9 +582,8 @@ can be completed separately. Ideally this issue would be fixed in Org.
 
 ** ~tmm-menubar~
 
-*NOTE*: I have implemented a fix for this problem which is part of Emacs 31. You
-can set ~completion-eager-display~ to ~nil~ in your configuration. See [[https://debbugs.gnu.org/cgi/bugreport.cgi?bug=74616][bug#74616]] for
-the upstream bug report.
+*NOTE*: I have implemented a fix for this problem upstream in Emacs, see
+[[https://debbugs.gnu.org/cgi/bugreport.cgi?bug=74616][bug#74616]]. From Emacs 31 and newer the workaround is not needed anymore.
 
 The text menu bar works well with Vertico but always shows a =*Completions*=
 buffer, which is unwanted if Vertico is used. Right now the completion buffer
@@ -586,9 +597,8 @@ prefer the Vertico interface you may also overwrite the default F10 keybinding.
 
 ** ~ffap-menu~
 
-*NOTE*: I have implemented a fix for this problem which is part of Emacs 31. You
-can set ~completion-eager-display~ to ~nil~ in your configuration. See [[https://debbugs.gnu.org/cgi/bugreport.cgi?bug=74616][bug#74616]] for
-the upstream bug report.
+*NOTE*: I have implemented a fix for this problem upstream in Emacs, see
+[[https://debbugs.gnu.org/cgi/bugreport.cgi?bug=74616][bug#74616]]. From Emacs 31 and newer the workaround is not needed anymore.
 
 The command ~ffap-menu~ shows the =*Completions*= buffer by default like
 ~tmm-menubar~, which is unwanted if Vertico is used. The completions buffer can be

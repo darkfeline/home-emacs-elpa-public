@@ -5,8 +5,8 @@
 ;; Author: Daniel Mendler <mail@daniel-mendler.de>
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2021
-;; Version: 2.2
-;; Package-Requires: ((emacs "28.1") (compat "30") (vertico "2.2"))
+;; Version: 2.4
+;; Package-Requires: ((emacs "28.1") (compat "30") (vertico "2.4"))
 ;; URL: https://github.com/minad/vertico
 
 ;; This file is part of GNU Emacs.
@@ -123,6 +123,13 @@ The function is configured by BY, BSIZE, BINDEX, BPRED and PRED."
 (vertico-sort--define (history alpha) 32 (if (equal % "") 0 (/ (aref % 0) 4)) string< string<)
 (vertico-sort--define (length alpha) 48 (length %) string< vertico-sort--length-string<)
 (vertico-sort--define (alpha) 32 (if (equal % "") 0 (/ (aref % 0) 4)) string< string<)
+
+;;;###autoload
+(defun vertico-sort-directories-first (list)
+  "Sort directories before files in LIST."
+  (setq list (vertico-sort-history-length-alpha list))
+  (nconc (cl-loop for x in list if (string-suffix-p "/" x) collect x)
+         (cl-loop for x in list if (not (string-suffix-p "/" x)) collect x)))
 
 (provide 'vertico-sort)
 ;;; vertico-sort.el ends here
