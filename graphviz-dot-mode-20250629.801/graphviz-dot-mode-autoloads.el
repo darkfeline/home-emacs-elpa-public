@@ -14,7 +14,7 @@
 (autoload 'graphviz-dot-mode "graphviz-dot-mode" "\
 Major mode for the dot language.
 
-Functionallity specific to this mode:
+Functionality specific to this mode:
 
   `indent-for-tab-command'    \\[indent-for-tab-command]
         Indents a single line.
