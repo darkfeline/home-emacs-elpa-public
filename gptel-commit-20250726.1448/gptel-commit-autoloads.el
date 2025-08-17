@@ -12,9 +12,9 @@
 ;;; Generated autoloads from gptel-commit.el
 
 (autoload 'gptel-commit "gptel-commit" "\
-Generate commit message with gptel." t)
+Generate commit message with configured backend (GPTel or Claude Code)." t)
 (autoload 'gptel-commit-rationale "gptel-commit" "\
-Prompt user for rationale and generate commit message with GPTel." t)
+Prompt user for rationale and generate commit message with configured backend." t)
 (register-definition-prefixes "gptel-commit" '("gptel-commit-"))
 
 ;;; End of scraped data
