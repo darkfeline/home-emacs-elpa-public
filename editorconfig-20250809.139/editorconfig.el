@@ -3,8 +3,8 @@
 ;; Copyright (C) 2011-2024 EditorConfig Team
 
 ;; Author: EditorConfig Team <editorconfig@googlegroups.com>
-;; Package-Version: 20250219.1528
-;; Package-Revision: 1a9942746cf5
+;; Package-Version: 20250809.139
+;; Package-Revision: 0c2d853aff14
 ;; URL: https://github.com/editorconfig/editorconfig-emacs#readme
 ;; Package-Requires: ((emacs "27.2"))
 ;; Keywords: convenience editorconfig
@@ -237,6 +237,7 @@ This hook will be run even when there are no matching sections in
                   java-ts-mode-indent-offset)
     (js-mode js-indent-level)
     (js-ts-mode js-indent-level)
+    (js-json-mode js-indent-level)
     (js-jsx-mode js-indent-level sgml-basic-offset)
     (js2-mode js2-basic-offset)
     (js2-jsx-mode js2-basic-offset sgml-basic-offset)
