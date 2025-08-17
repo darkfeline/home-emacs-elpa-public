@@ -112,7 +112,7 @@ If the buffer runs `dired', the buffer is reverted." t)
 Visit the file or directory named on this line as the superuser.
 
 By default this is done using the \"sudo\" Tramp method.
-YOu can customize `tramp-file-name-with-method' to change this.
+You can customize `tramp-file-name-with-method' to change this.
 
 Interactively, with a prefix argument, prompt for a different method." t)
 (register-definition-prefixes "tramp-cmds" '("tramp-" "with-tramp-file-name-with-method"))
