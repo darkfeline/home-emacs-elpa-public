@@ -22790,7 +22790,7 @@ sources when reading a document.  To that effect, you can use
 a bookmark with the following location:
 
 @example
-javascript:location.href='org-protocol://open-source?&url='+
+javascript:location.href='org-protocol://open-source?url='+
       encodeURIComponent(location.href);void(0)
 @end example
 

@@ -18701,7 +18701,7 @@ The ‘open-source’ handler is designed to help with editing local sources
 when reading a document.  To that effect, you can use a bookmark with
 the following location:
 
-     javascript:location.href='org-protocol://open-source?&url='+
+     javascript:location.href='org-protocol://open-source?url='+
            encodeURIComponent(location.href);void(0)
 
    The variable ‘org-protocol-project-alist’ maps URLs to local file
@@ -24987,49 +24987,49 @@ Node: Protocols778330
 Node: The store-link protocol779791
 Node: The capture protocol780950
 Node: The open-source protocol782611
-Node: Org Crypt785862
-Node: Org Mobile787737
-Node: Setting up the staging area789128
-Ref: Setting up the staging area-Footnote-1790368
-Ref: Setting up the staging area-Footnote-2790575
-Node: Pushing to the mobile application790747
-Ref: Pushing to the mobile application-Footnote-1791758
-Ref: Pushing to the mobile application-Footnote-2791849
-Ref: Pushing to the mobile application-Footnote-3792216
-Node: Pulling from the mobile application792292
-Ref: Pulling from the mobile application-Footnote-1794605
-Node: Drag and Drop & yank-media794658
-Ref: Drag and Drop & yank-media-Footnote-1796287
-Node: Hacking796435
-Node: Hooks797385
-Node: Add-on Packages797669
-Node: Adding Hyperlink Types798138
-Node: Adding Export Backends801950
-Node: Tables in Arbitrary Syntax803195
-Node: Radio tables804463
-Node: A LaTeX example806600
-Ref: A LaTeX example-Footnote-1810452
-Ref: A LaTeX example-Footnote-2810495
-Ref: A LaTeX example-Footnote-3810656
-Node: Translator functions811108
-Node: Dynamic Blocks813290
-Node: Special Agenda Views815536
-Ref: Special Agenda Views-Footnote-1819247
-Ref: Special Agenda Views-Footnote-2819453
-Node: Speeding Up Your Agendas819585
-Node: Extracting Agenda Information820808
-Node: Using the Property API824613
-Node: Using the Mapping API827962
-Node: History and Acknowledgments831995
-Ref: From Carsten832193
-Ref: From Bastien835632
-Ref: List of Contributions837764
-Node: GNU Free Documentation License846426
-Ref: ADDENDUM How to use this License for your documents870384
-Node: Main Index871777
-Node: Key Index972331
-Node: Command and Function Index1029554
-Node: Variable Index1078351
+Node: Org Crypt785861
+Node: Org Mobile787736
+Node: Setting up the staging area789127
+Ref: Setting up the staging area-Footnote-1790367
+Ref: Setting up the staging area-Footnote-2790574
+Node: Pushing to the mobile application790746
+Ref: Pushing to the mobile application-Footnote-1791757
+Ref: Pushing to the mobile application-Footnote-2791848
+Ref: Pushing to the mobile application-Footnote-3792215
+Node: Pulling from the mobile application792291
+Ref: Pulling from the mobile application-Footnote-1794604
+Node: Drag and Drop & yank-media794657
+Ref: Drag and Drop & yank-media-Footnote-1796286
+Node: Hacking796434
+Node: Hooks797384
+Node: Add-on Packages797668
+Node: Adding Hyperlink Types798137
+Node: Adding Export Backends801949
+Node: Tables in Arbitrary Syntax803194
+Node: Radio tables804462
+Node: A LaTeX example806599
+Ref: A LaTeX example-Footnote-1810451
+Ref: A LaTeX example-Footnote-2810494
+Ref: A LaTeX example-Footnote-3810655
+Node: Translator functions811107
+Node: Dynamic Blocks813289
+Node: Special Agenda Views815535
+Ref: Special Agenda Views-Footnote-1819246
+Ref: Special Agenda Views-Footnote-2819452
+Node: Speeding Up Your Agendas819584
+Node: Extracting Agenda Information820807
+Node: Using the Property API824612
+Node: Using the Mapping API827961
+Node: History and Acknowledgments831994
+Ref: From Carsten832192
+Ref: From Bastien835631
+Ref: List of Contributions837763
+Node: GNU Free Documentation License846425
+Ref: ADDENDUM How to use this License for your documents870383
+Node: Main Index871776
+Node: Key Index972330
+Node: Command and Function Index1029553
+Node: Variable Index1078350
 
 End Tag Table
 
