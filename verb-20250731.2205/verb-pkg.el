@@ -1,10 +1,10 @@
 ;; -*- no-byte-compile: t; lexical-binding: nil -*-
-(define-package "verb" "20250318.2150"
+(define-package "verb" "20250731.2205"
   "Organize and send HTTP requests."
   '((emacs "26.3"))
   :url "https://github.com/federicotdn/verb"
-  :commit "2e778afd08b8a9872b8273528052f52d53c2bd45"
-  :revdesc "2e778afd08b8"
+  :commit "e818377f2ceddf5670dcd9a32d3de0e8bf82a8f1"
+  :revdesc "e818377f2ced"
   :keywords '("tools")
   :authors '(("Federico Tedin" . "federicotedin@gmail.com"))
   :maintainers '(("Federico Tedin" . "federicotedin@gmail.com")))

@@ -20,7 +20,7 @@ Major mode for displaying HTTP responses with Babel.
 
 ;;; Generated autoloads from verb.el
 
-(defvar verb-command-map (let ((map (make-sparse-keymap))) (define-key map (kbd "C-s") #'verb-send-request-on-point-other-window) (define-key map (kbd "C-r") #'verb-send-request-on-point-other-window-stay) (define-key map (kbd "C-<return>") #'verb-send-request-on-point-no-window) (define-key map (kbd "C-f") #'verb-send-request-on-point) (define-key map (kbd "C-k") #'verb-kill-all-response-buffers) (define-key map (kbd "C-e") #'verb-export-request-on-point) (define-key map (kbd "C-v") #'verb-set-var) (define-key map (kbd "C-x") #'verb-show-vars) map) "\
+(defvar verb-command-map (let ((map (make-sparse-keymap))) (define-key map (kbd "C-s") #'verb-send-request-on-point-other-window) (define-key map (kbd "C-r") #'verb-send-request-on-point-display) (define-key map (kbd "C-<return>") #'verb-send-request-on-point-no-window) (define-key map (kbd "C-f") #'verb-send-request-on-point) (define-key map (kbd "C-k") #'verb-kill-all-response-buffers) (define-key map (kbd "C-e") #'verb-export-request-on-point) (define-key map (kbd "C-v") #'verb-set-var) (define-key map (kbd "C-x") #'verb-show-vars) map) "\
 Keymap for `verb-mode' commands.
 Bind this to an easy-to-reach key in Org mode in order to use Verb
 comfortably.  All commands listed in this keymap automatically enable
@@ -56,7 +56,7 @@ Show the results on another window and switch to it, using
 description of prefix argument ARG.
 
 (fn &optional ARG)" t)
-(autoload 'verb-send-request-on-point-other-window-stay "verb" "\
+(autoload 'verb-send-request-on-point-display "verb" "\
 Send the request specified by the selected heading's text contents.
 Show the results on another window but don't switch to it, using
 `verb-send-request-on-point'.  See that function's documentation for a
