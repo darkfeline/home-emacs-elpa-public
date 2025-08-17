@@ -5,7 +5,7 @@
 ;; Author: Omar Antolín Camarena <omar@matem.unam.mx>, Daniel Mendler <mail@daniel-mendler.de>
 ;; Maintainer: Omar Antolín Camarena <omar@matem.unam.mx>, Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2020
-;; Version: 2.1
+;; Version: 2.2
 ;; Package-Requires: ((emacs "28.1") (compat "30"))
 ;; URL: https://github.com/minad/marginalia
 ;; Keywords: docs, help, matching, completion
@@ -906,7 +906,10 @@ The string is transformed according to `marginalia--bookmark-type-transforms'."
 
 (defun marginalia-annotate-buffer (cand)
   "Annotate buffer CAND with modification status, file name and major mode."
-  (when-let ((buffer (get-buffer cand)))
+  ;; Emacs 31: `project--read-project-buffer' uses `uniquify-get-unique-names'
+  (when-let ((buffer (or (and (stringp cand)
+                              (get-text-property 0 'uniquify-orig-buffer cand))
+                         (get-buffer cand))))
     (if (buffer-live-p buffer)
         (marginalia--fields
          ((marginalia--buffer-status buffer))
@@ -1350,10 +1353,9 @@ Remember `this-command' for `marginalia-classify-by-command-name'."
   "Get completion metadata."
   (let* ((end (minibuffer-prompt-end))
          (pt (max 0 (- (point) end))))
-    (and (minibufferp)
-         (completion-metadata (buffer-substring-no-properties end (+ end pt))
-                              minibuffer-completion-table
-                              minibuffer-completion-predicate))))
+    (completion-metadata (buffer-substring-no-properties end (+ end pt))
+                         minibuffer-completion-table
+                         minibuffer-completion-predicate)))
 
 (defun marginalia--builtin-annotator-p (md)
   "Builtin annotator available in metadata MD?"
@@ -1393,8 +1395,10 @@ Remember `this-command' for `marginalia-classify-by-command-name'."
                      if (or (not (eq fun 'builtin)) (marginalia--builtin-annotator-p md))
                      collect
                      (vector
-                      (capitalize (replace-regexp-in-string
-                                   ".*?-+annotate-+" "" (symbol-name fun)))
+                      (thread-last (symbol-name fun)
+                                   (replace-regexp-in-string ".*?-+annotate-+" "")
+                                   (replace-regexp-in-string "-+" " ")
+                                   capitalize)
                       (let ((i i))
                         (lambda ()
                           (interactive)
