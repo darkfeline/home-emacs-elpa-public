@@ -24,8 +24,8 @@
 ;; Homepage: https://ppareit.github.io/graphviz-dot-mode/
 ;; Created: 28 Oct 2002
 ;; Last modified: 25 Januari 2020
-;; Package-Version: 20250629.801
-;; Package-Revision: 45338857d0ad
+;; Package-Version: 20250715.1358
+;; Package-Revision: 2c7ba85d19cb
 ;; Package-Requires: ((emacs "25.0"))
 ;; Keywords: mode dot dot-language dotlanguage graphviz graphs att
 
@@ -54,6 +54,10 @@
 (require 'subr-x)
 (require 'thingatpt)
 
+;; add optionally flycheck support, will not error if not installed
+(eval-when-compile
+  (require 'flycheck nil t))
+
 (defconst graphviz-dot-mode-version "0.4.2"
   "Version of `graphviz-dot-mode.el'.")
 
@@ -78,7 +82,7 @@
 (defcustom graphviz-dot-layout-programs
   '("dot" "neato" "fdp" "sfdp" "twopi" "twopi" "circo")
   "*List of layout programs for the user to choose from."
-  :type 'list
+  :type '(repeat (string :tag "Program"))
   :group 'graphviz)
 
 (defcustom graphviz-dot-view-command "dotty %s"
@@ -112,11 +116,6 @@ file.dot -o file.png'."
 (defcustom graphviz-dot-auto-preview-on-save nil
   "*Determines if saving the buffer should automatically trigger preview."
   :type 'boolean
-  :group 'graphviz)
-
-(defcustom graphviz-dot-revert-delay 300
-  "*Amount of time to sleep before attempting to display the rendered image."
-  :type 'number
   :group 'graphviz)
 
 (defcustom graphviz-dot-attr-keywords
@@ -667,7 +666,19 @@ Variables specific to this mode:
 	    'local)
   (run-hooks 'graphviz-dot-mode-hook))
 
+
+;;;;
+;;;; Syntax Checking with flycheck
+;;;;
+
+
+;; only require the graphviz-dot-flycheck support if flycheck was loaded
+(with-eval-after-load 'flycheck
+  (require 'graphviz-dot-flycheck))
+
+;;;;
 ;;;; Menu definitions
+;;;;
 
 (and (condition-case nil
          (require 'easymenu)
@@ -837,6 +848,7 @@ representing the current buffer's point where the graph definition starts
                               ,(format "-T%s" graphviz-dot-preview-extension))
                    :buffer stdout
                    :stderr stderr
+                   :connection-type 'pipe
                    :coding 'binary
                    :sentinel
                    (lambda (_ event)

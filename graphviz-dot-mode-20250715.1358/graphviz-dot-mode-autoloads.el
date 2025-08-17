@@ -9,6 +9,11 @@
 
 
 
+;;; Generated autoloads from graphviz-dot-flycheck.el
+
+(register-definition-prefixes "graphviz-dot-flycheck" '("graphviz-dot--"))
+
+
 ;;; Generated autoloads from graphviz-dot-mode.el
 
 (autoload 'graphviz-dot-mode "graphviz-dot-mode" "\
