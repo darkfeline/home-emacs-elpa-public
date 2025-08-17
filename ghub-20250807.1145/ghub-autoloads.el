@@ -28,6 +28,11 @@ and call `auth-source-forget+'." t)
 (register-definition-prefixes "ghub-graphql" '("ghub-"))
 
 
+;;; Generated autoloads from ghub-legacy.el
+
+(register-definition-prefixes "ghub-legacy" '("ghub-fetch-repository"))
+
+
 ;;; Generated autoloads from gsexp.el
 
 (register-definition-prefixes "gsexp" '("gsexp-"))
