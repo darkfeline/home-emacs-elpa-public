@@ -6,12 +6,11 @@
 ;; Homepage: https://github.com/magit/ghub
 ;; Keywords: tools
 
-;; Package-Version: 20250807.1145
-;; Package-Revision: 1affd93e6f87
+;; Package-Version: 20250823.2101
+;; Package-Revision: 8d6f6e5d949f
 ;; Package-Requires: (
 ;;     (emacs "29.1")
 ;;     (compat "30.1")
-;;     (let-alist "1.0.6")
 ;;     (llama "1.0")
 ;;     (treepy "0.1.2"))
 
