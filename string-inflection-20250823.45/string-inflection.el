@@ -4,8 +4,8 @@
 
 ;; Author: akicho8 <akicho8@gmail.com>
 ;; Keywords: elisp
-;; Package-Version: 20250719.829
-;; Package-Revision: 12be9891e6a8
+;; Package-Version: 20250823.45
+;; Package-Revision: e56f40737b69
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
