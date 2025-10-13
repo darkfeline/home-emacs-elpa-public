@@ -4,8 +4,8 @@
 
 ;; Author: akicho8 <akicho8@gmail.com>
 ;; Keywords: elisp
-;; Package-Version: 20250823.45
-;; Package-Revision: e56f40737b69
+;; Package-Version: 20250831.53
+;; Package-Revision: 67767a8239c2
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -135,6 +135,14 @@ Use it like this:
           (skip-chars-forward "_-")
           (point))))
 
+(defcustom string-inflection-region-selection-behavior 'replace-all-spaces-with-underscores
+  "Behavior applied when a region is selected.
+- `underscore`        : Replace consecutive whitespace with a single underscore.
+- `apply-to-symbols`  : Apply conversion to each symbol in the region (no automatic underscore replacement)."
+  :type '(choice (const :tag "Convert whitespace to underscore" replace-all-spaces-with-underscores)
+                 (const :tag "Apply to each symbols in the region" apply-to-each-symbols))
+  :group 'string-inflection)
+
 ;; --------------------------------------------------------------------------------
 
 ;;;###autoload
@@ -233,10 +241,23 @@ For these reasons, this method should not be used as part of your regular workfl
         (forward-symbol 1)))
     symbol-num))
 
+(defun string-inflection-replace-all-spaces-with-underscores (start end)
+  "Replace all whitespace characters in the region with underscores."
+  (interactive "r")
+  (save-excursion
+    (save-restriction
+      (narrow-to-region start end)
+      (goto-char (point-min))
+      (while (re-search-forward "[[:space:]]+" nil t)
+        (replace-match "_"))))
+  (deactivate-mark))
+
 (defun string-inflection--symbol-or-region (inflect-func)
   "Perform INFLECT-FUNC depending on if in region or symbol."
   (if (use-region-p)
-      (string-inflection--region inflect-func)
+      (if (and (eq string-inflection-region-selection-behavior 'replace-all-spaces-with-underscores))
+          (string-inflection-replace-all-spaces-with-underscores (region-beginning) (region-end))
+        (string-inflection--region inflect-func))
     (string-inflection--symbol inflect-func)))
 
 (defun string-inflection--symbol (inflect-func)
