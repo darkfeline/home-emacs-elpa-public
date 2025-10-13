@@ -20,7 +20,7 @@ asking the user for the correct information again.
 
 Set `url-http-real-basic-auth-storage' to nil
 and call `auth-source-forget+'." t)
-(register-definition-prefixes "ghub" '("ghub-"))
+(register-definition-prefixes "ghub" '("auth-source-netrc-parse" "ghub-"))
 
 
 ;;; Generated autoloads from ghub-graphql.el

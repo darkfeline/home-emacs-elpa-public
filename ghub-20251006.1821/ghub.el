@@ -6,12 +6,12 @@
 ;; Homepage: https://github.com/magit/ghub
 ;; Keywords: tools
 
-;; Package-Version: 20250823.2101
-;; Package-Revision: 8d6f6e5d949f
+;; Package-Version: 20251006.1821
+;; Package-Revision: 6dc4ff700fc5
 ;; Package-Requires: (
-;;     (emacs "29.1")
-;;     (compat "30.1")
-;;     (llama "1.0")
+;;     (emacs   "29.1")
+;;     (compat  "30.1")
+;;     (llama    "1.0")
 ;;     (treepy "0.1.2"))
 
 ;; SPDX-License-Identifier: GPL-3.0-or-later
@@ -784,8 +784,7 @@ or (info \"(ghub)Getting Started\") for instructions."
 
 (defun ghub--auth-source-get (keys &rest spec)
   (declare (indent 1))
-  (if-let ((plist (car (apply #'auth-source-search
-                              (append spec (list :max 1))))))
+  (if-let ((plist (car (apply #'auth-source-search spec))))
       (if (keywordp keys)
           (plist-get plist keys)
         (mapcar (##plist-get plist %) keys))
@@ -794,6 +793,14 @@ or (info \"(ghub)Getting Started\") for instructions."
     ;; trying, by invalidating that information.
     (auth-source-forget spec)
     nil))
+
+(define-advice auth-source-netrc-parse (:around (fn &rest args) handle-symlink)
+  "Follow symlinks for FILE before comparing modification times."
+  (let ((file (plist-get args :file)))
+    (when (and (stringp file)
+               (file-exists-p file))
+      (setq args (plist-put args :file (file-chase-links file)))))
+  (apply fn args))
 
 (defun ghub--git-get (var)
   (catch 'non-zero
