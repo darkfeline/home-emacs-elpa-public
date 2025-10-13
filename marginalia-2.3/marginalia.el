@@ -5,7 +5,7 @@
 ;; Author: Omar Antolín Camarena <omar@matem.unam.mx>, Daniel Mendler <mail@daniel-mendler.de>
 ;; Maintainer: Omar Antolín Camarena <omar@matem.unam.mx>, Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2020
-;; Version: 2.2
+;; Version: 2.3
 ;; Package-Requires: ((emacs "28.1") (compat "30"))
 ;; URL: https://github.com/minad/marginalia
 ;; Keywords: docs, help, matching, completion
@@ -109,6 +109,7 @@ displayed instead."
      (bookmark ,#'marginalia-annotate-bookmark)
      (file ,#'marginalia-annotate-file)
      (project-file ,#'marginalia-annotate-project-file)
+     (project-buffer ,#'marginalia-annotate-buffer)
      (buffer ,#'marginalia-annotate-buffer)
      (library ,#'marginalia-annotate-library)
      (theme ,#'marginalia-annotate-theme)
@@ -938,7 +939,8 @@ component of a full file path."
 The return value is a string describing the remote location,
 e.g., the protocol."
   (save-match-data
-    (setq file (substitute-in-file-name file))
+    (setq file (let (file-name-handler-alist)
+                 (substitute-in-file-name file)))
     (cl-loop for r in marginalia-remote-file-regexps
              if (string-match r file)
              return (or (match-string 1 file) "remote"))))
