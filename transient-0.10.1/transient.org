@@ -7,7 +7,7 @@
 #+texinfo_dir_category: Emacs misc features
 #+texinfo_dir_title: Transient: (transient).
 #+texinfo_dir_desc: Transient Commands
-#+subtitle: for version 0.9.4
+#+subtitle: for version 0.10.1
 
 #+setupfile: .orgconfig
 
@@ -20,7 +20,7 @@ resource to get over that hurdle is Psionic K's interactive tutorial,
 available at https://github.com/positron-solutions/transient-showcase.
 
 #+texinfo: @noindent
-This manual is for Transient version 0.9.4.
+This manual is for Transient version 0.10.1.
 
 #+texinfo: @insertcopying
 :END:
@@ -1494,14 +1494,27 @@ function, which for infix arguments serves about the same purpose as
   command was not invoked from {{{var(PREFIX)}}}, then it returns the set, saved
   or default value for {{{var(PREFIX)}}}.
 
+  PREFIX may also be a list of prefixes.  If no prefix is active, the
+  fallback value of the first of these prefixes is used.
+
+  The generic function ~transient-prefix-value~ is used to determine the
+  returned value.
+
+  This function is intended to be used by suffix commands, whether they
+  are invoked from a menu or not.  It is not intended to be used when
+  setting up a menu and its suffixes, in which case ~transient-get-value~
+  should be used.
+
 - Function: transient-get-value ::
 
-  This function returns the value of the current prefix.
+  This function returns the value of the erant prefix.
 
-  This is mostly intended for internal use, but may also be of use
-  in ~transient-set-value~ and ~transient-save-value~ methods.  Unlike
-  ~transient-args~, this does not include the values of suffixes whose
-  ~unsavable~ slot is non-~nil~.
+  This function is intended to be used when setting up a menu and its
+  suffixes.  It is not intended to be used when a suffix command is
+  invoked, whether from a menu or not, in which case ~transient-args~
+  should be used.  In other words, use this, e.g., in a suffixes ~:if*~
+  or ~:inapt-if*~ predicate and ~:description~ function, but never in its
+  ~interactive~ form or function body.
 
 - Function: transient-arg-value arg args ::
 
@@ -2146,6 +2159,21 @@ functions use ~describe-function~.
 - Function: transient-prefix-value obj ::
 
   This generic function returns the value of the prefix object {{{var(OBJ)}}}.
+
+  OBJ is a prototype object and is only used to select the appropriate
+  method of this generic function.  This function does not return the
+  value of that object.  Instead it extracts the name of the respective
+  command from the object and uses that to collect the current values
+  from the suffixes of the prefix from which the current command was
+  invoked.  If the current command was not invoked from the identified
+  prefix, then this method returns the set, save or default value, as
+  described for ~transient-args~.
+
+  This function is only intended to be used by ~transient-args~.  It is
+  not defined as an internal function because third-party packages may
+  define their own methods.  That does not mean that it would be a good
+  idea to call it for any other purpose.
+
   The respective generic function for infix and suffix objects is
   named ~transient-infix-value~.
 
@@ -2345,6 +2373,36 @@ functions use ~describe-function~.
 - ~history-key~ If multiple prefix commands should share a single value,
   then this slot has to be set to the same value for all of them.  You
   probably don't want that.
+
+- ~remember-value~ When a suffix command is invoked, which can consume
+  the prefix's value (which depends on the suffix slot ~transient~ and
+  the prefix slots ~transient-suffix~ and ~transient-non-suffix~), then
+  the value is automatically pushed to the prefix's value history.
+
+  This slot allows additionally setting or even saving the value, so
+  that it becomes the initial value when the menu is invoked again.
+
+  Beside ~nil~, the value can be one of these symbols:
+
+  - ~export~ Set the value when it is exported.  That is the time when
+    the value would ordinarily just be pushed to the history stack.
+
+  - ~exit~ Set the value when the menu is exited, except when that is
+    done using a command whose sole purpose is to quit the menu.
+
+  - ~quit~ Set the value when the menu is quit, using a command whose
+    sole purpose is to do so.
+
+  The value can also be a list of one or more of these symbols and
+  optionally also the symbol ~save~.
+
+  - ~save~ Instead of merely setting the value, save it, so that it will
+    be used in future Emacs sessions.  At least one other symbol has
+    to be used together with this.
+
+  The value can also be a (quoted) variable, whose value is a list of
+  symbols as described above.  Ideally an option should be used, since
+  not all users will find the automatic saving of the value desirable.
 
 - ~incompatible~ A list of lists.  Each sub-list specifies a set of
   mutually exclusive arguments.  Enabling one of these arguments
