@@ -5,8 +5,8 @@
 ;; Author: Daniel Mendler <mail@daniel-mendler.de>
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2023
-;; Version: 2.4
-;; Package-Requires: ((emacs "28.1") (compat "30") (vertico "2.4"))
+;; Version: 2.5
+;; Package-Requires: ((emacs "28.1") (compat "30") (vertico "2.5"))
 ;; URL: https://github.com/minad/vertico
 
 ;; This file is part of GNU Emacs.
@@ -74,7 +74,6 @@ or the latest completion session is restored."
         (overlay-put vertico-suspend--ov 'invisible t)
         (overlay-put vertico-suspend--ov 'priority 1000)
         (overlay-put vertico--candidates-ov 'before-string nil)
-        (overlay-put vertico--candidates-ov 'after-string nil)
         (set-window-parameter win 'no-other-window t)
         (when (bound-and-true-p vertico-buffer-mode)
           (vertico-buffer-mode -1)

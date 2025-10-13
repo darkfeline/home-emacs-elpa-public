@@ -5,8 +5,8 @@
 ;; Author: Daniel Mendler <mail@daniel-mendler.de>
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2021
-;; Version: 2.4
-;; Package-Requires: ((emacs "28.1") (compat "30") (vertico "2.4"))
+;; Version: 2.5
+;; Package-Requires: ((emacs "28.1") (compat "30") (vertico "2.5"))
 ;; URL: https://github.com/minad/vertico
 
 ;; This file is part of GNU Emacs.
@@ -72,8 +72,8 @@
     (setq lines (nconc (make-list (max 0 (- vertico-count (length lines))) "\n") lines)))
   (let ((string (apply #'concat lines)))
     (add-face-text-property 0 (length string) 'default 'append string)
-    (overlay-put vertico--candidates-ov 'before-string string)
-    (overlay-put vertico--candidates-ov 'after-string nil)))
+    (overlay-put vertico--candidates-ov 'before-string string))
+  (vertico--resize-window (length lines)))
 
 (provide 'vertico-reverse)
 ;;; vertico-reverse.el ends here

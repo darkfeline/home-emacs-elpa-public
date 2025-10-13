@@ -5,8 +5,8 @@
 ;; Author: Daniel Mendler <mail@daniel-mendler.de>
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2021
-;; Version: 2.4
-;; Package-Requires: ((emacs "28.1") (compat "30") (vertico "2.4"))
+;; Version: 2.5
+;; Package-Requires: ((emacs "28.1") (compat "30") (vertico "2.5"))
 ;; URL: https://github.com/minad/vertico
 
 ;; This file is part of GNU Emacs.
@@ -92,15 +92,18 @@
 
 (defvar-local vertico-buffer--restore nil)
 
-(defun vertico-buffer--redisplay (win)
-  "Redisplay window WIN."
+(defun vertico-buffer--redisplay (_)
+  "Redisplay buffer window."
   (when-let ((mbwin (active-minibuffer-window))
-             ((eq (window-buffer mbwin) (current-buffer))))
-    (unless (eq win mbwin)
-      (setq-local truncate-lines (< (window-point win)
-                                    (* 0.8 (window-width win))))
-      (set-window-point win (point))
-      (set-window-hscroll win 0))
+             ((eq (window-buffer mbwin) (current-buffer)))
+             ((overlayp vertico--candidates-ov))
+             (win (overlay-get vertico--candidates-ov 'window)))
+    (setq-local truncate-lines (< (window-point win)
+                                  (* 0.8 (window-width win)))
+                vertico-count (- (/ (window-pixel-height win)
+                                    (default-line-height)) 2))
+    (set-window-point win (point))
+    (set-window-hscroll win 0)
     (when vertico-buffer-hide-prompt
       (window-resize mbwin (- (window-pixel-height mbwin)) nil nil 'pixelwise)
       (set-window-vscroll mbwin 3))
@@ -208,7 +211,7 @@
        ((and (not vertico-buffer-mode) vertico-buffer--restore)
         (funcall vertico-buffer--restore))))))
 
-(cl-defmethod vertico--resize (&context (vertico-buffer-mode (eql t))))
+(cl-defmethod vertico--resize-window (_height &context (vertico-buffer-mode (eql t))))
 
 (cl-defmethod vertico--setup :after (&context (vertico-buffer-mode (eql t)))
   (vertico-buffer--setup))
