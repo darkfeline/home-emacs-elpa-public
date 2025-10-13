@@ -24,8 +24,8 @@
 ;; Homepage: https://ppareit.github.io/graphviz-dot-mode/
 ;; Created: 28 Oct 2002
 ;; Last modified: 25 Januari 2020
-;; Package-Version: 20250715.1358
-;; Package-Revision: 2c7ba85d19cb
+;; Package-Version: 20250925.1226
+;; Package-Revision: 516c151b845a
 ;; Package-Requires: ((emacs "25.0"))
 ;; Keywords: mode dot dot-language dotlanguage graphviz graphs att
 
