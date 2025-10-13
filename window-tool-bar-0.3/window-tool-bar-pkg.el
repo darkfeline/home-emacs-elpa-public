@@ -1,0 +1,2 @@
+;; Generated package description from window-tool-bar.el  -*- no-byte-compile: t -*-
+(define-package "window-tool-bar" "0.3" "Add tool bars inside windows" '((emacs "27.1") (compat "29.1")) :commit "72bbbff7e8128fe14c0b69c7282667788758b8b4" :authors '(("Jared Finder" . "jared@finder.org")) :maintainer '("Jared Finder" . "jared@finder.org") :keywords '("mouse") :url "http://github.com/chaosemer/window-tool-bar")
