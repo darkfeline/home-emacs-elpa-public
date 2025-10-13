@@ -559,7 +559,7 @@ This checks also `file-name-as-directory', `file-name-directory',
 
   (let (;; We test for the summary line.  Keyword "total" could be localized.
 	(process-environment
-	 (append '("LANG=C" "LANGUAGE=C" "LC_ALL=C") process-environment)))
+	 (seq-union '("LANG=C" "LANGUAGE=C" "LC_ALL=C") process-environment)))
     (unwind-protect
 	(progn
 	  (with-temp-buffer
@@ -856,7 +856,7 @@ This tests also `file-executable-p', `file-writable-p' and `set-file-modes'."
       (should (equal uid (with-no-warnings (file-user-uid))))
       (should (equal gid (with-no-warnings (file-group-gid)))))))
 
-(ert-deftest tramp-archive-test48-auto-load ()
+(ert-deftest tramp-archive-test50-auto-load ()
   "Check that `tramp-archive' autoloads properly."
   :tags '(:expensive-test)
   (skip-unless tramp-archive-enabled)
@@ -898,7 +898,7 @@ This tests also `file-executable-p', `file-writable-p' and `set-file-modes'."
 	       (format "(setq tramp-archive-enabled %s)" enabled))
 	      (shell-quote-argument (format code file)))))))))))
 
-(ert-deftest tramp-archive-test48-delay-load ()
+(ert-deftest tramp-archive-test50-delay-load ()
   "Check that `tramp-archive' is loaded lazily, only when needed."
   :tags '(:expensive-test)
   (skip-unless tramp-archive-enabled)
@@ -937,7 +937,7 @@ This tests also `file-executable-p', `file-writable-p' and `set-file-modes'."
             code tae tramp-archive-test-file-archive
             (concat tramp-archive-test-archive "foo"))))))))))
 
-(ert-deftest tramp-archive-test49-without-remote-files ()
+(ert-deftest tramp-archive-test51-without-remote-files ()
   "Check that Tramp can be suppressed."
   (skip-unless tramp-archive-enabled)
 
