@@ -1,4 +1,4 @@
-This is docRaoVF9.info, produced by makeinfo version 6.8 from
+This is docD4uajf.info, produced by makeinfo version 6.8 from
 with-editor.texi.
 
      Copyright (C) 2015-2025 Jonas Bernoulli
@@ -20,7 +20,7 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
 
-File: docRaoVF9.info,  Node: Top,  Next: Using the With-Editor package,  Up: (dir)
+File: docD4uajf.info,  Node: Top,  Next: Using the With-Editor package,  Up: (dir)
 
 With-Editor User Manual
 ***********************
@@ -40,7 +40,7 @@ library is made available as a separate package.  It also defines some
 additional functionality which makes it useful even for end-users, who
 don’t use Magit or another package which uses it internally.
 
-This manual is for With-Editor version 3.4.5.
+This manual is for With-Editor version 3.4.6.
 
      Copyright (C) 2015-2025 Jonas Bernoulli
      <emacs.with-editor@jonas.bernoulli.dev>
@@ -72,7 +72,7 @@ Using the With-Editor package
 
 
 
-File: docRaoVF9.info,  Node: Using the With-Editor package,  Next: Using With-Editor as a library,  Prev: Top,  Up: Top
+File: docD4uajf.info,  Node: Using the With-Editor package,  Next: Using With-Editor as a library,  Prev: Top,  Up: Top
 
 1 Using the With-Editor package
 *******************************
@@ -91,7 +91,7 @@ Magit.
 * Using With-Editor commands::
 
 
-File: docRaoVF9.info,  Node: Configuring With-Editor,  Next: Using With-Editor commands,  Up: Using the With-Editor package
+File: docD4uajf.info,  Node: Configuring With-Editor,  Next: Using With-Editor commands,  Up: Using the With-Editor package
 
 1.1 Configuring With-Editor
 ===========================
@@ -103,7 +103,7 @@ most likely reason is that someone found yet another way to package
 Emacs (most likely on macOS) without putting the executable on ‘$PATH’,
 and we have to add another kludge to find it anyway.
 
- -- User Option: with-editor-emacsclient-executable
+User Option: with-editor-emacsclient-executable
      The ‘emacsclient’ executable used as the editor by child processes
      of this Emacs instance.  By using this executable, child processes
      can call home to their parent process.
@@ -115,7 +115,7 @@ and we have to add another kludge to find it anyway.
 
      You should *not* customize this option permanently.  If you have to
      do it, then you should consider that a temporary kludge and inform
-     the Magit maintainer as described in *note Debugging: Debugging.
+     the Magit maintainer as described in *note Debugging::.
 
      If With-Editor fails to find a suitable ‘emacsclient’ on your
      system, then this should be fixed for all users at once, by
@@ -131,7 +131,7 @@ and we have to add another kludge to find it anyway.
      use this except in "emergencies", i.e., before we had a change to
      add a kludge appropriate for your setup.
 
- -- Function: with-editor-locate-emacsclient
+Function: with-editor-locate-emacsclient
      The function used to set the initial value of the option
      ‘with-editor-emacsclient-executable’.  There’s a lot of voodoo
      here.
@@ -146,7 +146,7 @@ remote processes in much the same way as local processes use an
 editor" because it is implemented as a shell script which sleeps until
 it receives a signal.
 
- -- User Option: with-editor-sleeping-editor
+User Option: with-editor-sleeping-editor
      The sleeping editor is a shell script used as the editor of child
      processes when the ‘emacsclient’ executable cannot be used.
 
@@ -186,7 +186,7 @@ it receives a signal.
      support floats, then by using ‘nanosleep’ instead.
 
 
-File: docRaoVF9.info,  Node: Using With-Editor commands,  Prev: Configuring With-Editor,  Up: Using the With-Editor package
+File: docD4uajf.info,  Node: Using With-Editor commands,  Prev: Configuring With-Editor,  Up: Using the With-Editor package
 
 1.2 Using With-Editor commands
 ==============================
@@ -202,11 +202,11 @@ Magit.
 instance as "the editor".  With a prefix argument these commands prompt
 for an alternative environment variable such as ‘$GIT_EDITOR’.
 
- -- Command: with-editor-async-shell-command
+Command: with-editor-async-shell-command
      This command is like ‘async-shell-command’, but it runs the shell
      command with the current Emacs instance exported as ‘$EDITOR’.
 
- -- Command: with-editor-shell-command
+Command: with-editor-shell-command
      This command is like ‘shell-command’, but if the shell command ends
      with ‘&’ and is therefore run asynchronously, then the current
      Emacs instance is exported as ‘$EDITOR’.
@@ -220,7 +220,7 @@ for an alternative environment variable such as ‘$GIT_EDITOR’.
 
    Alternatively use the global ‘shell-command-with-editor-mode’.
 
- -- Variable: shell-command-with-editor-mode
+Variable: shell-command-with-editor-mode
      When this mode is active, then ‘$EDITOR’ is exported whenever
      ultimately ‘shell-command’ is called to asynchronously run some
      shell command.  This affects most variants of that command, whether
@@ -244,21 +244,21 @@ appropriate mode hooks:
                (apply-partially 'with-editor-export-editor "GIT_EDITOR"))
      (add-hook 'shell-mode-hook 'with-editor-export-git-editor)
 
- -- Command: with-editor-export-editor
+Command: with-editor-export-editor
      When invoked in a ‘shell-mode’, ‘eshell-mode’, ‘term-mode’ or
      ‘vterm-mode’ buffer, this command teaches shell commands to use the
      current Emacs instance as the editor, by exporting ‘$EDITOR’.
 
- -- Command: with-editor-export-git-editor
+Command: with-editor-export-git-editor
      This command is like ‘with-editor-export-editor’ but exports
      ‘$GIT_EDITOR’.
 
- -- Command: with-editor-export-hg-editor
+Command: with-editor-export-hg-editor
      This command is like ‘with-editor-export-editor’ but exports
      ‘$HG_EDITOR’.
 
 
-File: docRaoVF9.info,  Node: Using With-Editor as a library,  Next: Debugging,  Prev: Using the With-Editor package,  Up: Top
+File: docD4uajf.info,  Node: Using With-Editor as a library,  Next: Debugging,  Prev: Using the With-Editor package,  Up: Top
 
 2 Using With-Editor as a library
 ********************************
@@ -273,7 +273,7 @@ create commits using Magit.  You can also ignore this if you use
 interactive and non-interactive use, see *note Using the With-Editor
 package::.
 
- -- Macro: with-editor &rest body
+Macro: with-editor &rest body
      This macro arranges for the ‘emacsclient’ or the sleeping editor to
      be used as the editor of child processes, effectively teaching them
      to call home to the current Emacs instance when they require that
@@ -288,11 +288,11 @@ package::.
      If BODY begins with a literal string, then that variable is set
      instead of ‘EDITOR’.
 
- -- Macro: with-editor* envvar &rest body
+Macro: with-editor* envvar &rest body
      This macro is like ‘with-editor’, except that the ENVVAR argument
      is required and that it is evaluated at run-time.
 
- -- Function: with-editor-set-process-filter process filter
+Function: with-editor-set-process-filter process filter
      This function is like ‘set-process-filter’ but ensures that adding
      the new FILTER does not remove the ‘with-editor-process-filter’.
      This is done by wrapping the two filter functions using a lambda,
@@ -302,7 +302,7 @@ package::.
      NO-STANDARD-FILTER.
 
 
-File: docRaoVF9.info,  Node: Debugging,  Next: Function and Command Index,  Prev: Using With-Editor as a library,  Up: Top
+File: docD4uajf.info,  Node: Debugging,  Next: Function and Command Index,  Prev: Using With-Editor as a library,  Up: Top
 
 3 Debugging
 ***********
@@ -321,48 +321,16 @@ about your Emacs installation.  Most importantly how did you install
 Emacs and what is the output of ‘M-x with-editor-debug RET’.
 
 
-File: docRaoVF9.info,  Node: Function and Command Index,  Next: Variable Index,  Prev: Debugging,  Up: Top
+File: docD4uajf.info,  Node: Function and Command Index,  Next: Variable Index,  Prev: Debugging,  Up: Top
 
 Appendix A Function and Command Index
 *************************************
 
- [index ]
-* Menu:
-
-* with-editor:                           Using With-Editor as a library.
-                                                               (line 16)
-* with-editor*:                          Using With-Editor as a library.
-                                                               (line 31)
-* with-editor-async-shell-command:       Using With-Editor commands.
-                                                               (line 17)
-* with-editor-export-editor:             Using With-Editor commands.
-                                                               (line 59)
-* with-editor-export-git-editor:         Using With-Editor commands.
-                                                               (line 64)
-* with-editor-export-hg-editor:          Using With-Editor commands.
-                                                               (line 68)
-* with-editor-locate-emacsclient:        Configuring With-Editor.
-                                                               (line 41)
-* with-editor-set-process-filter:        Using With-Editor as a library.
-                                                               (line 35)
-* with-editor-shell-command:             Using With-Editor commands.
-                                                               (line 21)
-
 
-File: docRaoVF9.info,  Node: Variable Index,  Prev: Function and Command Index,  Up: Top
+File: docD4uajf.info,  Node: Variable Index,  Prev: Function and Command Index,  Up: Top
 
 Appendix B Variable Index
 *************************
-
- [index ]
-* Menu:
-
-* shell-command-with-editor-mode:        Using With-Editor commands.
-                                                               (line 35)
-* with-editor-emacsclient-executable:    Configuring With-Editor.
-                                                               (line 13)
-* with-editor-sleeping-editor:           Configuring With-Editor.
-                                                               (line 56)
 
 
 
@@ -370,11 +338,11 @@ Tag Table:
 Node: Top797
 Node: Using the With-Editor package2611
 Node: Configuring With-Editor3196
-Node: Using With-Editor commands7759
-Node: Using With-Editor as a library11059
-Node: Debugging13089
-Node: Function and Command Index13979
-Node: Variable Index15475
+Node: Using With-Editor commands7738
+Node: Using With-Editor as a library11014
+Node: Debugging13032
+Node: Function and Command Index13922
+Node: Variable Index14109
 
 End Tag Table
 
