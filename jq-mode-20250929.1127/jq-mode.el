@@ -5,8 +5,8 @@
 ;; Author: Bjarte Johansen <Bjarte dot Johansen at gmail dot com>
 ;; Homepage: https://github.com/ljos/jq-mode
 ;; Package-Requires: ((emacs "25.1"))
-;; Package-Version: 20250113.1214
-;; Package-Revision: eeb86b4d5ad8
+;; Package-Version: 20250929.1127
+;; Package-Revision: 39acc77a6355
 
 ;; This file is not part of GNU Emacs.
 
@@ -159,12 +159,12 @@
     (modify-syntax-entry ?\n ">" syntax-table)
 
     ;; Parenthesis
-    (modify-syntax-entry ?\( "(" syntax-table)
-    (modify-syntax-entry ?\) ")" syntax-table)
-    (modify-syntax-entry ?\{ "(" syntax-table)
-    (modify-syntax-entry ?\} ")" syntax-table)
-    (modify-syntax-entry ?\[ "(" syntax-table)
-    (modify-syntax-entry ?\] ")" syntax-table)
+    (modify-syntax-entry ?\( "()" syntax-table)
+    (modify-syntax-entry ?\) ")(" syntax-table)
+    (modify-syntax-entry ?\{ "(}" syntax-table)
+    (modify-syntax-entry ?\} "){" syntax-table)
+    (modify-syntax-entry ?\[ "(]" syntax-table)
+    (modify-syntax-entry ?\] ")[" syntax-table)
 
     ;; Operators
     (modify-syntax-entry ?+ "." syntax-table)
