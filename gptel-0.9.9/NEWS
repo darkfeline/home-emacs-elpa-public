@@ -1,5 +1,115 @@
 # -*- mode: org; -*-
 
+* 0.9.9 2025-08-02
+
+** Breaking changes
+
+- The suffix =-latest= has been dropped from Grok models, as they are
+  no longer required.  So the models =grok-3-latest=,
+  =grok-3-mini-latest= have been renamed to just =grok-3=,
+  =grok-3-mini= and so on.
+
+- The models =gemini-exp-1206=, =gemini-2.5-pro-preview-03-25=,
+  =gemini-2.5-pro-preview-05-06=, =gemini-2.5-flash-preview-04-17=
+  have been removed from the default list of Gemini models.  The first
+  one is no longer available, and the others are superseded by their
+  stable, non-preview versions.  If required, you can add these models
+  back to the Gemini backend in your personal configuration:
+  #+begin_src emacs-lisp
+  (push 'gemini-2.5-pro-preview-03-25
+        (gptel-backend-models (gptel-get-backend "Gemini")))
+  #+end_src
+
+** New models and backends
+
+- Add support for ~grok-code-fast-1~.
+
+- Add support for ~gpt-5~, ~gpt-5-mini~ and ~gpt-5-nano~.
+
+- Add support for ~claude-opus-4-1-20250805~.
+
+- Add support for ~gemini-2.5-pro~, ~gemini-2.5-flash~,
+  ~gemini-2.5-flash-lite-preview-06-17~.
+
+- Add support for Open WebUI.  Open WebUI provides an
+  OpenAI-compatible API, so the "support" is just a new section of the
+  README with instructions.
+
+- Add support for Moonshot (Kimi), in a similar sense.
+
+- Add support for the AI/ML API, in a similar sense.
+
+- Add support for ~grok-4~.
+
+** New features and UI changes
+
+- ~gptel-rewrite~ now no longer pops up a Transient menu.  Instead, it
+  reads a rewrite instruction and starts the rewrite immediately.  This
+  is intended to reduce the friction of using ~gptel-rewrite~.  You can
+  still bring up the Transient menu by pressing =M-RET= instead of =RET=
+  when supplying the rewrite instruction.  If no region is selected and
+  there are pending rewrites, the rewrite menu is displayed.
+
+- ~gptel-rewrite~ will now produce more refined merge conflicts when
+  using the merge action.  It works by feeding the original and
+  rewritten text to git (when it is available).
+
+- New command ~gptel-gh-login~ to authenticate with GitHub Copilot.  The
+  authentication step happens automatically when you use gptel, so
+  invoking it manually is not required.  But you can use this command to
+  change accounts or refresh your login if required.
+
+- gptel now supports handling reasoning/thinking blocks in responses
+  from xAI's Grok models.  This is controlled by
+  ~gptel-include-reasoning~, in the same way that it handles other
+  APIs.
+
+- When including a file in the context, the abbreviated full path of
+  the file is included is now included instead of the basename.
+  Specifically, =/home/user/path/to/file= is included as
+  =~/path/to/file=.  This is to provide additional context for LLM
+  actions, including tool-use in subsequent conversation turns.  This
+  applies to context included via ~gptel-add~ or as a link in a
+  buffer.
+
+- Structured output support: ~gptel-request~ can now take an optional
+  schema argument to constrain LLM output to the specified JSON schema.
+  The JSON schema can be provided as
+  - an elisp object, a nested plist structure.
+  - A JSON schema serialized to a string.
+  - A shorthand object/array description, described in the manual (and
+    the documentation of ~gptel--dispatch-schema-type~.)
+
+  This feature works with all major backends: OpenAI, Anthropic, Gemini,
+  llama-cpp and Ollama.  It is presently supported by some but not all
+  "OpenAI-compatible API" providers.
+
+  Note that this is only available via the ~gptel-request~ API, and
+  currently unsupported by ~gptel-send~.
+
+- gptel's log buffer and logging settings are now accessible from
+  gptel's Transient menu.  To see these turn on the full interface by
+  setting ~gptel-expert-commands~.
+
+- Presets: You can now specify ~:request-params~ (API-specific request
+  parameters) in a preset.
+
+- From the dry-run inspector buffer, you can now copy the Curl command
+  for the request.  Like when continuing the query, the request is
+  constructed from the contents of the buffer, which is editable.
+
+- gptel now handles Ollama models that return both reasoning content
+  and tool calls in a single request.
+
+- The "Prompt from minibuffer" option in gptel's Transient menu
+  behaves slightly differently now.  If a region is active in the
+  buffer, it can optionally be included in the prompt.  The keybinding
+  to toggle this is displayed during the minibuffer-read.
+
+  Additionally, when reading a prompt or instructions from the
+  minibuffer you can switch to a dedicated composition buffer via
+  =C-c C-e=.
+
 * 0.9.8.5 2025-06-11
 
 ** Breaking changes
@@ -39,7 +149,7 @@
 
 - Add support for AWS Bedrock models.  You can create an AWS Bedrock
   gptel backend with ~gptel-make-bedrock~, which see.  Please note:
-  AWS Bedrock support requires Curl 8.5.0 or higher.
+  AWS Bedrock support requires Curl 8.9.0 or higher.
 
 - You can now create an xAI backend with ~gptel-make-xai~, which see.
   (xAI was supported before but the model configuration is now handled

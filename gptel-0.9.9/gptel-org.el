@@ -93,14 +93,19 @@ of Org."
   (if (fboundp 'org-element-begin)
       (progn (declare-function org-element-begin "org-element")
              (declare-function org-element-end "org-element")
+             (declare-function org-element-parent "org-element")
              (defalias 'gptel-org--element-begin 'org-element-begin)
-             (defalias 'gptel-org--element-end 'org-element-end))
-    (defun gptel-org--element-begin (node)
+             (defalias 'gptel-org--element-end 'org-element-end)
+             (defalias 'gptel-org--element-parent 'org-element-parent))
+    (defsubst gptel-org--element-begin (node)
       "Get `:begin' property of NODE."
       (org-element-property :begin node))
-    (defun gptel-org--element-end (node)
+    (defsubst gptel-org--element-end (node)
       "Get `:end' property of NODE."
-      (org-element-property :end node))))
+      (org-element-property :end node))
+    (defsubst gptel-org--element-parent (node)
+      "Return `:parent' property of NODE."
+      (org-element-property :parent node))))
 
 
 ;;; User options
@@ -171,8 +176,8 @@ adding elements to this list can significantly slow down
 (defun gptel-org-set-topic (topic)
   "Set a TOPIC and limit this conversation to the current heading.
 
-This limits the context sent to the LLM to the text between the
-current heading and the cursor position."
+This limits the context sent to the LLM to the text between the current
+heading (i.e. the heading with the topic set) and the cursor position."
   (interactive
    (list
     (progn
@@ -200,10 +205,9 @@ Otherwise the prompt text is constructed from the contents of the
 current buffer up to point, or PROMPT-END if provided.  Its contents
 depend on the value of `gptel-org-branching-context', which see."
   (when (use-region-p)
-    (narrow-to-region (region-beginning) (region-end)))
-  (if prompt-end
-      (goto-char prompt-end)
-    (setq prompt-end (point)))
+    (narrow-to-region (region-beginning) (region-end))
+    (setq prompt-end (point-max)))
+  (goto-char (or prompt-end (setq prompt-end (point))))
   (let ((topic-start (gptel-org--get-topic-start)))
     (when topic-start
       ;; narrow to GPTEL_TOPIC property scope
@@ -247,7 +251,12 @@ depend on the value of `gptel-org-branching-context', which see."
               (goto-char (point-max))
               (gptel-org--unescape-tool-results)
               (gptel-org--strip-block-headers)
-              (when gptel-org-ignore-elements (gptel-org--strip-elements))
+              (when-let* ((gptel-org-ignore-elements ;not copied by -with-buffer-copy
+                           (buffer-local-value 'gptel-org-ignore-elements
+                                               org-buf)))
+                (gptel-org--strip-elements))
+              (setq org-complex-heading-regexp ;For org-element-context to run
+                    (buffer-local-value 'org-complex-heading-regexp org-buf))
               (current-buffer))))
       ;; Create prompt the usual way
       (let ((org-buf (current-buffer))
@@ -255,7 +264,12 @@ depend on the value of `gptel-org-branching-context', which see."
         (gptel--with-buffer-copy org-buf beg prompt-end
           (gptel-org--unescape-tool-results)
           (gptel-org--strip-block-headers)
-          (when gptel-org-ignore-elements (gptel-org--strip-elements))
+          (when-let* ((gptel-org-ignore-elements ;not copied by -with-buffer-copy
+                       (buffer-local-value 'gptel-org-ignore-elements
+                                           org-buf)))
+                (gptel-org--strip-elements))
+          (setq org-complex-heading-regexp ;For org-element-context to run
+                (buffer-local-value 'org-complex-heading-regexp org-buf))
           (current-buffer))))))
 
 (defun gptel-org--strip-elements ()
@@ -388,8 +402,8 @@ for inclusion into the user prompt for the gptel request."
 
 (defun gptel-org--link-standalone-p (object)
   "Check if link OBJECT is on a line by itself."
-  ;; Specify ancestor TYPES as list (#245)
-  (when-let* ((par (org-element-lineage object '(paragraph))))
+  (when-let* ((par (gptel-org--element-parent object))
+              ((eq (org-element-type par) 'paragraph)))
     (and (= (gptel-org--element-begin object)
             (save-excursion
               (goto-char (org-element-property :contents-begin par))
@@ -516,10 +530,10 @@ non-nil (default), display a message afterwards."
    ;; Save response boundaries
    (letrec ((write-bounds
              (lambda (attempts)
-               (let* ((bounds (gptel--get-buffer-bounds))
-                      ;; first value of ((prop . ((beg end val)...))...)
-                      (offset (caadar bounds))
-                      (offset-marker (set-marker (make-marker) offset)))
+               (when-let* ((bounds (gptel--get-buffer-bounds))
+                           ;; first value of ((prop . ((beg end val)...))...)
+                           (offset (caadar bounds))
+                           (offset-marker (set-marker (make-marker) offset)))
                  (org-entry-put (point-min) "GPTEL_BOUNDS"
                                 (prin1-to-string (gptel--get-buffer-bounds)))
                  (when (and (not (= (marker-position offset-marker) offset))
