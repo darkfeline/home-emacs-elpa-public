@@ -1,4 +1,4 @@
-This is docDyV5wr.info, produced by makeinfo version 6.8 from
+This is docYsuVns.info, produced by makeinfo version 6.8 from
 consult.texi.
 
 INFO-DIR-SECTION Emacs misc features
@@ -7,7 +7,7 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
 
-File: docDyV5wr.info,  Node: Top,  Next: Available commands,  Up: (dir)
+File: docYsuVns.info,  Node: Top,  Next: Available commands,  Up: (dir)
 
 consult.el - Consulting completing-read
 ***************************************
@@ -109,7 +109,7 @@ Indices
 
 
 
-File: docDyV5wr.info,  Node: Available commands,  Next: Special features,  Prev: Top,  Up: Top
+File: docYsuVns.info,  Node: Available commands,  Next: Special features,  Prev: Top,  Up: Top
 
 1 Available commands
 ********************
@@ -142,7 +142,7 @@ their descriptions.
 * Miscellaneous::                Various other useful commands
 
 
-File: docDyV5wr.info,  Node: Virtual Buffers,  Next: Editing,  Up: Available commands
+File: docYsuVns.info,  Node: Virtual Buffers,  Next: Editing,  Up: Available commands
 
 1.1 Virtual Buffers
 ===================
@@ -186,7 +186,7 @@ File: docDyV5wr.info,  Node: Virtual Buffers,  Next: Editing,  Up: Available com
      ‘recentf-mode’ enables tracking of recent files.
 
 
-File: docDyV5wr.info,  Node: Editing,  Next: Register,  Prev: Virtual Buffers,  Up: Available commands
+File: docYsuVns.info,  Node: Editing,  Next: Register,  Prev: Virtual Buffers,  Up: Available commands
 
 1.2 Editing
 ===========
@@ -204,7 +204,7 @@ File: docDyV5wr.info,  Node: Editing,  Next: Register,  Prev: Virtual Buffers,  
    • ‘consult-kmacro’: Select macro from the macro ring and execute it.
 
 
-File: docDyV5wr.info,  Node: Register,  Next: Navigation,  Prev: Editing,  Up: Available commands
+File: docYsuVns.info,  Node: Register,  Next: Navigation,  Prev: Editing,  Up: Available commands
 
 1.3 Register
 ============
@@ -235,7 +235,7 @@ File: docDyV5wr.info,  Node: Register,  Next: Navigation,  Prev: Editing,  Up: A
         • ‘C-u 100 M-' x’: Store number in register ‘x’.
 
 
-File: docDyV5wr.info,  Node: Navigation,  Next: Search,  Prev: Register,  Up: Available commands
+File: docYsuVns.info,  Node: Navigation,  Next: Search,  Prev: Register,  Up: Available commands
 
 1.4 Navigation
 ==============
@@ -259,7 +259,7 @@ File: docDyV5wr.info,  Node: Navigation,  Next: Search,  Prev: Register,  Up: Av
      imenu-anywhere (https://github.com/vspinu/imenu-anywhere).
 
 
-File: docDyV5wr.info,  Node: Search,  Next: Grep and Find,  Prev: Navigation,  Up: Available commands
+File: docYsuVns.info,  Node: Search,  Next: Grep and Find,  Prev: Navigation,  Up: Available commands
 
 1.5 Search
 ==========
@@ -292,11 +292,13 @@ File: docDyV5wr.info,  Node: Search,  Next: Grep and Find,  Prev: Navigation,  U
      region restricts the filtering.
 
 
-File: docDyV5wr.info,  Node: Grep and Find,  Next: Compilation,  Prev: Search,  Up: Available commands
+File: docYsuVns.info,  Node: Grep and Find,  Next: Compilation,  Prev: Search,  Up: Available commands
 
 1.6 Grep and Find
 =================
 
+   • ‘consult-grep-match’: Jump to a Grep match in related Grep buffers.
+     Supports live preview narrowing and recursive editing.
    • ‘consult-grep’, ‘consult-ripgrep’, ‘consult-git-grep’: Search for
      regular expression in files.  Consult invokes Grep asynchronously,
      while you enter the search term.  After at least
@@ -329,13 +331,14 @@ File: docDyV5wr.info,  Node: Grep and Find,  Next: Compilation,  Prev: Search,  
      ‘consult-find’ work just like those for the consult grep commands.
 
 
-File: docDyV5wr.info,  Node: Compilation,  Next: Histories,  Prev: Grep and Find,  Up: Available commands
+File: docYsuVns.info,  Node: Compilation,  Next: Histories,  Prev: Grep and Find,  Up: Available commands
 
 1.7 Compilation
 ===============
 
-   • ‘consult-compile-error’: Jump to a compilation error or grep search
-     result.  Supports live preview narrowing and recursive editing.
+   • ‘consult-compile-error’: Jump to a compilation error in related
+     compilation buffers.  Supports live preview narrowing and recursive
+     editing.
    • ‘consult-flymake’: Jump to Flymake diagnostic.  Supports live
      preview and recursive editing.  The command supports narrowing.
      Press ‘e SPC’, ‘w SPC’, ‘n SPC’ to only show errors, warnings and
@@ -344,7 +347,7 @@ File: docDyV5wr.info,  Node: Compilation,  Next: Histories,  Prev: Grep and Find
      ‘xref-show-xrefs-function’ and ‘xref-show-definitions-function’.
 
 
-File: docDyV5wr.info,  Node: Histories,  Next: Modes,  Prev: Compilation,  Up: Available commands
+File: docYsuVns.info,  Node: Histories,  Next: Modes,  Prev: Compilation,  Up: Available commands
 
 1.8 Histories
 =============
@@ -367,7 +370,7 @@ File: docDyV5wr.info,  Node: Histories,  Next: Modes,  Prev: Compilation,  Up: A
      ‘isearch-edit-string’.
 
 
-File: docDyV5wr.info,  Node: Modes,  Next: Org Mode,  Prev: Histories,  Up: Available commands
+File: docYsuVns.info,  Node: Modes,  Next: Org Mode,  Prev: Histories,  Up: Available commands
 
 1.9 Modes
 =========
@@ -380,7 +383,7 @@ File: docDyV5wr.info,  Node: Modes,  Next: Org Mode,  Prev: Histories,  Up: Avai
      local-minor/global-minor/major mode via the keys ‘l/g/m’.
 
 
-File: docDyV5wr.info,  Node: Org Mode,  Next: Help,  Prev: Modes,  Up: Available commands
+File: docYsuVns.info,  Node: Org Mode,  Next: Help,  Prev: Modes,  Up: Available commands
 
 1.10 Org Mode
 =============
@@ -395,7 +398,7 @@ File: docDyV5wr.info,  Node: Org Mode,  Next: Help,  Prev: Modes,  Up: Available
      live preview and recursive editing.
 
 
-File: docDyV5wr.info,  Node: Help,  Next: Miscellaneous,  Prev: Org Mode,  Up: Available commands
+File: docYsuVns.info,  Node: Help,  Next: Miscellaneous,  Prev: Org Mode,  Up: Available commands
 
 1.11 Help
 =========
@@ -420,7 +423,7 @@ File: docDyV5wr.info,  Node: Help,  Next: Miscellaneous,  Prev: Org Mode,  Up: A
      (consult-info-define "magit")
 
 
-File: docDyV5wr.info,  Node: Miscellaneous,  Prev: Help,  Up: Available commands
+File: docYsuVns.info,  Node: Miscellaneous,  Prev: Help,  Up: Available commands
 
 1.12 Miscellaneous
 ==================
@@ -452,7 +455,7 @@ File: docDyV5wr.info,  Node: Miscellaneous,  Prev: Help,  Up: Available commands
      place directly in the original buffer.
 
 
-File: docDyV5wr.info,  Node: Special features,  Next: Configuration,  Prev: Available commands,  Up: Top
+File: docYsuVns.info,  Node: Special features,  Next: Configuration,  Prev: Available commands,  Up: Top
 
 2 Special features
 ******************
@@ -476,7 +479,7 @@ advanced features.
 * Embark integration::           Actions, Grep/Occur-buffer export
 
 
-File: docDyV5wr.info,  Node: Live previews,  Next: Narrowing and grouping,  Up: Special features
+File: docYsuVns.info,  Node: Live previews,  Next: Narrowing and grouping,  Up: Special features
 
 2.1 Live previews
 =================
@@ -557,7 +560,7 @@ experience.
                           :debounce 1 any))
 
 
-File: docDyV5wr.info,  Node: Narrowing and grouping,  Next: Asynchronous search,  Prev: Live previews,  Up: Special features
+File: docYsuVns.info,  Node: Narrowing and grouping,  Next: Asynchronous search,  Prev: Live previews,  Up: Special features
 
 2.2 Narrowing and grouping
 ==========================
@@ -592,7 +595,7 @@ keys are automatically shown in the which-key window after pressing the
 ‘consult-narrow-key’.
 
 
-File: docDyV5wr.info,  Node: Asynchronous search,  Next: Multiple sources,  Prev: Narrowing and grouping,  Up: Special features
+File: docYsuVns.info,  Node: Asynchronous search,  Next: Multiple sources,  Prev: Narrowing and grouping,  Up: Special features
 
 2.3 Asynchronous search
 =======================
@@ -658,7 +661,7 @@ status:
      provided.
 
 
-File: docDyV5wr.info,  Node: Multiple sources,  Next: Embark integration,  Prev: Asynchronous search,  Up: Special features
+File: docYsuVns.info,  Node: Multiple sources,  Next: Embark integration,  Prev: Asynchronous search,  Up: Special features
 
 2.4 Multiple sources
 ====================
@@ -762,7 +765,7 @@ the internal ‘consult--multi’ API.  The function ‘consult--multi’ can be
 used to create new multi-source commands.
 
 
-File: docDyV5wr.info,  Node: Embark integration,  Prev: Multiple sources,  Up: Special features
+File: docYsuVns.info,  Node: Embark integration,  Prev: Multiple sources,  Up: Special features
 
 2.5 Embark integration
 ======================
@@ -807,7 +810,7 @@ workflows are symmetric.
      ‘wdired-change-to-wdired-mode’ for editing.
 
 
-File: docDyV5wr.info,  Node: Configuration,  Next: Recommended packages,  Prev: Special features,  Up: Top
+File: docYsuVns.info,  Node: Configuration,  Next: Recommended packages,  Prev: Special features,  Up: Top
 
 3 Configuration
 ***************
@@ -834,7 +837,7 @@ lexical binding, since they use lambdas and closures.
 * Fine-tuning::                  Fine-grained configuration for special requirements
 
 
-File: docDyV5wr.info,  Node: Use-package example,  Next: Custom variables,  Up: Configuration
+File: docYsuVns.info,  Node: Use-package example,  Next: Custom variables,  Up: Configuration
 
 3.1 Use-package example
 =======================
@@ -882,6 +885,7 @@ additional configuration examples.
               ("M-y" . consult-yank-pop)                ;; orig. yank-pop
               ;; M-g bindings in `goto-map'
               ("M-g e" . consult-compile-error)
+              ("M-g r" . consult-grep-match)
               ("M-g f" . consult-flymake)               ;; Alternative: consult-flycheck
               ("M-g g" . consult-goto-line)             ;; orig. goto-line
               ("M-g M-g" . consult-goto-line)           ;; orig. goto-line
@@ -960,7 +964,7 @@ additional configuration examples.
      )
 
 
-File: docDyV5wr.info,  Node: Custom variables,  Next: Project support,  Prev: Use-package example,  Up: Configuration
+File: docYsuVns.info,  Node: Custom variables,  Next: Project support,  Prev: Use-package example,  Up: Configuration
 
 3.2 Custom variables
 ====================
@@ -1018,7 +1022,7 @@ consult-themes                     List of themes to be presented for selection
 consult-widen-key                  Widening key during completion
 
 
-File: docDyV5wr.info,  Node: Project support,  Next: Fine-tuning,  Prev: Custom variables,  Up: Configuration
+File: docYsuVns.info,  Node: Project support,  Next: Fine-tuning,  Prev: Custom variables,  Up: Configuration
 
 3.3 Project support
 ===================
@@ -1045,7 +1049,7 @@ possible to configure alternative methods via the customization variable
      (setq consult-project-function nil)
 
 
-File: docDyV5wr.info,  Node: Fine-tuning,  Prev: Project support,  Up: Configuration
+File: docYsuVns.info,  Node: Fine-tuning,  Prev: Project support,  Up: Configuration
 
 3.4 Fine-tuning of individual commands
 ======================================
@@ -1115,7 +1119,7 @@ by the following techniques:
   5. Write or propose a patch.
 
 
-File: docDyV5wr.info,  Node: Recommended packages,  Next: Bug reports,  Prev: Configuration,  Up: Top
+File: docYsuVns.info,  Node: Recommended packages,  Next: Bug reports,  Prev: Configuration,  Up: Top
 
 4 Recommended packages
 **********************
@@ -1161,7 +1165,7 @@ Consult wiki.  These packages integrate Consult with special programs or
 with other packages in the wider Emacs ecosystem.
 
 
-File: docDyV5wr.info,  Node: Bug reports,  Next: Hacking,  Prev: Recommended packages,  Up: Top
+File: docYsuVns.info,  Node: Bug reports,  Next: Hacking,  Prev: Recommended packages,  Up: Top
 
 5 Bug reports
 *************
@@ -1226,7 +1230,7 @@ lexical binding
 Consult often relies on lambdas and lexical closures.
 
 
-File: docDyV5wr.info,  Node: Hacking,  Next: Contributions,  Prev: Bug reports,  Up: Top
+File: docYsuVns.info,  Node: Hacking,  Next: Contributions,  Prev: Bug reports,  Up: Top
 
 6 Hacking
 *********
@@ -1237,7 +1241,7 @@ File: docDyV5wr.info,  Node: Hacking,  Next: Contributions,  Prev: Bug reports, 
 * Live preview::
 
 
-File: docDyV5wr.info,  Node: Creating asynchronous completion commands,  Next: Live preview,  Up: Hacking
+File: docYsuVns.info,  Node: Creating asynchronous completion commands,  Next: Live preview,  Up: Hacking
 
 6.1 Creating asynchronous completion commands
 =============================================
@@ -1289,7 +1293,7 @@ and ‘consult--process-collection’ can be used for ‘consult--multi’
 sources.  Specify them as ‘:async’ field of the source plist.
 
 
-File: docDyV5wr.info,  Node: Live preview,  Prev: Creating asynchronous completion commands,  Up: Hacking
+File: docYsuVns.info,  Node: Live preview,  Prev: Creating asynchronous completion commands,  Up: Hacking
 
 6.2 Live preview
 ================
@@ -1322,7 +1326,7 @@ action argument.  Once defined, we can use this preview function in
       :state #'testibus--preview)
 
 
-File: docDyV5wr.info,  Node: Contributions,  Next: Acknowledgments,  Prev: Hacking,  Up: Top
+File: docYsuVns.info,  Node: Contributions,  Next: Acknowledgments,  Prev: Hacking,  Up: Top
 
 7 Contributions
 ***************
@@ -1342,7 +1346,7 @@ contribute to the Consult wiki (https://github.com/minad/consult/wiki),
 in case you want to share small configuration or command snippets.
 
 
-File: docDyV5wr.info,  Node: Acknowledgments,  Next: Indices,  Prev: Contributions,  Up: Top
+File: docYsuVns.info,  Node: Acknowledgments,  Next: Indices,  Prev: Contributions,  Up: Top
 
 8 Acknowledgments
 *****************
@@ -1393,7 +1397,7 @@ Manuel Uberti (https://github.com/manuel-uberti/), Stefan Monnier
 (https://protesilaos.com).
 
 
-File: docDyV5wr.info,  Node: Indices,  Prev: Acknowledgments,  Up: Top
+File: docYsuVns.info,  Node: Indices,  Prev: Acknowledgments,  Up: Top
 
 9 Indices
 *********
@@ -1404,7 +1408,7 @@ File: docDyV5wr.info,  Node: Indices,  Prev: Acknowledgments,  Up: Top
 * Concept index::                List of all Consult-specific concepts
 
 
-File: docDyV5wr.info,  Node: Function index,  Next: Concept index,  Up: Indices
+File: docYsuVns.info,  Node: Function index,  Next: Concept index,  Up: Indices
 
 9.1 Function index
 ==================
@@ -1428,6 +1432,7 @@ File: docDyV5wr.info,  Node: Function index,  Next: Concept index,  Up: Indices
 * consult-global-mark:                   Navigation.            (line 6)
 * consult-goto-line:                     Navigation.            (line 6)
 * consult-grep:                          Grep and Find.         (line 6)
+* consult-grep-match:                    Grep and Find.         (line 6)
 * consult-history:                       Histories.             (line 6)
 * consult-imenu:                         Navigation.            (line 6)
 * consult-imenu-multi:                   Navigation.            (line 6)
@@ -1463,7 +1468,7 @@ File: docDyV5wr.info,  Node: Function index,  Next: Concept index,  Up: Indices
 * consult-yank-replace:                  Editing.               (line 6)
 
 
-File: docDyV5wr.info,  Node: Concept index,  Prev: Function index,  Up: Indices
+File: docYsuVns.info,  Node: Concept index,  Prev: Function index,  Up: Indices
 
 9.2 Concept index
 =================
@@ -1504,33 +1509,33 @@ Node: Register9814
 Node: Navigation11535
 Node: Search12778
 Node: Grep and Find14689
-Node: Compilation16965
-Node: Histories17663
-Node: Modes18883
-Node: Org Mode19363
-Node: Help19979
-Node: Miscellaneous21183
-Node: Special features22927
-Node: Live previews24056
-Node: Narrowing and grouping28197
-Node: Asynchronous search30200
-Node: Multiple sources33282
-Node: Embark integration38184
-Node: Configuration40404
-Node: Use-package example41554
-Node: Custom variables48047
-Node: Project support51980
-Node: Fine-tuning53245
-Node: Recommended packages56204
-Node: Bug reports58329
-Node: Hacking61410
-Node: Creating asynchronous completion commands61596
-Node: Live preview63561
-Node: Contributions64758
-Node: Acknowledgments65670
-Node: Indices68220
-Node: Function index68458
-Node: Concept index72179
+Node: Compilation17104
+Node: Histories17816
+Node: Modes19036
+Node: Org Mode19516
+Node: Help20132
+Node: Miscellaneous21336
+Node: Special features23080
+Node: Live previews24209
+Node: Narrowing and grouping28350
+Node: Asynchronous search30353
+Node: Multiple sources33435
+Node: Embark integration38337
+Node: Configuration40557
+Node: Use-package example41707
+Node: Custom variables48245
+Node: Project support52178
+Node: Fine-tuning53443
+Node: Recommended packages56402
+Node: Bug reports58527
+Node: Hacking61608
+Node: Creating asynchronous completion commands61794
+Node: Live preview63759
+Node: Contributions64956
+Node: Acknowledgments65868
+Node: Indices68418
+Node: Function index68656
+Node: Concept index72450
 
 End Tag Table
 
