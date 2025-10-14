@@ -5,8 +5,8 @@
 ;; Author: Omar Antolín Camarena <omar@matem.unam.mx>, Daniel Mendler <mail@daniel-mendler.de>
 ;; Maintainer: Omar Antolín Camarena <omar@matem.unam.mx>, Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2020
-;; Version: 2.3
-;; Package-Requires: ((emacs "28.1") (compat "30"))
+;; Version: 2.4
+;; Package-Requires: ((emacs "29.1") (compat "30"))
 ;; URL: https://github.com/minad/marginalia
 ;; Keywords: docs, help, matching, completion
 
@@ -83,9 +83,6 @@ The first match group is displayed instead of the detailed file
 attribute information.  For Tramp paths, the protocol is
 displayed instead."
   :type '(repeat regexp))
-
-(define-obsolete-variable-alias 'marginalia-annotator-registry
-  'marginalia-annotators "2.0")
 
 (defcustom marginalia-annotators
   (mapcar
@@ -164,7 +161,7 @@ matched case-sensitively."
 
 (defcustom marginalia-command-categories
   `((,#'imenu . imenu)
-    (,'recentf-open . file) ;; Available only on Emacs 29.
+    (,#'recentf-open . file)
     (,#'where-is . command))
   "Associate commands with a completion category.
 The value of `this-command' is used as key for the lookup."
@@ -676,10 +673,9 @@ keybinding since CAND includes it."
                   (abbrev-table-p val)))
          (propertize "#<abbrev-table>" 'face 'marginalia-value))
         ((pred char-table-p) (propertize "#<char-table>" 'face 'marginalia-value))
-        ;; Emacs 29 comes with callable objects or object closures (OClosures)
-        ((guard (and (fboundp 'oclosure-type) (oclosure-type val)))
-         (format (propertize "#<oclosure %s>" 'face 'marginalia-function)
-                 (and (fboundp 'oclosure-type) (oclosure-type val))))
+        ;; Callable objects or object closures (OClosures)
+        ((guard (oclosure-type val))
+         (format (propertize "#<oclosure %s>" 'face 'marginalia-function) (oclosure-type val)))
         ((pred byte-code-function-p) (propertize "#<byte-code-function>" 'face 'marginalia-function))
         ((and (pred functionp) (pred symbolp))
          ;; We are not consistent here, values are generally printed
@@ -1134,10 +1130,6 @@ These annotations are skipped for remote paths."
       (put-text-property 0 1 'marginalia--library-doc doc file))
     doc))
 
-(defun marginalia-annotate-theme (cand)
-  "Annotate theme CAND with documentation and path."
-  (marginalia-annotate-library (concat cand "-theme")))
-
 (defun marginalia-annotate-library (cand)
   "Annotate library CAND with documentation and path."
   (setq cand (marginalia--library-name cand))
@@ -1153,6 +1145,15 @@ These annotations are skipped for remote paths."
       :truncate 1.0 :face 'marginalia-documentation)
      ((abbreviate-file-name (file-name-directory file))
       :truncate -0.5 :face 'marginalia-file-name))))
+
+(defun marginalia-annotate-theme (cand)
+  "Annotate theme CAND with documentation and path."
+  (when-let (file (gethash (concat cand "-theme") (marginalia--library-cache)))
+    (marginalia--fields
+     ((marginalia--library-doc file)
+      :truncate 1.0 :face 'marginalia-documentation)
+     ((abbreviate-file-name (file-name-directory file))
+      :truncate -1.0 :face 'marginalia-file-name))))
 
 (defun marginalia-annotate-tab (cand)
   "Annotate named tab CAND with tab index, window and buffer information."
