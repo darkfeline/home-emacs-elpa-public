@@ -5,8 +5,8 @@
 ;; Author: Daniel Mendler and Consult contributors
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2020
-;; Version: 2.8
-;; Package-Requires: ((emacs "28.1") (compat "30"))
+;; Version: 2.9
+;; Package-Requires: ((emacs "29.1") (compat "30"))
 ;; URL: https://github.com/minad/consult
 ;; Keywords: matching, files, completion
 
@@ -4633,19 +4633,21 @@ The command supports previewing the currently selected theme."
                  (or (and selected (car (memq selected avail-themes)))
                      saved-theme))
        :state (lambda (action theme)
-                (pcase action
-                  ('return (consult-theme (or theme saved-theme)))
-                  ((and 'preview (guard theme)) (consult-theme theme))))
+                (with-selected-window (or (active-minibuffer-window)
+                                          (selected-window))
+                  (pcase action
+                    ('return (consult-theme (or theme saved-theme)))
+                    ((and 'preview (guard theme)) (consult-theme theme)))))
        :default (symbol-name (or saved-theme 'default))))))
   (when (eq theme 'default) (setq theme nil))
   (unless (eq theme (car custom-enabled-themes))
     (mapc #'disable-theme custom-enabled-themes)
     (when theme
-      (unless (custom-theme-p theme)
+      (unless (and (memq theme custom-known-themes) (get theme 'theme-settings))
         (load-theme theme 'no-confirm 'no-enable))
-      (if (custom-theme-p theme)
+      (if (and (memq theme custom-known-themes) (get theme 'theme-settings))
           (enable-theme theme)
-        (consult--minibuffer-message "%s is not a valid theme")))))
+        (consult--minibuffer-message "%s is not a valid theme" theme)))))
 
 ;;;;; Command: consult-buffer
 
@@ -5239,7 +5241,8 @@ input."
 This command collects entries from all related Grep buffers.  The
 command supports preview of the currently selected match.  With prefix
 ARG, jump to the match in the Grep buffer, instead of to the actual
-location of the match."
+location of the match.  This command is a thin wrapper around
+`consult-compile-error'."
   (interactive "P")
   (consult-compile-error arg t))
 

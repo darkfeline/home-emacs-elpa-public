@@ -205,7 +205,8 @@ Jump to grep matches related to the current project or file.
 This command collects entries from all related Grep buffers.  The
 command supports preview of the currently selected match.  With prefix
 ARG, jump to the match in the Grep buffer, instead of to the actual
-location of the match.
+location of the match.  This command is a thin wrapper around
+`consult-compile-error'.
 
 (fn &optional ARG)" t)
 (autoload 'consult-grep "consult" "\
@@ -307,7 +308,7 @@ This command collects entries from all related compilation buffers.  The
 command supports preview of the currently selected error.  With prefix
 ARG, jump to the error message in the compilation buffer, instead of to
 the actual location of the error.  If GREP is non-nil, Grep buffers are
-searched.
+searched.  See also `consult-grep-match'.
 
 (fn &optional ARG GREP)" t)
 (register-definition-prefixes "consult-compile" '("consult-compile--"))

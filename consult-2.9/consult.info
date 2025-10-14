@@ -1,4 +1,4 @@
-This is docYsuVns.info, produced by makeinfo version 6.8 from
+This is docaMkmSL.info, produced by makeinfo version 6.8 from
 consult.texi.
 
 INFO-DIR-SECTION Emacs misc features
@@ -7,14 +7,15 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
 
-File: docYsuVns.info,  Node: Top,  Next: Available commands,  Up: (dir)
+File: docaMkmSL.info,  Node: Top,  Next: Available commands,  Up: (dir)
 
 consult.el - Consulting completing-read
 ***************************************
 
 Consult provides search and navigation commands based on the Emacs
 completion function completing-read
-(https://www.gnu.org/software/emacs/manual/html_node/elisp/Minibuffer-Completion.html).
+(https://www.gnu.org/software/emacs/manual/html_node/elisp/Minibuffer-Completion.html)
+documented in the *note Elisp manual: (elisp)Minibuffer Completion.
 Completion allows you to quickly select an item from a list of
 candidates.  Consult offers asynchronous and interactive ‘consult-grep’
 and ‘consult-ripgrep’ commands, and the line-based search command
@@ -28,10 +29,10 @@ narrowing: Narrowing and grouping.  Please take a look at the *note full
 list of commands: Available commands.
 
    Consult is fully compatible with completion systems centered around
-the standard Emacs ‘completing-read’ API, notably the default completion
-system, Vertico (https://github.com/minad/vertico), Mct
-(https://github.com/protesilaos/mct), and Icomplete
-(https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html).
+the standard Emacs ‘completing-read’ API, Vertico
+(https://github.com/minad/vertico), Mct
+(https://github.com/protesilaos/mct), and the built-in default
+completion system and Icomplete.
 
    This package keeps the completion system specifics to a minimum.  The
 ability of the Consult commands to work well with arbitrary completion
@@ -40,8 +41,8 @@ into existing setups and it helps you to create a full completion
 environment out of small and independent components.
 
    You can combine the complementary packages Marginalia
-(https://github.com/minad/marginalia/), Embark
-(https://github.com/oantolin/embark/) and Orderless
+(https://github.com/minad/marginalia), Embark
+(https://github.com/oantolin/embark) and Orderless
 (https://github.com/oantolin/orderless) with Consult.  Marginalia
 enriches the completion display with annotations, e.g., documentation
 strings or file information.  The versatile Embark package provides
@@ -99,6 +100,7 @@ Configuration
 
 Hacking
 
+* Creating simple commands::
 * Creating asynchronous completion commands::
 * Live preview::
 
@@ -109,7 +111,7 @@ Indices
 
 
 
-File: docYsuVns.info,  Node: Available commands,  Next: Special features,  Prev: Top,  Up: Top
+File: docaMkmSL.info,  Node: Available commands,  Next: Special features,  Prev: Top,  Up: Top
 
 1 Available commands
 ********************
@@ -142,7 +144,7 @@ their descriptions.
 * Miscellaneous::                Various other useful commands
 
 
-File: docYsuVns.info,  Node: Virtual Buffers,  Next: Editing,  Up: Available commands
+File: docaMkmSL.info,  Node: Virtual Buffers,  Next: Editing,  Up: Available commands
 
 1.1 Virtual Buffers
 ===================
@@ -186,7 +188,7 @@ File: docYsuVns.info,  Node: Virtual Buffers,  Next: Editing,  Up: Available com
      ‘recentf-mode’ enables tracking of recent files.
 
 
-File: docYsuVns.info,  Node: Editing,  Next: Register,  Prev: Virtual Buffers,  Up: Available commands
+File: docaMkmSL.info,  Node: Editing,  Next: Register,  Prev: Virtual Buffers,  Up: Available commands
 
 1.2 Editing
 ===========
@@ -204,7 +206,7 @@ File: docYsuVns.info,  Node: Editing,  Next: Register,  Prev: Virtual Buffers,  
    • ‘consult-kmacro’: Select macro from the macro ring and execute it.
 
 
-File: docYsuVns.info,  Node: Register,  Next: Navigation,  Prev: Editing,  Up: Available commands
+File: docaMkmSL.info,  Node: Register,  Next: Navigation,  Prev: Editing,  Up: Available commands
 
 1.3 Register
 ============
@@ -235,7 +237,7 @@ File: docYsuVns.info,  Node: Register,  Next: Navigation,  Prev: Editing,  Up: A
         • ‘C-u 100 M-' x’: Store number in register ‘x’.
 
 
-File: docYsuVns.info,  Node: Navigation,  Next: Search,  Prev: Register,  Up: Available commands
+File: docaMkmSL.info,  Node: Navigation,  Next: Search,  Prev: Register,  Up: Available commands
 
 1.4 Navigation
 ==============
@@ -259,7 +261,7 @@ File: docYsuVns.info,  Node: Navigation,  Next: Search,  Prev: Register,  Up: Av
      imenu-anywhere (https://github.com/vspinu/imenu-anywhere).
 
 
-File: docYsuVns.info,  Node: Search,  Next: Grep and Find,  Prev: Navigation,  Up: Available commands
+File: docaMkmSL.info,  Node: Search,  Next: Grep and Find,  Prev: Navigation,  Up: Available commands
 
 1.5 Search
 ==========
@@ -292,7 +294,7 @@ File: docYsuVns.info,  Node: Search,  Next: Grep and Find,  Prev: Navigation,  U
      region restricts the filtering.
 
 
-File: docYsuVns.info,  Node: Grep and Find,  Next: Compilation,  Prev: Search,  Up: Available commands
+File: docaMkmSL.info,  Node: Grep and Find,  Next: Compilation,  Prev: Search,  Up: Available commands
 
 1.6 Grep and Find
 =================
@@ -331,7 +333,7 @@ File: docYsuVns.info,  Node: Grep and Find,  Next: Compilation,  Prev: Search,  
      ‘consult-find’ work just like those for the consult grep commands.
 
 
-File: docYsuVns.info,  Node: Compilation,  Next: Histories,  Prev: Grep and Find,  Up: Available commands
+File: docaMkmSL.info,  Node: Compilation,  Next: Histories,  Prev: Grep and Find,  Up: Available commands
 
 1.7 Compilation
 ===============
@@ -347,7 +349,7 @@ File: docYsuVns.info,  Node: Compilation,  Next: Histories,  Prev: Grep and Find
      ‘xref-show-xrefs-function’ and ‘xref-show-definitions-function’.
 
 
-File: docYsuVns.info,  Node: Histories,  Next: Modes,  Prev: Compilation,  Up: Available commands
+File: docaMkmSL.info,  Node: Histories,  Next: Modes,  Prev: Compilation,  Up: Available commands
 
 1.8 Histories
 =============
@@ -370,7 +372,7 @@ File: docYsuVns.info,  Node: Histories,  Next: Modes,  Prev: Compilation,  Up: A
      ‘isearch-edit-string’.
 
 
-File: docYsuVns.info,  Node: Modes,  Next: Org Mode,  Prev: Histories,  Up: Available commands
+File: docaMkmSL.info,  Node: Modes,  Next: Org Mode,  Prev: Histories,  Up: Available commands
 
 1.9 Modes
 =========
@@ -383,7 +385,7 @@ File: docYsuVns.info,  Node: Modes,  Next: Org Mode,  Prev: Histories,  Up: Avai
      local-minor/global-minor/major mode via the keys ‘l/g/m’.
 
 
-File: docYsuVns.info,  Node: Org Mode,  Next: Help,  Prev: Modes,  Up: Available commands
+File: docaMkmSL.info,  Node: Org Mode,  Next: Help,  Prev: Modes,  Up: Available commands
 
 1.10 Org Mode
 =============
@@ -398,7 +400,7 @@ File: docYsuVns.info,  Node: Org Mode,  Next: Help,  Prev: Modes,  Up: Available
      live preview and recursive editing.
 
 
-File: docYsuVns.info,  Node: Help,  Next: Miscellaneous,  Prev: Org Mode,  Up: Available commands
+File: docaMkmSL.info,  Node: Help,  Next: Miscellaneous,  Prev: Org Mode,  Up: Available commands
 
 1.11 Help
 =========
@@ -423,7 +425,7 @@ File: docYsuVns.info,  Node: Help,  Next: Miscellaneous,  Prev: Org Mode,  Up: A
      (consult-info-define "magit")
 
 
-File: docYsuVns.info,  Node: Miscellaneous,  Prev: Help,  Up: Available commands
+File: docaMkmSL.info,  Node: Miscellaneous,  Prev: Help,  Up: Available commands
 
 1.12 Miscellaneous
 ==================
@@ -455,7 +457,7 @@ File: docYsuVns.info,  Node: Miscellaneous,  Prev: Help,  Up: Available commands
      place directly in the original buffer.
 
 
-File: docYsuVns.info,  Node: Special features,  Next: Configuration,  Prev: Available commands,  Up: Top
+File: docaMkmSL.info,  Node: Special features,  Next: Configuration,  Prev: Available commands,  Up: Top
 
 2 Special features
 ******************
@@ -479,7 +481,7 @@ advanced features.
 * Embark integration::           Actions, Grep/Occur-buffer export
 
 
-File: docYsuVns.info,  Node: Live previews,  Next: Narrowing and grouping,  Up: Special features
+File: docaMkmSL.info,  Node: Live previews,  Next: Narrowing and grouping,  Up: Special features
 
 2.1 Live previews
 =================
@@ -560,7 +562,7 @@ experience.
                           :debounce 1 any))
 
 
-File: docYsuVns.info,  Node: Narrowing and grouping,  Next: Asynchronous search,  Prev: Live previews,  Up: Special features
+File: docaMkmSL.info,  Node: Narrowing and grouping,  Next: Asynchronous search,  Prev: Live previews,  Up: Special features
 
 2.2 Narrowing and grouping
 ==========================
@@ -595,7 +597,7 @@ keys are automatically shown in the which-key window after pressing the
 ‘consult-narrow-key’.
 
 
-File: docYsuVns.info,  Node: Asynchronous search,  Next: Multiple sources,  Prev: Narrowing and grouping,  Up: Special features
+File: docaMkmSL.info,  Node: Asynchronous search,  Next: Multiple sources,  Prev: Narrowing and grouping,  Up: Special features
 
 2.3 Asynchronous search
 =======================
@@ -661,7 +663,7 @@ status:
      provided.
 
 
-File: docYsuVns.info,  Node: Multiple sources,  Next: Embark integration,  Prev: Asynchronous search,  Up: Special features
+File: docaMkmSL.info,  Node: Multiple sources,  Next: Embark integration,  Prev: Asynchronous search,  Up: Special features
 
 2.4 Multiple sources
 ====================
@@ -765,7 +767,7 @@ the internal ‘consult--multi’ API.  The function ‘consult--multi’ can be
 used to create new multi-source commands.
 
 
-File: docYsuVns.info,  Node: Embark integration,  Prev: Multiple sources,  Up: Special features
+File: docaMkmSL.info,  Node: Embark integration,  Prev: Multiple sources,  Up: Special features
 
 2.5 Embark integration
 ======================
@@ -810,7 +812,7 @@ workflows are symmetric.
      ‘wdired-change-to-wdired-mode’ for editing.
 
 
-File: docYsuVns.info,  Node: Configuration,  Next: Recommended packages,  Prev: Special features,  Up: Top
+File: docaMkmSL.info,  Node: Configuration,  Next: Recommended packages,  Prev: Special features,  Up: Top
 
 3 Configuration
 ***************
@@ -824,10 +826,9 @@ repository via other non-standard package managers.
    There is the Consult wiki (https://github.com/minad/consult/wiki),
 where additional configuration examples can be contributed.
 
-   *IMPORTANT:* It is recommended that you enable lexical binding
-(https://www.gnu.org/software/emacs/manual/html_node/elisp/Lexical-Binding.html)
-in your configuration.  Many Consult-related code snippets require
-lexical binding, since they use lambdas and closures.
+   *IMPORTANT:* It is recommended that you enable lexical binding in
+your configuration.  Many Consult-related code snippets require lexical
+binding, since they use lambdas and closures.
 
 * Menu:
 
@@ -837,7 +838,7 @@ lexical binding, since they use lambdas and closures.
 * Fine-tuning::                  Fine-grained configuration for special requirements
 
 
-File: docYsuVns.info,  Node: Use-package example,  Next: Custom variables,  Up: Configuration
+File: docaMkmSL.info,  Node: Use-package example,  Next: Custom variables,  Up: Configuration
 
 3.1 Use-package example
 =======================
@@ -964,7 +965,7 @@ additional configuration examples.
      )
 
 
-File: docYsuVns.info,  Node: Custom variables,  Next: Project support,  Prev: Use-package example,  Up: Configuration
+File: docaMkmSL.info,  Node: Custom variables,  Next: Project support,  Prev: Use-package example,  Up: Configuration
 
 3.2 Custom variables
 ====================
@@ -1022,7 +1023,7 @@ consult-themes                     List of themes to be presented for selection
 consult-widen-key                  Widening key during completion
 
 
-File: docYsuVns.info,  Node: Project support,  Next: Fine-tuning,  Prev: Custom variables,  Up: Configuration
+File: docaMkmSL.info,  Node: Project support,  Next: Fine-tuning,  Prev: Custom variables,  Up: Configuration
 
 3.3 Project support
 ===================
@@ -1049,7 +1050,7 @@ possible to configure alternative methods via the customization variable
      (setq consult-project-function nil)
 
 
-File: docYsuVns.info,  Node: Fine-tuning,  Prev: Project support,  Up: Configuration
+File: docaMkmSL.info,  Node: Fine-tuning,  Prev: Project support,  Up: Configuration
 
 3.4 Fine-tuning of individual commands
 ======================================
@@ -1119,7 +1120,7 @@ by the following techniques:
   5. Write or propose a patch.
 
 
-File: docYsuVns.info,  Node: Recommended packages,  Next: Bug reports,  Prev: Configuration,  Up: Top
+File: docaMkmSL.info,  Node: Recommended packages,  Next: Bug reports,  Prev: Configuration,  Up: Top
 
 4 Recommended packages
 **********************
@@ -1165,7 +1166,7 @@ Consult wiki.  These packages integrate Consult with special programs or
 with other packages in the wider Emacs ecosystem.
 
 
-File: docYsuVns.info,  Node: Bug reports,  Next: Hacking,  Prev: Recommended packages,  Up: Top
+File: docaMkmSL.info,  Node: Bug reports,  Next: Hacking,  Prev: Recommended packages,  Up: Top
 
 5 Bug reports
 *************
@@ -1225,25 +1226,78 @@ report:
      (https://github.com/emacs-evil/evil-collection).
 
    When evaluating Consult-related code snippets you should enable
-lexical binding
-(https://www.gnu.org/software/emacs/manual/html_node/elisp/Lexical-Binding.html).
-Consult often relies on lambdas and lexical closures.
+lexical binding.  Consult relies on lambdas and lexical closures.
 
 
-File: docYsuVns.info,  Node: Hacking,  Next: Contributions,  Prev: Bug reports,  Up: Top
+File: docaMkmSL.info,  Node: Hacking,  Next: Contributions,  Prev: Bug reports,  Up: Top
 
 6 Hacking
 *********
 
 * Menu:
 
+* Creating simple commands::
 * Creating asynchronous completion commands::
 * Live preview::
 
 
-File: docYsuVns.info,  Node: Creating asynchronous completion commands,  Next: Live preview,  Up: Hacking
+File: docaMkmSL.info,  Node: Creating simple commands,  Next: Creating asynchronous completion commands,  Up: Hacking
 
-6.1 Creating asynchronous completion commands
+6.1 Creating simple commands
+============================
+
+When creating simple commands you can either use ‘consult--read’ or
+directly rely on the built-in ‘completing-read’ function.
+‘consult--read’ provides a nicer and more featureful API on top of
+‘completing-read’.  You can specify the completion candidates directly.
+
+     (consult--read
+      '("String A"
+        "String B"
+        "String C")
+      :sort nil
+      :prompt "Select: ")
+
+   If you pass it an alist of ‘(completion-string . value)’, you can
+look up the value.
+
+     (consult--read
+      '(("String A" . value-a)
+        ("String B" . value-b)
+        ("String C" . value-c))
+      :prompt "Select: "
+      :sort nil
+      :lookup #'consult--lookup-cdr)
+
+   You can add the result as a text property.
+
+     (consult--read
+      (list
+       (propertize "String A" 'consult--candidate 'value-a)
+       (propertize "String B" 'consult--candidate 'value-b)
+       (propertize "String C" 'consult--candidate 'value-c))
+      :prompt "Select: "
+      :sort nil
+      :lookup #'consult--lookup-candidate)
+
+   You can add other text properties.
+
+     (consult--read
+      (mapcar (lambda (value)
+                (propertize
+                 (format "%s %s"
+                         (propertize "Option" 'face 'font-lock-comment-face)
+                         value)
+                 'consult--candidate value))
+              '("A" "B" "C"))
+      :prompt "Select: "
+      :sort nil
+      :lookup #'consult--lookup-candidate)
+
+
+File: docaMkmSL.info,  Node: Creating asynchronous completion commands,  Next: Live preview,  Prev: Creating simple commands,  Up: Hacking
+
+6.2 Creating asynchronous completion commands
 =============================================
 
 If you have a completion source that’s both dynamic and expensive to
@@ -1293,9 +1347,9 @@ and ‘consult--process-collection’ can be used for ‘consult--multi’
 sources.  Specify them as ‘:async’ field of the source plist.
 
 
-File: docYsuVns.info,  Node: Live preview,  Prev: Creating asynchronous completion commands,  Up: Hacking
+File: docaMkmSL.info,  Node: Live preview,  Prev: Creating asynchronous completion commands,  Up: Hacking
 
-6.2 Live preview
+6.3 Live preview
 ================
 
 Implementing live preview requires the definition of a state or preview
@@ -1326,7 +1380,7 @@ action argument.  Once defined, we can use this preview function in
       :state #'testibus--preview)
 
 
-File: docYsuVns.info,  Node: Contributions,  Next: Acknowledgments,  Prev: Hacking,  Up: Top
+File: docaMkmSL.info,  Node: Contributions,  Next: Acknowledgments,  Prev: Hacking,  Up: Top
 
 7 Contributions
 ***************
@@ -1346,7 +1400,7 @@ contribute to the Consult wiki (https://github.com/minad/consult/wiki),
 in case you want to share small configuration or command snippets.
 
 
-File: docYsuVns.info,  Node: Acknowledgments,  Next: Indices,  Prev: Contributions,  Up: Top
+File: docaMkmSL.info,  Node: Acknowledgments,  Next: Indices,  Prev: Contributions,  Up: Top
 
 8 Acknowledgments
 *****************
@@ -1360,9 +1414,9 @@ great contributors and thanks to the feedback of many users.  Thank you!
    Code contributions: Aymeric Agon-Rambosson
 (https://github.com/aagon), Amos Bird (https://github.com/amosbird),
 Ashton Wiersdorf (https://github.com/ashton314), Adam Spiers
-(https://github.com/aspiers/), Augusto Stoffel
+(https://github.com/aspiers), Augusto Stoffel
 (https://github.com/astoff), Clemens Radermacher
-(https://github.com/clemera/), Zhengyi (https://github.com/fuzy112),
+(https://github.com/clemera), Zhengyi (https://github.com/fuzy112),
 Geoffrey Lessel (https://github.com/geolessel), Illia Ostapyshyn
 (https://github.com/iostapyshyn), jakanakaevangeli
 (https://github.com/jakanakaevangeli), JD Smith
@@ -1370,34 +1424,33 @@ Geoffrey Lessel (https://github.com/geolessel), Illia Ostapyshyn
 (https://github.com/jyp), mattiasdrp (https://github.com/mattiasdrp),
 Mohamed Abdelnour (https://github.com/mohamed-abdelnour), Mohsin Kaleem
 (https://github.com/mohkale), Fox Kiester (https://github.com/noctuid),
-Omar Antolín Camarena (https://github.com/oantolin/), Earl Hyatt
-(https://github.com/okamsn/), Omar Polo (https://github.com/omar-polo),
+Omar Antolín Camarena (https://github.com/oantolin), Earl Hyatt
+(https://github.com/okamsn), Omar Polo (https://github.com/omar-polo),
 Piotr Kwiecinski (https://github.com/piotrkwiecinski), Robert Weiner
 (https://github.com/rswgnu), Sergey Kostyaev
-(https://github.com/s-kostyaev/), Alexandru Scvorțov
+(https://github.com/s-kostyaev), Alexandru Scvorțov
 (https://github.com/scvalex), Tecosaur (https://github.com/tecosaur),
 Sylvain Rousseau (https://github.com/thisirs), Tom Fitzhenry
-(https://github.com/tomfitzhenry/), Iñigo Serna (https://hg.serna.eu)
-and Alex Kreisher (https://github.com/akreisher).
+(https://github.com/tomfitzhenry), Iñigo Serna (https://hg.serna.eu) and
+Alex Kreisher (https://github.com/akreisher).
 
    Advice and useful discussions: Enrique Kessler Martínez
 (https://github.com/Qkessler), Adam Porter
-(https://github.com/alphapapa/), Bruce d’Arcus
+(https://github.com/alphapapa), Bruce d’Arcus
 (https://github.com/bdarcus), Clemens Radermacher
-(https://github.com/clemera/), Dmitry Gutov
-(https://github.com/dgutov/), Howard Melman
-(https://github.com/hmelman/), Itai Y.  Efrat
+(https://github.com/clemera), Dmitry Gutov (https://github.com/dgutov),
+Howard Melman (https://github.com/hmelman), Itai Y.  Efrat
 (https://github.com/iyefrat), JD Smith (https://github.com/jdtsmith),
-Manuel Uberti (https://github.com/manuel-uberti/), Stefan Monnier
-(https://github.com/monnier/), Omar Antolín Camarena
-(https://github.com/oantolin/), Steve Purcell
-(https://github.com/purcell/), Radon Rosborough
+Manuel Uberti (https://github.com/manuel-uberti), Stefan Monnier
+(https://github.com/monnier), Omar Antolín Camarena
+(https://github.com/oantolin), Steve Purcell
+(https://github.com/purcell), Radon Rosborough
 (https://github.com/raxod502), Tom Fitzhenry
-(https://github.com/tomfitzhenry/) and Protesilaos Stavrou
+(https://github.com/tomfitzhenry) and Protesilaos Stavrou
 (https://protesilaos.com).
 
 
-File: docYsuVns.info,  Node: Indices,  Prev: Acknowledgments,  Up: Top
+File: docaMkmSL.info,  Node: Indices,  Prev: Acknowledgments,  Up: Top
 
 9 Indices
 *********
@@ -1408,7 +1461,7 @@ File: docYsuVns.info,  Node: Indices,  Prev: Acknowledgments,  Up: Top
 * Concept index::                List of all Consult-specific concepts
 
 
-File: docYsuVns.info,  Node: Function index,  Next: Concept index,  Up: Indices
+File: docaMkmSL.info,  Node: Function index,  Next: Concept index,  Up: Indices
 
 9.1 Function index
 ==================
@@ -1468,7 +1521,7 @@ File: docYsuVns.info,  Node: Function index,  Next: Concept index,  Up: Indices
 * consult-yank-replace:                  Editing.               (line 6)
 
 
-File: docYsuVns.info,  Node: Concept index,  Prev: Function index,  Up: Indices
+File: docaMkmSL.info,  Node: Concept index,  Prev: Function index,  Up: Indices
 
 9.2 Concept index
 =================
@@ -1502,40 +1555,41 @@ File: docYsuVns.info,  Node: Concept index,  Prev: Function index,  Up: Indices
 
 Tag Table:
 Node: Top221
-Node: Available commands5204
-Node: Virtual Buffers6781
-Node: Editing8958
-Node: Register9814
-Node: Navigation11535
-Node: Search12778
-Node: Grep and Find14689
-Node: Compilation17104
-Node: Histories17816
-Node: Modes19036
-Node: Org Mode19516
-Node: Help20132
-Node: Miscellaneous21336
-Node: Special features23080
-Node: Live previews24209
-Node: Narrowing and grouping28350
-Node: Asynchronous search30353
-Node: Multiple sources33435
-Node: Embark integration38337
-Node: Configuration40557
-Node: Use-package example41707
-Node: Custom variables48245
-Node: Project support52178
-Node: Fine-tuning53443
-Node: Recommended packages56402
-Node: Bug reports58527
-Node: Hacking61608
-Node: Creating asynchronous completion commands61794
-Node: Live preview63759
-Node: Contributions64956
-Node: Acknowledgments65868
-Node: Indices68418
-Node: Function index68656
-Node: Concept index72450
+Node: Available commands5227
+Node: Virtual Buffers6804
+Node: Editing8981
+Node: Register9837
+Node: Navigation11558
+Node: Search12801
+Node: Grep and Find14712
+Node: Compilation17127
+Node: Histories17839
+Node: Modes19059
+Node: Org Mode19539
+Node: Help20155
+Node: Miscellaneous21359
+Node: Special features23103
+Node: Live previews24232
+Node: Narrowing and grouping28373
+Node: Asynchronous search30376
+Node: Multiple sources33458
+Node: Embark integration38360
+Node: Configuration40580
+Node: Use-package example41649
+Node: Custom variables48187
+Node: Project support52120
+Node: Fine-tuning53385
+Node: Recommended packages56344
+Node: Bug reports58469
+Node: Hacking61464
+Node: Creating simple commands61679
+Node: Creating asynchronous completion commands63312
+Node: Live preview65310
+Node: Contributions66507
+Node: Acknowledgments67419
+Node: Indices69954
+Node: Function index70192
+Node: Concept index73986
 
 End Tag Table
 
