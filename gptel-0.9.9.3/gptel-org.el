@@ -27,6 +27,7 @@
 (require 'cl-lib)
 (require 'org-element)
 (require 'outline)
+(require 'mailcap)                    ;FIXME Avoid this somehow
 
 ;; Functions used for saving/restoring gptel state in Org buffers
 (defvar gptel--num-messages-to-send)
@@ -37,6 +38,7 @@
 (defvar gptel-model)
 (defvar gptel-temperature)
 (defvar gptel-max-tokens)
+(defvar gptel--link-type-cache)
 
 (defvar org-link-angle-re)
 (defvar org-link-bracket-re)
@@ -153,8 +155,7 @@ This makes it feasible to have multiple conversation branches."
   :group 'gptel)
 
 (defcustom gptel-org-ignore-elements '(property-drawer)
-  "List of Org elements that should be stripped from the prompt
-before sending it.
+  "Types of Org elements to be stripped from the prompt before sending.
 
 By default gptel will remove Org property drawers from the
 prompt.  For the full list of available elements, please see
@@ -165,6 +166,32 @@ adding elements to this list can significantly slow down
 `gptel-send'."
   :group 'gptel
   :type '(repeat symbol))
+
+(defcustom gptel-org-validate-link #'always
+  "Validate links to be sent as context with gptel queries.
+
+When `gptel-track-media' is enabled, this option determines if a
+supported link will be followed and its source included with gptel
+queries from Org buffers.  Currently only \"file\" and \"attachment\"
+link types are supported (along with web URLs if the model supports
+them).
+
+It should be a function that accepts an Org link object and return
+non-nil if the link should be followed.
+
+By default, all links are considered valid.
+
+Set this to `gptel-org--link-standalone-p' to only follow links placed
+on a line by themselves, separated from surrounding text."
+  :group 'gptel
+  :type '(choice
+          (const :tag "All links" always)
+          (const :tag "Standalone links" gptel-org--link-standalone-p)
+          (function :tag "Function")))
+
+(defconst gptel-org--link-regex
+  (concat "\\(?:" org-link-bracket-re "\\|" org-link-angle-re "\\)")
+  "Link regex for `gptel-mode' in Org mode.")
 
 
 ;;; Setting context and creating queries
@@ -273,8 +300,7 @@ depend on the value of `gptel-org-branching-context', which see."
           (current-buffer))))))
 
 (defun gptel-org--strip-elements ()
-  "Remove all elements in `gptel-org-ignore-elements' from the
-prompt."
+  "Remove all elements in `gptel-org-ignore-elements' from the prompt."
   (let ((major-mode 'org-mode) element-markers)
     (if (equal '(property-drawer) gptel-org-ignore-elements)
         (save-excursion
@@ -345,61 +371,6 @@ unescapes the remainder."
              (min prev-pt (point)) prev-pt))
           (goto-char (setq prev-pt backward-progress)))))))
 
-;; Handle media links in the buffer
-(cl-defmethod gptel--parse-media-links ((_mode (eql 'org-mode)) beg end)
-  "Parse text and actionable links between BEG and END.
-
-Return a list of the form
- ((:text \"some text\")
-  (:media \"/path/to/media.png\" :mime \"image/png\")
-  (:text \"More text\"))
-for inclusion into the user prompt for the gptel request."
-  (require 'mailcap)                    ;FIXME Avoid this somehow
-  (let ((parts) (from-pt) (mime)
-        (link-regex (concat "\\(?:" org-link-bracket-re "\\|"
-                            org-link-angle-re "\\)")))
-    (save-excursion
-      (setq from-pt (goto-char beg))
-      (while (re-search-forward link-regex end t)
-        (setq mime nil)
-        (when-let* ((link (org-element-context))
-                    ((gptel-org--link-standalone-p link))
-                    (raw-link (org-element-property :raw-link link))
-                    (path (org-element-property :path link))
-                    (type (org-element-property :type link))
-                    ;; FIXME This is not a good place to check for url capability!
-                    ((member type `("attachment" "file"
-                                    ,@(and (gptel--model-capable-p 'url)
-                                       '("http" "https" "ftp"))))))
-          (cond
-           ((member type '("file" "attachment"))
-            (if (file-readable-p path)
-              (if (or (not (gptel--file-binary-p path))
-                      (and (setq mime (mailcap-file-name-to-mime-type path))
-                           (gptel--model-mime-capable-p mime)))
-                  (progn                ; text file or supported binary file
-                    ;; collect text up to link
-                    (when-let* ((text (buffer-substring-no-properties
-                                       from-pt (gptel-org--element-begin link))))
-                      (unless (string-blank-p text) (push (list :text text) parts)))
-                    ;; collect link
-                    (push (if mime (list :media path :mime mime) (list :textfile path)) parts)
-                    (setq from-pt (point)))
-                (message "Ignoring unsupported binary file \"%s\"." path))
-              (message "Ignoring inaccessible file \"%s\"." path)))
-           ((and (member type '("http" "https" "ftp"))
-                 (setq mime (mailcap-file-name-to-mime-type path))
-                 (gptel--model-capable-p mime))
-            ;; Collect text up to this image, and collect this image url
-            (when-let* ((text (buffer-substring-no-properties
-                               from-pt (gptel-org--element-begin link))))
-              (unless (string-blank-p text) (push (list :text text) parts)))
-            (push (list :url raw-link :mime mime) parts)
-            (setq from-pt (point))))))
-      (unless (= from-pt end)
-        (push (list :text (buffer-substring-no-properties from-pt end)) parts)))
-    (nreverse parts)))
-
 (defun gptel-org--link-standalone-p (object)
   "Check if link OBJECT is on a line by itself."
   (when-let* ((par (gptel-org--element-parent object))
@@ -413,6 +384,115 @@ for inclusion into the user prompt for the gptel request."
                 (org-element-property :end object))
              1))))
 
+(defsubst gptel-org--validate-link (link)
+  "Validate an Org LINK as sendable under the current gptel settings.
+
+Return a form (validp link-type path . REST), where REST is a list
+explaining why sending the link is not supported by gptel.  Only the
+first nil value in REST is guaranteed to be correct."
+  (let ((mime))
+    (if-let* ((link-type (org-element-property :type link))
+              (resource-type
+               (or (and (member link-type '("attachment" "file")) 'file)
+                   (and (gptel--model-capable-p 'url)
+                        (member link-type '("http" "https" "ftp")) 'url)))
+              (path (org-element-property :path link))
+              (user-check (funcall gptel-org-validate-link link))
+              (readablep (or (eq resource-type 'url) (file-remote-p path)
+                             (file-readable-p path)))
+              (mime-valid
+               (if (or (eq resource-type 'url)
+                       (cdr (with-memoization
+                                (alist-get (expand-file-name path)
+                                           gptel--link-type-cache
+                                           nil nil #'string=)
+                              (cons t (gptel--file-binary-p path)))))
+                   (gptel--model-mime-capable-p
+                    (setq mime (mailcap-file-name-to-mime-type path)))
+                 t)))
+        (list t link-type path resource-type user-check readablep mime-valid mime)
+      (list nil link-type path resource-type user-check readablep mime-valid mime))))
+
+(cl-defmethod gptel--parse-media-links ((_mode (eql 'org-mode)) beg end)
+  "Parse text and actionable links between BEG and END.
+
+Return a list of the form
+ ((:text \"some text\")
+  (:media \"/path/to/media.png\" :mime \"image/png\")
+  (:text \"More text\"))
+for inclusion into the user prompt for the gptel request."
+  (let ((parts) (from-pt))
+    (save-excursion
+      (setq from-pt (goto-char beg))
+      (while (re-search-forward gptel-org--link-regex end t)
+        (let* ((link (org-element-context))
+               (link-status (gptel-org--validate-link link)))
+          (cl-destructuring-bind
+              (valid type path resource-type user-check readablep mime-valid mime)
+              link-status
+            (cond
+             ((and valid (member type '("file" "attachment")))
+              ;; Text file or supported binary file: collect text up to link
+              (when-let* ((text (buffer-substring-no-properties
+                                 from-pt (gptel-org--element-begin link))))
+                (unless (string-blank-p text) (push (list :text text) parts)))
+              ;; collect link
+              (push (if mime (list :media path :mime mime) (list :textfile path))
+                    parts)
+              (setq from-pt (point)))
+             ((and valid (member type '("http" "https" "ftp")))
+              ;; Collect text up to this image, and collect this image url
+              (when-let* ((text (buffer-substring-no-properties
+                                 from-pt (gptel-org--element-begin link))))
+                (unless (string-blank-p text) (push (list :text text) parts)))
+              (push (list :url (org-element-property :raw-link link) :mime mime) parts)
+              (setq from-pt (point)))
+             ((not resource-type)
+              (message "Link source not followed for unsupported link type \"%s\"." type))
+             ((not user-check)
+              (message (if (eq gptel-org-validate-link 'gptel--link-standalone-p)
+                           "Ignoring non-standalone link \"%s\"."
+                         "Link %s failed to validate, see `gptel-org-validate-link'.")
+                       path))
+             ((not readablep)
+              (message "Ignoring inaccessible file \"%s\"." path))
+             ((and (not mime-valid) (eq resource-type 'file))
+              (message "Ignoring unsupported binary file \"%s\"." path))))))
+      (unless (= from-pt end)
+        (push (list :text (buffer-substring-no-properties from-pt end)) parts)))
+    (nreverse parts)))
+
+(defun gptel-org--annotate-links (beg end)
+  "Annotate Org links whose sources will be sent with `gptel-send'.
+
+Search between BEG and END."
+  (when gptel-track-media
+    (save-excursion
+      (goto-char beg) (forward-line -1)
+      (let ((link-ovs (cl-loop for o in (overlays-in (point) end)
+                               if (overlay-get o 'gptel-track-media)
+                               collect o into os finally return os)))
+        (while (re-search-forward gptel-org--link-regex end t)
+          (unless (gptel--in-response-p (1- (point)))
+            (let* ((link (org-element-context))
+                   (from (org-element-begin link))
+                   (to (org-element-end link))
+                   (link-status (gptel-org--validate-link link))
+                   (ov (cl-loop for o in (overlays-in from to)
+                                if (overlay-get o 'gptel-track-media)
+                                return o)))
+              (if ov                    ; Ensure overlay over each link
+                  (progn (move-overlay ov from to)
+                         (setq link-ovs (delq ov link-ovs)))
+                (setq ov (make-overlay from to nil t))
+                (overlay-put ov 'gptel-track-media t)
+                (overlay-put ov 'evaporate t)
+                (overlay-put ov 'priority -80))
+              ;; Check if link will be sent, and annotate accordingly
+              (gptel--annotate-link ov link-status))))
+        (and link-ovs (mapc #'delete-overlay link-ovs))))
+    `(jit-lock-bounds ,beg . ,end)))
+
 (defun gptel-org--send-with-props (send-fun &rest args)
   "Conditionally modify SEND-FUN's calling environment.
 
@@ -424,11 +504,13 @@ parameters.
 ARGS are the original function call arguments."
   (if (derived-mode-p 'org-mode)
       (pcase-let ((`(,gptel--system-message ,gptel-backend ,gptel-model
-                     ,gptel-temperature ,gptel-max-tokens)
+                     ,gptel-temperature ,gptel-max-tokens
+                     ,gptel--num-messages-to-send ,gptel-tools)
                    (seq-mapn (lambda (a b) (or a b))
                              (gptel-org--entry-properties)
                              (list gptel--system-message gptel-backend gptel-model
-                                   gptel-temperature gptel-max-tokens))))
+                                   gptel-temperature gptel-max-tokens
+                                   gptel--num-messages-to-send gptel-tools))))
         (apply send-fun args))
     (apply send-fun args)))
 
@@ -445,12 +527,12 @@ ARGS are the original function call arguments."
 (defun gptel-org--entry-properties (&optional pt)
   "Find gptel configuration properties stored at PT."
   (pcase-let
-      ((`(,system ,backend ,model ,temperature ,tokens ,num)
+      ((`(,system ,backend ,model ,temperature ,tokens ,num ,tools)
          (mapcar
           (lambda (prop) (org-entry-get (or pt (point)) prop 'selective))
           '("GPTEL_SYSTEM" "GPTEL_BACKEND" "GPTEL_MODEL"
             "GPTEL_TEMPERATURE" "GPTEL_MAX_TOKENS"
-            "GPTEL_NUM_MESSAGES_TO_SEND"))))
+            "GPTEL_NUM_MESSAGES_TO_SEND" "GPTEL_TOOLS"))))
     (when system
       (setq system (string-replace "\\n" "\n" system)))
     (when backend
@@ -461,7 +543,16 @@ ARGS are the original function call arguments."
       (setq temperature (gptel--to-number temperature)))
     (when tokens (setq tokens (gptel--to-number tokens)))
     (when num (setq num (gptel--to-number num)))
-    (list system backend model temperature tokens num)))
+    (when tools
+      (setq tools (cl-loop
+                   for tname in (split-string tools)
+                   for tool = (with-demoted-errors "gptel: %S"
+                                (gptel-get-tool tname))
+                   if tool collect tool else do
+                   (display-warning
+                    '(gptel org tools)
+                    (format "Tool %s not found, ignoring" tname)))))
+    (list system backend model temperature tokens num tools)))
 
 (defun gptel-org--restore-state ()
   "Restore gptel state for Org buffers when turning on `gptel-mode'."
@@ -472,7 +563,7 @@ ARGS are the original function call arguments."
           (progn
             (when-let* ((bounds (org-entry-get (point-min) "GPTEL_BOUNDS")))
               (gptel--restore-props (read bounds)))
-            (pcase-let ((`(,system ,backend ,model ,temperature ,tokens ,num)
+            (pcase-let ((`(,system ,backend ,model ,temperature ,tokens ,num ,tools)
                          (gptel-org--entry-properties (point-min))))
               (when system (setq-local gptel--system-message system))
               (if backend (setq-local gptel-backend backend)
@@ -486,7 +577,8 @@ ARGS are the original function call arguments."
               (when model (setq-local gptel-model model))
               (when temperature (setq-local gptel-temperature temperature))
               (when tokens (setq-local gptel-max-tokens tokens))
-              (when num (setq-local gptel--num-messages-to-send num))))
+              (when num (setq-local gptel--num-messages-to-send num))
+              (when tools (setq-local gptel-tools tools))))
         (:success (message "gptel chat restored."))
         (error (message "Could not restore gptel state, sorry! Error: %s" status)))
       (set-buffer-modified-p modified))))
@@ -503,20 +595,27 @@ non-nil (default), display a message afterwards."
   (interactive (list (point) t))
   (org-entry-put pt "GPTEL_MODEL" (gptel--model-name gptel-model))
   (org-entry-put pt "GPTEL_BACKEND" (gptel-backend-name gptel-backend))
-  (unless (equal (default-value 'gptel-temperature) gptel-temperature)
-    (org-entry-put pt "GPTEL_TEMPERATURE"
-                   (number-to-string gptel-temperature)))
-  (when (natnump gptel--num-messages-to-send)
-    (org-entry-put pt "GPTEL_NUM_MESSAGES_TO_SEND"
-                   (number-to-string gptel--num-messages-to-send)))
-  (org-entry-put pt "GPTEL_SYSTEM"
+  (org-entry-put pt "GPTEL_SYSTEM"      ;TODO: Handle nil case correctly
                  (and-let* ((msg (car-safe
                                   (gptel--parse-directive
                                    gptel--system-message))))
                    (string-replace "\n" "\\n" msg)))
-  (when gptel-max-tokens
-    (org-entry-put
-     pt "GPTEL_MAX_TOKENS" (number-to-string gptel-max-tokens)))
+  (if gptel-tools
+      (org-entry-put
+       pt "GPTEL_TOOLS" (mapconcat #'gptel-tool-name gptel-tools " "))
+    (org-entry-delete pt "GPTEL_TOOLS"))
+  (if (equal (default-value 'gptel-temperature) gptel-temperature)
+      (org-entry-delete pt "GPTEL_TEMPERATURE")
+    (org-entry-put pt "GPTEL_TEMPERATURE"
+                   (number-to-string gptel-temperature)))
+  (if (natnump gptel--num-messages-to-send)
+      (org-entry-put pt "GPTEL_NUM_MESSAGES_TO_SEND"
+                     (number-to-string gptel--num-messages-to-send))
+    (org-entry-delete pt "GPTEL_NUM_MESSAGES_TO_SEND"))
+  (if gptel-max-tokens
+      (org-entry-put
+       pt "GPTEL_MAX_TOKENS" (number-to-string gptel-max-tokens))
+    (org-entry-delete pt "GPTEL_MAX_TOKENS"))
   (when msg
     (message "Added gptel configuration to current headline.")))
 

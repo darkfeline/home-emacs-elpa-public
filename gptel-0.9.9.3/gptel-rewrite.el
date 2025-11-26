@@ -279,13 +279,13 @@ input history list."
               (run-at-time 0 nil #'gptel--suffix-rewrite gptel--rewrite-message))
             (when (minibufferp)
               (funcall set-rewrite-message)
-              (minibuffer-quit-recursive-edit))))
+              (exit-minibuffer))))
          (start-transient
           (lambda () (interactive)
             (run-at-time 0 nil #'transient-setup 'gptel-rewrite)
             (when (minibufferp)
               (funcall set-rewrite-message)
-              (minibuffer-quit-recursive-edit))))
+              (exit-minibuffer))))
          (edit-in-buffer
           (lambda () (interactive)
             (let ((offset (- (point) (minibuffer-prompt-end))))
@@ -298,7 +298,7 @@ input history list."
                     (run-at-time 0 nil #'gptel--suffix-rewrite)
                     (push (buffer-local-value 'gptel--rewrite-message cb)
                           (alist-get 'gptel--infix-rewrite-extra transient-history)))
-                  (when (minibufferp) (minibuffer-quit-recursive-edit)))))))
+                  (when (minibufferp) (exit-minibuffer)))))))
          (minibuffer-local-map
           (make-composed-keymap (define-keymap
                                   "TAB" cycle-prefix "<tab>" cycle-prefix
@@ -514,6 +514,8 @@ INFO is the async communication channel for the rewrite request."
             (let ((inhibit-read-only t))
               (delete-region (point) (point-max))
               ;; Run post-rewrite-functions on rewritten text in its buffer
+              (setq-local gptel-post-rewrite-functions
+                          (buffer-local-value 'gptel-post-rewrite-functions buf))
               (with-demoted-errors "gptel-post-rewrite-functions: %S"
                 (run-hook-with-args 'gptel-post-rewrite-functions (point-min) (point-max)))
               (when (and (plist-get info :newline)
