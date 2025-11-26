@@ -9,7 +9,7 @@
 ;; URL: https://orgmode.org
 ;; Package-Requires: ((emacs "26.1"))
 
-;; Version: 9.7.34
+;; Version: 9.7.38
 
 ;; This file is part of GNU Emacs.
 ;;
@@ -12126,7 +12126,7 @@ which see."
       (`lambda (assoc string org-last-tags-completion-table)) ;exact match?
       (`(boundaries . ,suffix)
        (let ((end (if (string-match "[-+:&,|]" suffix)
-                      (match-string 0 suffix)
+                      (match-beginning 0)
                     (length suffix))))
          `(boundaries ,(or begin 0) . ,end)))
       (`nil
@@ -19271,7 +19271,8 @@ With prefix arg UNCOMPILED, load the uncompiled versions."
 	(when (or (> marker (point-max)) (< marker (point-min)))
 	  (widen))
 	(goto-char marker)
-	(org-fold-show-context 'org-goto))
+        (when (derived-mode-p 'org-mode)
+	  (org-fold-show-context 'org-goto)))
     (if bookmark
 	(bookmark-jump bookmark)
       (error "Cannot find location"))))
@@ -21511,7 +21512,7 @@ Optional argument ELEMENT contains element at point."
 (defun org-at-block-p nil
   "Return t if cursor is at a block keyword."
   (save-excursion
-    (move-beginning-of-line 1)
+    (forward-line 0)
     (looking-at org-block-regexp)))
 
 (defun org-point-at-end-of-empty-headline ()
