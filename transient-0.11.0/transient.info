@@ -1,4 +1,4 @@
-This is doc7uquGA.info, produced by makeinfo version 6.8 from
+This is docNghdh6.info, produced by makeinfo version 6.8 from
 transient.texi.
 
      Copyright (C) 2018–2025 Free Software Foundation, Inc.
@@ -19,7 +19,7 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
 
-File: doc7uquGA.info,  Node: Top,  Next: Introduction,  Up: (dir)
+File: docNghdh6.info,  Node: Top,  Next: Introduction,  Up: (dir)
 
 Transient User and Developer Manual
 ***********************************
@@ -32,7 +32,7 @@ used to implement similar menus in other packages.
 resource to get over that hurdle is Psionic K’s interactive tutorial,
 available at <https://github.com/positron-solutions/transient-showcase>.
 
-This manual is for Transient version 0.10.1.
+This manual is for Transient version 0.11.0.
 
      Copyright (C) 2018–2025 Free Software Foundation, Inc.
 
@@ -112,7 +112,7 @@ Suffix Methods
 
 
 
-File: doc7uquGA.info,  Node: Introduction,  Next: Usage,  Prev: Top,  Up: Top
+File: docNghdh6.info,  Node: Introduction,  Next: Usage,  Prev: Top,  Up: Top
 
 1 Introduction
 **************
@@ -185,7 +185,7 @@ you’ve tried it, it’s hard to go back to the ‘C-u what can I do here
 again?’ way.
 
 
-File: doc7uquGA.info,  Node: Usage,  Next: Modifying Existing Transients,  Prev: Introduction,  Up: Top
+File: docNghdh6.info,  Node: Usage,  Next: Modifying Existing Transients,  Prev: Introduction,  Up: Top
 
 2 Usage
 *******
@@ -203,7 +203,7 @@ File: doc7uquGA.info,  Node: Usage,  Next: Modifying Existing Transients,  Prev:
 * Configuration::
 
 
-File: doc7uquGA.info,  Node: Invoking Transients,  Next: Aborting and Resuming Transients,  Up: Usage
+File: docNghdh6.info,  Node: Invoking Transients,  Next: Aborting and Resuming Transients,  Up: Usage
 
 2.1 Invoking Transients
 =======================
@@ -229,7 +229,7 @@ commands may also set some value by side-effect, e.g., by setting the
 value of some variable.
 
 
-File: doc7uquGA.info,  Node: Aborting and Resuming Transients,  Next: Common Suffix Commands,  Prev: Invoking Transients,  Up: Usage
+File: docNghdh6.info,  Node: Aborting and Resuming Transients,  Next: Common Suffix Commands,  Prev: Invoking Transients,  Up: Usage
 
 2.2 Aborting and Resuming Transients
 ====================================
@@ -286,7 +286,7 @@ Key: M-x transient-resume
      if any.
 
 
-File: doc7uquGA.info,  Node: Common Suffix Commands,  Next: Saving Values,  Prev: Aborting and Resuming Transients,  Up: Usage
+File: docNghdh6.info,  Node: Common Suffix Commands,  Next: Saving Values,  Prev: Aborting and Resuming Transients,  Up: Usage
 
 2.3 Common Suffix Commands
 ==========================
@@ -344,7 +344,7 @@ Key: C-x t (transient-toggle-common)
 one of the following sections.
 
 
-File: doc7uquGA.info,  Node: Saving Values,  Next: Using History,  Prev: Common Suffix Commands,  Up: Usage
+File: docNghdh6.info,  Node: Saving Values,  Next: Using History,  Prev: Common Suffix Commands,  Up: Usage
 
 2.4 Saving Values
 =================
@@ -390,7 +390,7 @@ their handling of buffer-local values is actually a bit more complicated
 than outlined above and even customizable.
 
 
-File: doc7uquGA.info,  Node: Using History,  Next: Getting Help for Suffix Commands,  Prev: Saving Values,  Up: Usage
+File: docNghdh6.info,  Node: Using History,  Next: Getting Help for Suffix Commands,  Prev: Saving Values,  Up: Usage
 
 2.5 Using History
 =================
@@ -441,7 +441,7 @@ User Option: transient-history-limit
      the history is saved in ‘transient-history-file’.
 
 
-File: doc7uquGA.info,  Node: Getting Help for Suffix Commands,  Next: Enabling and Disabling Suffixes,  Prev: Using History,  Up: Usage
+File: docNghdh6.info,  Node: Getting Help for Suffix Commands,  Next: Enabling and Disabling Suffixes,  Prev: Using History,  Up: Usage
 
 2.6 Getting Help for Suffix Commands
 ====================================
@@ -469,7 +469,7 @@ supported.  The fallback is to show the command’s documentation string,
 for non-infix suffixes this is usually appropriate.
 
 
-File: doc7uquGA.info,  Node: Enabling and Disabling Suffixes,  Next: Other Commands,  Prev: Getting Help for Suffix Commands,  Up: Usage
+File: docNghdh6.info,  Node: Enabling and Disabling Suffixes,  Next: Other Commands,  Prev: Getting Help for Suffix Commands,  Up: Usage
 
 2.7 Enabling and Disabling Suffixes
 ===================================
@@ -584,7 +584,7 @@ Function: transient-set-default-level suffix level
      new feature, so you might encounter this quite often.)
 
 
-File: doc7uquGA.info,  Node: Other Commands,  Next: Configuration,  Prev: Enabling and Disabling Suffixes,  Up: Usage
+File: docNghdh6.info,  Node: Other Commands,  Next: Configuration,  Prev: Enabling and Disabling Suffixes,  Up: Usage
 
 2.8 Other Commands
 ==================
@@ -621,7 +621,7 @@ Command: transient-toggle-docstrings
      is used when displaying docstrings.
 
 
-File: doc7uquGA.info,  Node: Configuration,  Prev: Other Commands,  Up: Usage
+File: docNghdh6.info,  Node: Configuration,  Prev: Other Commands,  Up: Usage
 
 2.9 Configuration
 =================
@@ -821,6 +821,9 @@ User Option: transient-highlight-mismatched-keys
      not match the respective command-line argument should be
      highlighted.  For other infix commands this option has no effect.
 
+     This is mostly indended for autors of transient menus and disabled
+     by default.
+
      When this option is non-‘nil’, the key binding for an infix
      argument is highlighted when only a long argument (e.g.,
      ‘--verbose’) is specified but no shorthand (e.g., ‘-v’).  In the
@@ -925,7 +928,7 @@ Variable: transient-setup-buffer-hook
      buffer is current and empty when this hook is runs.
 
 
-File: doc7uquGA.info,  Node: Modifying Existing Transients,  Next: Defining New Commands,  Prev: Usage,  Up: Top
+File: docNghdh6.info,  Node: Modifying Existing Transients,  Next: Defining New Commands,  Prev: Usage,  Up: Top
 
 3 Modifying Existing Transients
 *******************************
@@ -978,12 +981,12 @@ after the infix argument that is bound to ‘-3’ in ‘magit-patch-apply’.
    These functions operate on the information stored in the
 ‘transient--layout’ property of the PREFIX symbol.  Elements in that
 tree are not objects but have the form ‘(CLASS PLIST) for suffixes’ and
-[CLASS PLIST CHILDREN] for groups.  At the root of the tree is an
-element [N nil CHILDREN], where N is the version of the layout format,
-currently and hopefully for a long time 2.  While that element looks
-like a group vector, that element does not count when identifying a
-group using a coordinate vector, i.e., [0] is its first child, not the
-root element itself.
+‘[CLASS PLIST CHILDREN]’ for groups.  At the root of the tree is an
+element ‘[N Nil CHILDREN]’, where ‘N’ is the version of the layout
+format, currently and hopefully for a long time 2.  While that element
+looks like a group vector, that element does not count when identifying
+a group using a coordinate vector, i.e., ‘[0]’ is its first child, not
+the root element itself.
 
 Function: transient-insert-suffix prefix loc suffix &optional keep-other
 
@@ -1042,7 +1045,7 @@ an error by default.  If you really want the insert functions to also
 signal an error, set ‘transient-error-on-insert-failure’ to ‘t’.
 
 
-File: doc7uquGA.info,  Node: Defining New Commands,  Next: Classes and Methods,  Prev: Modifying Existing Transients,  Up: Top
+File: docNghdh6.info,  Node: Defining New Commands,  Next: Classes and Methods,  Prev: Modifying Existing Transients,  Up: Top
 
 4 Defining New Commands
 ***********************
@@ -1060,7 +1063,7 @@ File: doc7uquGA.info,  Node: Defining New Commands,  Next: Classes and Methods, 
 * Transient State::
 
 
-File: doc7uquGA.info,  Node: Technical Introduction,  Next: Defining Transients,  Up: Defining New Commands
+File: docNghdh6.info,  Node: Technical Introduction,  Next: Defining Transients,  Up: Defining New Commands
 
 4.1 Technical Introduction
 ==========================
@@ -1160,7 +1163,7 @@ incomplete key sequences, and those cannot be interrupted with prefix
 commands.)
 
 
-File: doc7uquGA.info,  Node: Defining Transients,  Next: Binding Suffix and Infix Commands,  Prev: Technical Introduction,  Up: Defining New Commands
+File: docNghdh6.info,  Node: Defining Transients,  Next: Binding Suffix and Infix Commands,  Prev: Technical Introduction,  Up: Defining New Commands
 
 4.2 Defining Transients
 =======================
@@ -1229,7 +1232,7 @@ Macro: transient-define-group name group...
      NAME.  GROUPs have the same form as for ‘transient-define-prefix’.
 
 
-File: doc7uquGA.info,  Node: Binding Suffix and Infix Commands,  Next: Defining Suffix and Infix Commands,  Prev: Defining Transients,  Up: Defining New Commands
+File: docNghdh6.info,  Node: Binding Suffix and Infix Commands,  Next: Defining Suffix and Infix Commands,  Prev: Defining Transients,  Up: Defining New Commands
 
 4.3 Binding Suffix and Infix Commands
 =====================================
@@ -1251,7 +1254,7 @@ used in ‘transient-define-prefix’.
 * Suffix Specifications::
 
 
-File: doc7uquGA.info,  Node: Group Specifications,  Next: Suffix Specifications,  Up: Binding Suffix and Infix Commands
+File: docNghdh6.info,  Node: Group Specifications,  Next: Suffix Specifications,  Up: Binding Suffix and Infix Commands
 
 4.3.1 Group Specifications
 --------------------------
@@ -1396,7 +1399,7 @@ This feature is experimental and should be avoided.
    The form of suffix specifications is documented in the next node.
 
 
-File: doc7uquGA.info,  Node: Suffix Specifications,  Prev: Group Specifications,  Up: Binding Suffix and Infix Commands
+File: docNghdh6.info,  Node: Suffix Specifications,  Prev: Group Specifications,  Up: Binding Suffix and Infix Commands
 
 4.3.2 Suffix Specifications
 ---------------------------
@@ -1505,7 +1508,7 @@ supported.  Inside suffix bindings, the use of ‘##’ is not supported
 anywhere but directly following a keyword symbol.
 
 
-File: doc7uquGA.info,  Node: Defining Suffix and Infix Commands,  Next: Using Infix Arguments,  Prev: Binding Suffix and Infix Commands,  Up: Defining New Commands
+File: docNghdh6.info,  Node: Defining Suffix and Infix Commands,  Next: Using Infix Arguments,  Prev: Binding Suffix and Infix Commands,  Up: Defining New Commands
 
 4.4 Defining Suffix and Infix Commands
 ======================================
@@ -1568,7 +1571,7 @@ Macro: transient-define-argument name arglist [docstring] [keyword value]...
      ‘transient-define-infix’ instead.
 
 
-File: doc7uquGA.info,  Node: Using Infix Arguments,  Next: Using Prefix Scope,  Prev: Defining Suffix and Infix Commands,  Up: Defining New Commands
+File: docNghdh6.info,  Node: Using Infix Arguments,  Next: Using Prefix Scope,  Prev: Defining Suffix and Infix Commands,  Up: Defining New Commands
 
 4.5 Using Infix Arguments
 =========================
@@ -1633,7 +1636,7 @@ Function: transient-suffixes prefix
      if the current command is not being invoked from PREFIX.
 
 
-File: doc7uquGA.info,  Node: Using Prefix Scope,  Next: Current Suffix Command,  Prev: Using Infix Arguments,  Up: Defining New Commands
+File: docNghdh6.info,  Node: Using Prefix Scope,  Next: Current Suffix Command,  Prev: Using Infix Arguments,  Up: Defining New Commands
 
 4.6 Using Prefix Scope
 ======================
@@ -1646,18 +1649,18 @@ Function: transient-scope prefixes classes
      This function returns the scope of the active or current transient
      prefix command.
 
-     If optional PREFIXES and CLASSES are both nil, return the scope of
-     the prefix currently being setup, making this variation useful,
+     If optional PREFIXES and CLASSES are both ‘nil’, return the scope
+     of the prefix currently being setup, making this variation useful,
      e.g., in ‘:if*’ predicates.  If no prefix is being setup, but the
      current command was invoked from some prefix, then return the scope
      of that.
 
-     If PREFIXES is non-nil, it must be a prefix command or a list of
-     such commands.  If CLASSES is non-nil, it must be a prefix class or
-     a list of such classes.  When this function is called from the body
-     or the ‘interactive’ form of a suffix command, PREFIXES and/or
-     CLASSES should be non-nil.  If either is non-nil, try the following
-     in order:
+     If PREFIXES is non-‘nil’, it must be a prefix command or a list of
+     such commands.  If CLASSES is non-‘nil’, it must be a prefix class
+     or a list of such classes.  When this function is called from the
+     body or the ‘interactive’ form of a suffix command, PREFIXES and/or
+     CLASSES should be non-‘nil’.  If either is non-‘nil’, try the
+     following in order:
 
         • If the current suffix command was invoked from a prefix, which
           appears in PREFIXES, return the scope of that prefix.
@@ -1677,10 +1680,10 @@ Function: transient-scope prefixes classes
           respective class definition or using its
           ‘transient-init-scope’ method.
 
-     If no prefix matches, return nil.
+     If no prefix matches, return ‘nil’.
 
 
-File: doc7uquGA.info,  Node: Current Suffix Command,  Next: Current Prefix Command,  Prev: Using Prefix Scope,  Up: Defining New Commands
+File: docNghdh6.info,  Node: Current Suffix Command,  Next: Current Prefix Command,  Prev: Using Prefix Scope,  Up: Defining New Commands
 
 4.7 Current Suffix Command
 ==========================
@@ -1733,7 +1736,7 @@ Variable: transient-current-suffixes
      the value.
 
 
-File: doc7uquGA.info,  Node: Current Prefix Command,  Next: Transient State,  Prev: Current Suffix Command,  Up: Defining New Commands
+File: docNghdh6.info,  Node: Current Prefix Command,  Next: Transient State,  Prev: Current Suffix Command,  Up: Defining New Commands
 
 4.8 Current Prefix Command
 ==========================
@@ -1788,7 +1791,7 @@ Function: transient-active-prefix &optional prefixes
      object is only returned if it matches one of the PREFIXES.
 
 
-File: doc7uquGA.info,  Node: Transient State,  Prev: Current Prefix Command,  Up: Defining New Commands
+File: docNghdh6.info,  Node: Transient State,  Prev: Current Prefix Command,  Up: Defining New Commands
 
 4.9 Transient State
 ===================
@@ -1996,7 +1999,7 @@ Function: transient–do-suspend
      This is used when the user pressed ‘C-z’.
 
 
-File: doc7uquGA.info,  Node: Classes and Methods,  Next: FAQ,  Prev: Defining New Commands,  Up: Top
+File: docNghdh6.info,  Node: Classes and Methods,  Next: FAQ,  Prev: Defining New Commands,  Up: Top
 
 5 Classes and Methods
 *********************
@@ -2049,7 +2052,7 @@ This happens in two ways.
 * Predicate Slots::
 
 
-File: doc7uquGA.info,  Node: Group Classes,  Next: Group Methods,  Up: Classes and Methods
+File: docNghdh6.info,  Node: Group Classes,  Next: Group Methods,  Up: Classes and Methods
 
 5.1 Group Classes
 =================
@@ -2097,7 +2100,7 @@ beginning of the class specification, e.g., ‘[:class transient-columns
      their elements.
 
 
-File: doc7uquGA.info,  Node: Group Methods,  Next: Prefix Classes,  Prev: Group Classes,  Up: Classes and Methods
+File: docNghdh6.info,  Node: Group Methods,  Next: Prefix Classes,  Prev: Group Classes,  Up: Classes and Methods
 
 5.2 Group Methods
 =================
@@ -2127,7 +2130,7 @@ Function: transient–insert-group group
      buffer.
 
 
-File: doc7uquGA.info,  Node: Prefix Classes,  Next: Suffix Classes,  Prev: Group Methods,  Up: Classes and Methods
+File: docNghdh6.info,  Node: Prefix Classes,  Next: Suffix Classes,  Prev: Group Methods,  Up: Classes and Methods
 
 5.3 Prefix Classes
 ==================
@@ -2145,7 +2148,7 @@ is active, a clone of that object is stored in the variable
 to the active transient’s object should not affect later invocations.
 
 
-File: doc7uquGA.info,  Node: Suffix Classes,  Next: Prefix Methods,  Prev: Prefix Classes,  Up: Classes and Methods
+File: docNghdh6.info,  Node: Suffix Classes,  Next: Prefix Methods,  Prev: Prefix Classes,  Up: Classes and Methods
 
 5.4 Suffix Classes
 ==================
@@ -2245,7 +2248,7 @@ classes will likely get generalized and added to Transient.  For now
 they are very much subject to change and not documented.
 
 
-File: doc7uquGA.info,  Node: Prefix Methods,  Next: Suffix Methods,  Prev: Suffix Classes,  Up: Classes and Methods
+File: docNghdh6.info,  Node: Prefix Methods,  Next: Suffix Methods,  Prev: Suffix Classes,  Up: Classes and Methods
 
 5.5 Prefix Methods
 ==================
@@ -2315,7 +2318,7 @@ prefix commands.  The default method effectively describes the command
 using ‘describe-function’.
 
 
-File: doc7uquGA.info,  Node: Suffix Methods,  Next: Prefix Slots,  Prev: Prefix Methods,  Up: Classes and Methods
+File: docNghdh6.info,  Node: Suffix Methods,  Next: Prefix Slots,  Prev: Prefix Methods,  Up: Classes and Methods
 
 5.6 Suffix Methods
 ==================
@@ -2329,7 +2332,7 @@ functions use ‘describe-function’.
 * Suffix Format Methods::
 
 
-File: doc7uquGA.info,  Node: Suffix Value Methods,  Next: Suffix Format Methods,  Up: Suffix Methods
+File: docNghdh6.info,  Node: Suffix Value Methods,  Next: Suffix Format Methods,  Up: Suffix Methods
 
 5.6.1 Suffix Value Methods
 --------------------------
@@ -2407,7 +2410,7 @@ Function: transient-init-scope obj
      default implementation, which is a noop.
 
 
-File: doc7uquGA.info,  Node: Suffix Format Methods,  Prev: Suffix Value Methods,  Up: Suffix Methods
+File: docNghdh6.info,  Node: Suffix Format Methods,  Prev: Suffix Value Methods,  Up: Suffix Methods
 
 5.6.2 Suffix Format Methods
 ---------------------------
@@ -2477,7 +2480,7 @@ Function: transient-show-summary obj &optional return
      of showing it.  This is used when a tooltip is needed.
 
 
-File: doc7uquGA.info,  Node: Prefix Slots,  Next: Suffix Slots,  Prev: Suffix Methods,  Up: Classes and Methods
+File: docNghdh6.info,  Node: Prefix Slots,  Next: Suffix Slots,  Prev: Suffix Methods,  Up: Classes and Methods
 
 5.7 Prefix Slots
 ================
@@ -2636,7 +2639,7 @@ set in calls to ‘transient-define-prefix’.
      properly exited, even in case of an error.
 
 
-File: doc7uquGA.info,  Node: Suffix Slots,  Next: Predicate Slots,  Prev: Prefix Slots,  Up: Classes and Methods
+File: docNghdh6.info,  Node: Suffix Slots,  Next: Predicate Slots,  Prev: Prefix Slots,  Up: Classes and Methods
 
 5.8 Suffix Slots
 ================
@@ -2708,7 +2711,7 @@ Slots of ‘transient-suffix’
 
    The following two slots are experimental.  They can also be set for a
 group, in which case they apply to all suffixes in that group, except
-for suffixes that set the same slot to a non-nil value.
+for suffixes that set the same slot to a non-‘nil’ value.
 
    • ‘advice’ A function used to advise the command.  The advise is
      called using ‘(apply advice command args)’, i.e., it behaves like
@@ -2716,9 +2719,9 @@ for suffixes that set the same slot to a non-nil value.
 
    • ‘advice*’ A function used to advise the command.  Unlike ‘advice’,
      this advises not only the command body but also its ‘interactive’
-     spec.  If both slots are non-nil, ‘advice’ is used for the body and
-     ‘advice*’ is used for the ‘interactive’ form.  When advising the
-     ‘interactive’ spec, called using ‘(funcall advice
+     spec.  If both slots are non-‘nil’, ‘advice’ is used for the body
+     and ‘advice*’ is used for the ‘interactive’ form.  When advising
+     the ‘interactive’ spec, called using ‘(funcall advice
      #'advice-eval-interactive-spec spec)’.
 
 Slots of ‘transient-infix’
@@ -2811,7 +2814,7 @@ Slots of ‘transient-switches’
      E.g., ‘\\(--\\(topo\\|author-date\\|date\\)-order\\)’.
 
 
-File: doc7uquGA.info,  Node: Predicate Slots,  Prev: Suffix Slots,  Up: Classes and Methods
+File: docNghdh6.info,  Node: Predicate Slots,  Prev: Suffix Slots,  Up: Classes and Methods
 
 5.9 Predicate Slots
 ===================
@@ -2860,7 +2863,7 @@ depending on user preference.  See *note Enabling and Disabling
 Suffixes::.
 
 
-File: doc7uquGA.info,  Node: FAQ,  Next: Keystroke Index,  Prev: Classes and Methods,  Up: Top
+File: docNghdh6.info,  Node: FAQ,  Next: Keystroke Index,  Prev: Classes and Methods,  Up: Top
 
 Appendix A FAQ
 **************
@@ -2936,25 +2939,25 @@ have implemented a function, ‘transient-bind-q-to-quit’ that makes the
 necessary changes.  See its documentation string for more information.
 
 
-File: doc7uquGA.info,  Node: Keystroke Index,  Next: Command and Function Index,  Prev: FAQ,  Up: Top
+File: docNghdh6.info,  Node: Keystroke Index,  Next: Command and Function Index,  Prev: FAQ,  Up: Top
 
 Appendix B Keystroke Index
 **************************
 
 
-File: doc7uquGA.info,  Node: Command and Function Index,  Next: Variable Index,  Prev: Keystroke Index,  Up: Top
+File: docNghdh6.info,  Node: Command and Function Index,  Next: Variable Index,  Prev: Keystroke Index,  Up: Top
 
 Appendix C Command and Function Index
 *************************************
 
 
-File: doc7uquGA.info,  Node: Variable Index,  Next: Concept Index,  Prev: Command and Function Index,  Up: Top
+File: docNghdh6.info,  Node: Variable Index,  Next: Concept Index,  Prev: Command and Function Index,  Up: Top
 
 Appendix D Variable Index
 *************************
 
 
-File: doc7uquGA.info,  Node: Concept Index,  Next: GNU General Public License,  Prev: Variable Index,  Up: Top
+File: docNghdh6.info,  Node: Concept Index,  Next: GNU General Public License,  Prev: Variable Index,  Up: Top
 
 Appendix E Concept Index
 ************************
@@ -2999,7 +3002,7 @@ Appendix E Concept Index
 * value history:                         Using History.        (line  6)
 
 
-File: doc7uquGA.info,  Node: GNU General Public License,  Prev: Concept Index,  Up: Top
+File: docNghdh6.info,  Node: GNU General Public License,  Prev: Concept Index,  Up: Top
 
 Appendix F GNU General Public License
 *************************************
@@ -3736,59 +3739,59 @@ Node: Configuration25848
 Ref: Essential Options26128
 Ref: Accessibility Options32650
 Ref: Auxiliary Options32969
-Ref: Developer Options37509
-Ref: Hook Variables39024
-Node: Modifying Existing Transients39540
-Node: Defining New Commands45350
-Node: Technical Introduction45790
-Node: Defining Transients51499
-Node: Binding Suffix and Infix Commands54834
-Node: Group Specifications55692
-Node: Suffix Specifications62628
-Node: Defining Suffix and Infix Commands67665
-Node: Using Infix Arguments70671
-Node: Using Prefix Scope73686
-Node: Current Suffix Command75688
-Node: Current Prefix Command78037
-Node: Transient State80577
-Ref: Pre-commands for Infixes84928
-Ref: Pre-commands for Suffixes85445
-Ref: Pre-commands for Non-Suffixes87877
-Ref: Special Pre-Commands89004
-Node: Classes and Methods89503
-Node: Group Classes91590
-Node: Group Methods93517
-Node: Prefix Classes94769
-Node: Suffix Classes95614
-Node: Prefix Methods100412
-Node: Suffix Methods103619
-Node: Suffix Value Methods103940
-Node: Suffix Format Methods107261
-Node: Prefix Slots110235
-Ref: Value and Scope110385
-Ref: Behavior113387
-Ref: Appearance114728
-Ref: Documentation115414
-Ref: Internal116034
-Node: Suffix Slots117389
-Ref: Slots of transient-child117757
-Ref: Slots of transient-suffix118215
-Ref: Slots of transient-infix121068
-Ref: Slots of transient-variable124364
-Ref: Slots of transient-switches124466
-Node: Predicate Slots124829
-Node: FAQ127174
-Ref: Can I control how the menu buffer is displayed?127303
-Ref: How can I copy text from the menu buffer?127627
-Ref: How can I autoload prefix and suffix commands?128390
-Ref: How does Transient compare to prefix keys and universal arguments?128864
-Ref: How does Transient compare to Magit-Popup and Hydra?129107
-Ref: Why does q not quit popups anymore?129301
-Node: Keystroke Index130404
-Node: Command and Function Index130564
-Node: Variable Index130757
-Node: Concept Index130924
-Node: GNU General Public License133660
+Ref: Developer Options37599
+Ref: Hook Variables39114
+Node: Modifying Existing Transients39630
+Node: Defining New Commands45464
+Node: Technical Introduction45904
+Node: Defining Transients51613
+Node: Binding Suffix and Infix Commands54948
+Node: Group Specifications55806
+Node: Suffix Specifications62742
+Node: Defining Suffix and Infix Commands67779
+Node: Using Infix Arguments70785
+Node: Using Prefix Scope73800
+Node: Current Suffix Command75838
+Node: Current Prefix Command78187
+Node: Transient State80727
+Ref: Pre-commands for Infixes85078
+Ref: Pre-commands for Suffixes85595
+Ref: Pre-commands for Non-Suffixes88027
+Ref: Special Pre-Commands89154
+Node: Classes and Methods89653
+Node: Group Classes91740
+Node: Group Methods93667
+Node: Prefix Classes94919
+Node: Suffix Classes95764
+Node: Prefix Methods100562
+Node: Suffix Methods103769
+Node: Suffix Value Methods104090
+Node: Suffix Format Methods107411
+Node: Prefix Slots110385
+Ref: Value and Scope110535
+Ref: Behavior113537
+Ref: Appearance114878
+Ref: Documentation115564
+Ref: Internal116184
+Node: Suffix Slots117539
+Ref: Slots of transient-child117907
+Ref: Slots of transient-suffix118365
+Ref: Slots of transient-infix121230
+Ref: Slots of transient-variable124526
+Ref: Slots of transient-switches124628
+Node: Predicate Slots124991
+Node: FAQ127336
+Ref: Can I control how the menu buffer is displayed?127465
+Ref: How can I copy text from the menu buffer?127789
+Ref: How can I autoload prefix and suffix commands?128552
+Ref: How does Transient compare to prefix keys and universal arguments?129026
+Ref: How does Transient compare to Magit-Popup and Hydra?129269
+Ref: Why does q not quit popups anymore?129463
+Node: Keystroke Index130566
+Node: Command and Function Index130726
+Node: Variable Index130919
+Node: Concept Index131086
+Node: GNU General Public License133822
 
 End Tag Table
 
