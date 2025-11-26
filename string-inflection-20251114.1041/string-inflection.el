@@ -4,8 +4,8 @@
 
 ;; Author: akicho8 <akicho8@gmail.com>
 ;; Keywords: elisp
-;; Package-Version: 20250831.53
-;; Package-Revision: 67767a8239c2
+;; Package-Version: 20251114.1041
+;; Package-Revision: 072f7dff4314
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -137,10 +137,10 @@ Use it like this:
 
 (defcustom string-inflection-region-selection-behavior 'replace-all-spaces-with-underscores
   "Behavior applied when a region is selected.
-- `underscore`        : Replace consecutive whitespace with a single underscore.
-- `apply-to-symbols`  : Apply conversion to each symbol in the region (no automatic underscore replacement)."
-  :type '(choice (const :tag "Convert whitespace to underscore" replace-all-spaces-with-underscores)
-                 (const :tag "Apply to each symbols in the region" apply-to-each-symbols))
+- `replace-all-spaces-with-underscores` : Replace consecutive whitespace with a single underscore.
+- `apply-to-each-symbols`               : Apply conversion to each symbol in the region (no automatic underscore replacement)."
+  :type '(choice (const :tag "Convert whitespace to underscores" replace-all-spaces-with-underscores)
+                 (const :tag "Apply conversion to each symbol" apply-to-each-symbols))
   :group 'string-inflection)
 
 ;; --------------------------------------------------------------------------------
