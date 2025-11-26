@@ -216,12 +216,12 @@ Notes:
 All these arguments can be overwritten by connection properties.
 See Info node `(tramp) Predefined connection information'.
 
-When using `su', `sudo' or `doas' the phrase \"open connection to
-a remote host\" sounds strange, but it is used nevertheless, for
-consistency.  No connection is opened to a remote host, but `su',
-`sudo' or `doas' is started on the local host.  You should
-specify a remote host `localhost' or the name of the local host.
-Another host name is useful only in combination with
+When using `su', `surs', `sg', `sudo', `sudors', `doas', `run0' or `ksu'
+the phrase \"open connection to a remote host\" sounds strange, but it
+is used nevertheless, for consistency.  No connection is opened to a
+remote host, but the respective command is started on the local host.
+You should specify a remote host `localhost' or the name of the local
+host.  Another host name is useful only in combination with
 `tramp-default-proxies-alist'.")
 (defvar tramp-default-method-alist nil "\
 Default method to use for specific host/user pairs.
@@ -488,17 +488,6 @@ Return t if NAME is a string with archive file name syntax.
 
 (defvar tramp-cache-data (make-hash-table :test #'equal) "\
 Hash table for remote files properties.")
-(defvar tramp-connection-properties nil "\
-List of static connection properties.
-Every entry has the form (REGEXP PROPERTY VALUE).  The regexp
-matches remote file names.  It can be nil.  PROPERTY is a string,
-and VALUE the corresponding value.  They are used, if there is no
-matching entry for PROPERTY in `tramp-cache-data'.
-
-PROPERTY can also be a string representing a parameter in
-`tramp-methods'.  For more details see the Info node `(tramp) Predefined
-connection information'.")
-(custom-autoload 'tramp-connection-properties "tramp-cache" t)
 (defvar tramp-persistency-file-name (locate-user-emacs-file "tramp") "\
 File which keeps connection history for Tramp connections.")
 (custom-autoload 'tramp-persistency-file-name "tramp-cache" t)
@@ -990,23 +979,6 @@ arguments to pass to the OPERATION.
 
 ;;; Generated autoloads from tramp-message.el
 
-(defvar tramp-verbose 3 "\
-Verbosity level for Tramp messages.
-Any level x includes messages for all levels 1 .. x-1.  The levels are
-
- 0  silent (no tramp messages at all)
- 1  errors
- 2  warnings
- 3  connection to remote hosts (default level)
- 4  activities
- 5  internal
- 6  sent and received strings
- 7  connection properties
- 8  file caching
- 9  test commands
-10  traces (huge)
-11  call traces (maintainer only).")
-(custom-autoload 'tramp-verbose "tramp-message" t)
 (autoload 'tramp-message "tramp-message" "\
 Emit a message depending on verbosity level.
 VEC-OR-PROC identifies the Tramp buffer to use.  It can be either a
@@ -1080,6 +1052,10 @@ Default list of (FUNCTION REGISTRY) pairs to be examined for putty sessions.")
 (tramp--with-startup (tramp-set-completion-function "rcp" tramp-completion-function-alist-rsh) (tramp-set-completion-function "remcp" tramp-completion-function-alist-rsh) (tramp-set-completion-function "scp" tramp-completion-function-alist-ssh) (tramp-set-completion-function "scpx" tramp-completion-function-alist-ssh) (tramp-set-completion-function "rsync" tramp-completion-function-alist-ssh) (tramp-set-completion-function "rsh" tramp-completion-function-alist-rsh) (tramp-set-completion-function "remsh" tramp-completion-function-alist-rsh) (tramp-set-completion-function "ssh" tramp-completion-function-alist-ssh) (tramp-set-completion-function "sshx" tramp-completion-function-alist-ssh) (tramp-set-completion-function "telnet" tramp-completion-function-alist-telnet) (tramp-set-completion-function "su" tramp-completion-function-alist-su) (tramp-set-completion-function "sudo" tramp-completion-function-alist-su) (tramp-set-completion-function "doas" tramp-completion-function-alist-su) (tramp-set-completion-function "sg" tramp-completion-function-alist-sg) (tramp-set-completion-function "plink" tramp-completion-function-alist-ssh) (tramp-set-completion-function "plinkx" tramp-completion-function-alist-putty) (tramp-set-completion-function "pscp" tramp-completion-function-alist-ssh) (tramp-set-completion-function "psftp" tramp-completion-function-alist-ssh))
 (autoload 'tramp-enable-nc-method "tramp-sh" "\
 Enable \"ksu\" method.")
+(autoload 'tramp-enable-surs-method "tramp-sh" "\
+Enable \"surs\" method.")
+(autoload 'tramp-enable-sudors-method "tramp-sh" "\
+Enable \"sudors\" method.")
 (autoload 'tramp-enable-run0-method "tramp-sh" "\
 Enable \"run0\" method.")
 (autoload 'tramp-enable-ksu-method "tramp-sh" "\
@@ -1198,7 +1174,7 @@ UU-encode the region between BEG and END.
 
 ;;; Generated autoloads from trampver.el
 
-(defconst tramp-version "2.8.0.3" "\
+(defconst tramp-version "2.8.0.4" "\
 This version of Tramp.")
 (defconst tramp-bug-report-address "tramp-devel@gnu.org" "\
 Email address to send bug reports to.")
