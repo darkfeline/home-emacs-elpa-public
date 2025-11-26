@@ -1,11 +1,11 @@
-;;; ialign.el --- visual align-regexp  -*- lexical-binding: t; -*-
+;;; ialign.el --- Interactive align-regexp  -*- lexical-binding: t; -*-
 
 ;;
 ;; Author: Michał Krzywkowski <k.michal@zoho.com>
-;; URL: https://github.com/mkcms/interactive-align
+;; URL: https://github.com/mkcms/ialign
 ;; Package-Requires: ((emacs "25.1"))
-;; Package-Version: 20240925.654
-;; Package-Revision: fd1ad6bae749
+;; Package-Version: 20251102.1056
+;; Package-Revision: 2a7472bdb782
 ;; Keywords: tools, editing, align, interactive
 
 ;; Copyright (C) 2017-2024 Michał Krzywkowski
