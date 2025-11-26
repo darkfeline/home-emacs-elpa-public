@@ -6,8 +6,8 @@
 ;; Maintainer: Federico Tedin <federicotedin@gmail.com>
 ;; Homepage: https://github.com/federicotdn/verb
 ;; Keywords: tools
-;; Package-Version: 20250916.350
-;; Package-Revision: 3179e53373b9
+;; Package-Version: 20251026.1520
+;; Package-Revision: 600a9bdf82aa
 ;; Package-Requires: ((emacs "26.3"))
 
 ;; This file is NOT part of GNU Emacs.
@@ -1416,6 +1416,7 @@ buffer used to show the request."
         (setq header-line-format (format "HTTP Response Headers | count: %s"
                                          (length headers)))
         (verb--insert-header-contents headers)
+        (goto-char (point-min))
         (fit-window-to-buffer)))))
 
 ;;;###autoload
