@@ -6,8 +6,8 @@
 ;; Homepage: https://github.com/magit/ghub
 ;; Keywords: tools
 
-;; Package-Version: 20251006.1821
-;; Package-Revision: 6dc4ff700fc5
+;; Package-Version: 20251113.2133
+;; Package-Revision: 423c0838c15a
 ;; Package-Requires: (
 ;;     (emacs   "29.1")
 ;;     (compat  "30.1")
@@ -752,7 +752,7 @@ and call `auth-source-forget+'."
     (unless (or token nocreate)
       (error "\
 Required %s token (%S for %s%S) does not exist.
-See https://magit.vc/manual/ghub/Getting-Started.html
+See https://docs.magit.vc/ghub/Getting-Started.html
 or (info \"(ghub)Getting Started\") for instructions."
              (capitalize (symbol-name (or forge 'github)))
              user
