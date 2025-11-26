@@ -1,4 +1,4 @@
-This is docD4uajf.info, produced by makeinfo version 6.8 from
+This is docs7WDWu.info, produced by makeinfo version 6.8 from
 with-editor.texi.
 
      Copyright (C) 2015-2025 Jonas Bernoulli
@@ -20,7 +20,7 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
 
-File: docD4uajf.info,  Node: Top,  Next: Using the With-Editor package,  Up: (dir)
+File: docs7WDWu.info,  Node: Top,  Next: Using the With-Editor package,  Up: (dir)
 
 With-Editor User Manual
 ***********************
@@ -40,7 +40,7 @@ library is made available as a separate package.  It also defines some
 additional functionality which makes it useful even for end-users, who
 don’t use Magit or another package which uses it internally.
 
-This manual is for With-Editor version 3.4.6.
+This manual is for With-Editor version 3.4.7.
 
      Copyright (C) 2015-2025 Jonas Bernoulli
      <emacs.with-editor@jonas.bernoulli.dev>
@@ -72,7 +72,7 @@ Using the With-Editor package
 
 
 
-File: docD4uajf.info,  Node: Using the With-Editor package,  Next: Using With-Editor as a library,  Prev: Top,  Up: Top
+File: docs7WDWu.info,  Node: Using the With-Editor package,  Next: Using With-Editor as a library,  Prev: Top,  Up: Top
 
 1 Using the With-Editor package
 *******************************
@@ -91,7 +91,7 @@ Magit.
 * Using With-Editor commands::
 
 
-File: docD4uajf.info,  Node: Configuring With-Editor,  Next: Using With-Editor commands,  Up: Using the With-Editor package
+File: docs7WDWu.info,  Node: Configuring With-Editor,  Next: Using With-Editor commands,  Up: Using the With-Editor package
 
 1.1 Configuring With-Editor
 ===========================
@@ -186,7 +186,7 @@ User Option: with-editor-sleeping-editor
      support floats, then by using ‘nanosleep’ instead.
 
 
-File: docD4uajf.info,  Node: Using With-Editor commands,  Prev: Configuring With-Editor,  Up: Using the With-Editor package
+File: docs7WDWu.info,  Node: Using With-Editor commands,  Prev: Configuring With-Editor,  Up: Using the With-Editor package
 
 1.2 Using With-Editor commands
 ==============================
@@ -258,7 +258,7 @@ Command: with-editor-export-hg-editor
      ‘$HG_EDITOR’.
 
 
-File: docD4uajf.info,  Node: Using With-Editor as a library,  Next: Debugging,  Prev: Using the With-Editor package,  Up: Top
+File: docs7WDWu.info,  Node: Using With-Editor as a library,  Next: Debugging,  Prev: Using the With-Editor package,  Up: Top
 
 2 Using With-Editor as a library
 ********************************
@@ -302,7 +302,7 @@ Function: with-editor-set-process-filter process filter
      NO-STANDARD-FILTER.
 
 
-File: docD4uajf.info,  Node: Debugging,  Next: Function and Command Index,  Prev: Using With-Editor as a library,  Up: Top
+File: docs7WDWu.info,  Node: Debugging,  Next: Function and Command Index,  Prev: Using With-Editor as a library,  Up: Top
 
 3 Debugging
 ***********
@@ -321,13 +321,13 @@ about your Emacs installation.  Most importantly how did you install
 Emacs and what is the output of ‘M-x with-editor-debug RET’.
 
 
-File: docD4uajf.info,  Node: Function and Command Index,  Next: Variable Index,  Prev: Debugging,  Up: Top
+File: docs7WDWu.info,  Node: Function and Command Index,  Next: Variable Index,  Prev: Debugging,  Up: Top
 
 Appendix A Function and Command Index
 *************************************
 
 
-File: docD4uajf.info,  Node: Variable Index,  Prev: Function and Command Index,  Up: Top
+File: docs7WDWu.info,  Node: Variable Index,  Prev: Function and Command Index,  Up: Top
 
 Appendix B Variable Index
 *************************
