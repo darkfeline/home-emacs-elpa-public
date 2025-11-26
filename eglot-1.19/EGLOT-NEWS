@@ -18,7 +18,53 @@ to look up issue github#1234, go to
 https://github.com/joaotavora/eglot/issues/1234.
 
 
-* Changes in upcoming Eglot
+* Changes in Eglot 1.19 (23/10/2025)
+
+** Support for call and type hierarchies
+
+The new commands 'eglot-show-type-hierarchy' and
+'eglot-show-call-hierarchy', when invoked on a symbol, pop up a special
+buffer showing an interactive tree which represents a hierarchy of sub-
+and super-types or callers and callees for that symbol.
+
+** New 'eglot-advertise-cancellation' variable
+
+Tweaking this variable may help some LSP servers avoid doing costly but
+ultimately useless work on behalf of the client, improving overall
+performance.
+
+** Suggests code actions at point
+
+A commonly requested feature, Eglot will use ElDoc to ask the server for
+code actions available at point.  This is indicated to the user, who may
+quickly execute via the usual 'eglot-code-actions' command or with the
+mouse.  Customize with 'eglot-code-action-indications' and
+'eglot-code-action-indicator'.
+
+** Mode line is customizable
+
+The composition of Eglot's mode line can be fully customized by adding
+or removing symbols and strings from the customizable variable
+'eglot-mode-line-format'
+
+** Improved diagnostic-reporting performance and bugfixes (bug#77588)
+
+Eglot remembers the LSP document version pertaining to the diagnostics
+reported by the LSP server.  This helps in skipping useless or confusing
+diagnostic updates, avoids flakiness with code actions and prevents
+flickering overlays when the buffer is changed.
+
+** Markdown links migrating to *eldoc* buffer now clickable (bug#79552)
+
+Eglot now preserves crucial properties in the Markdown documentation
+provided by the LSP server, fixing a longstanding bug with clickable
+hyperlinks.  See also github#1238.
+
+** Compliant shutdown requests  (bug#79653, bug#66144, github#1540)
+
+Eglot now complies with the latest LSP spec, which mandates that the
+shutdown request mustn't have any parameters.  This should fix problems
+with some servers.
 
 
 * Changes in Eglot 1.18 (20/1/2025)
@@ -750,4 +796,3 @@ bug-reference-bug-regexp: "\\(\\(github\\|bug\\)#\\([0-9]+\\)\\)"
 bug-reference-url-format: eglot--debbugs-or-github-bug-uri
 paragraph-separate: "[	 ]"
 End:
-
