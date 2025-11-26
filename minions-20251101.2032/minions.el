@@ -6,9 +6,11 @@
 ;; Homepage: https://github.com/tarsius/minions
 ;; Keywords: convenience
 
-;; Package-Version: 20250531.2220
-;; Package-Revision: 7aeabcab964f
-;; Package-Requires: ((emacs "26.1") (compat "30.1"))
+;; Package-Version: 20251101.2032
+;; Package-Revision: 7bd15dd0a12e
+;; Package-Requires: (
+;;     (emacs  "26.1")
+;;     (compat "30.1"))
 
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
