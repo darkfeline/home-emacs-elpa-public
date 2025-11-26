@@ -3,8 +3,8 @@
 ;; Copyright © 2021-2025  Free Software Foundation, Inc.
 
 ;; Author: Zachary Romero <zkry@posteo.org>
-;; Package-Version: 20250316.1721
-;; Package-Revision: f99ef76c80e6
+;; Package-Version: 20251029.2056
+;; Package-Revision: 3fbeaee97dce
 ;; Homepage: https://github.com/zkry/yaml.el
 ;; Package-Requires: ((emacs "25.1"))
 ;; Keywords: tools
@@ -2633,9 +2633,11 @@ without first inserting a newline."
 If AUTO-INDENT is non-nil, start the list on the current line,
 auto-detecting the indentation.  Functionality defers to
 `yaml--encode-list'."
-  (yaml--encode-list (seq-map #'identity a)
-                     indent
-                     auto-indent))
+  (if (equal a [])
+      (insert "[]")
+    (yaml--encode-list (seq-map #'identity a)
+                       indent
+                       auto-indent)))
 
 
 (defun yaml--encode-scalar (s)
