@@ -27,6 +27,13 @@ Authentication token used when connecting to an HTTP MCP server.
 HEADERS is a alist.
 Additional HTTP headers to include when connecting via URL.
 
+ROOTS is a list of directory paths or root specifications.
+Each root can be either:
+- A string path (e.g., \"/home/user/project\")
+- A plist with :uri and :name
+  (e.g., (:uri \"file:///home/user/project\" :name \"Project\"))
+Roots define filesystem boundaries that the server can access.
+
 INITIAL-CALLBACK is a function called when the server completes
 the connection.
 TOOLS-CALLBACK is a function called to handle the list of tools
@@ -44,7 +51,7 @@ This function creates a new process for the server, initializes a connection,
 and sends an initialization message to the server.  The connection is stored
 in the `mcp-server-connections` hash table for future reference.
 
-(fn NAME &key COMMAND ARGS URL ENV TOKEN HEADERS INITIAL-CALLBACK TOOLS-CALLBACK PROMPTS-CALLBACK RESOURCES-CALLBACK RESOURCES-TEMPLATES-CALLBACK ERROR-CALLBACK SYNCP)")
+(fn NAME &key COMMAND ARGS URL ENV TOKEN HEADERS ROOTS INITIAL-CALLBACK TOOLS-CALLBACK PROMPTS-CALLBACK RESOURCES-CALLBACK RESOURCES-TEMPLATES-CALLBACK ERROR-CALLBACK SYNCP)")
 (autoload 'mcp-stop-server "mcp" "\
 Stop the MCP server with the given NAME.
 If the server is running, it will be shutdown and its connection will be removed
@@ -138,6 +145,14 @@ recovering from errors." t)
 View the event log for the currently selected MCP server.
 This function opens a buffer showing the event log for the server that is
 currently highlighted in the *Mcp-Hub* buffer." t)
+(autoload 'mcp-hub-add-root "mcp-hub" "\
+Add a root directory to the currently selected MCP server.
+Prompts for a directory path and adds it to the server's roots." t)
+(autoload 'mcp-hub-remove-root "mcp-hub" "\
+Remove a root directory from the currently selected MCP server.
+Prompts for selection from the server's current roots." t)
+(autoload 'mcp-hub-view-roots "mcp-hub" "\
+View the roots for the currently selected MCP server." t)
 (register-definition-prefixes "mcp-hub" '("mcp-hub-"))
 
 ;;; End of scraped data
