@@ -1,6 +1,6 @@
 This is ghub.info, produced by makeinfo version 6.8 from ghub.texi.
 
-     Copyright (C) 2017-2025 Jonas Bernoulli
+     Copyright (C) 2017-2026 Jonas Bernoulli
      <emacs.ghub@jonas.bernoulli.dev>
 
      You can redistribute this document and/or modify it under the terms
@@ -27,9 +27,9 @@ Ghub User and Developer Manual
 Ghub is an Emacs library that is used by various packages to access the
 APIs of various instances of various Git forge implementations.
 
-This manual is for Ghub version 5.0.2.
+This manual is for Ghub version 5.0.3.
 
-     Copyright (C) 2017-2025 Jonas Bernoulli
+     Copyright (C) 2017-2026 Jonas Bernoulli
      <emacs.ghub@jonas.bernoulli.dev>
 
      You can redistribute this document and/or modify it under the terms

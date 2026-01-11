@@ -1,6 +1,6 @@
 ;;; ghub-graphql.el --- Access Github API using GraphQL  -*- lexical-binding:t -*-
 
-;; Copyright (C) 2016-2025 Jonas Bernoulli
+;; Copyright (C) 2016-2026 Jonas Bernoulli
 
 ;; Author: Jonas Bernoulli <emacs.ghub@jonas.bernoulli.dev>
 ;; Homepage: https://github.com/magit/ghub
@@ -51,8 +51,8 @@ repositories.")
 (cl-defun ghub-graphql-rate-limit (&key username auth host)
   "Return rate limit information."
   (let-alist (ghub-query
-              '(query (rateLimit limit cost remaining resetAt)) nil
-              :synchronous t :username username :auth auth :host host)
+               '(query (rateLimit limit cost remaining resetAt)) nil
+               :synchronous t :username username :auth auth :host host)
     .data.rateLimit))
 
 (cl-defstruct (ghub--graphql-req
@@ -201,14 +201,15 @@ repositories.")
 (defun ghub--graphql-handle-failure (req errors headers status)
   (ghub--graphql-set-mode-line req)
   (setf (ghub--req-value req) errors)
-  (if-let ((errorback (ghub--req-errorback req)))
-      (ghub--graphql-run-callback req errorback errors headers status req)
-    (if (ghub--req-noerror req)
-        (when-let ((callback (ghub--req-callback req)))
-          (ghub--graphql-run-callback req callback errors))
-      (ghub--signal-error (if (eq (car errors) 'errors)
-                              (cons 'ghub-graphql-error (cdr errors))
-                            errors)))))
+  (cond-let
+    ([errorback (ghub--req-errorback req)]
+     (ghub--graphql-run-callback req errorback errors headers status req))
+    ((ghub--req-noerror req)
+     (when-let ((callback (ghub--req-callback req)))
+       (ghub--graphql-run-callback req callback errors)))
+    ((ghub--signal-error (if (eq (car errors) 'errors)
+                             (cons 'ghub-graphql-error (cdr errors))
+                           errors)))))
 
 (defun ghub--graphql-handle-success (req data)
   (ghub--graphql-set-mode-line req)
@@ -341,4 +342,11 @@ repositories.")
 
 ;;; _
 (provide 'ghub-graphql)
+;; Local Variables:
+;; read-symbol-shorthands: (
+;;   ("and-let"   . "cond-let--and-let")
+;;   ("if-let"    . "cond-let--if-let")
+;;   ("when-let"  . "cond-let--when-let")
+;;   ("while-let" . "cond-let--while-let"))
+;; End:
 ;;; ghub-graphql.el ends here
