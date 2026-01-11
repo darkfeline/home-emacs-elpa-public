@@ -2,8 +2,8 @@
 ;; Copyright (C) 2015-2021 jack angers
 ;; Author: jack angers and contributors
 ;; Url: https://github.com/jacktasia/dumb-jump
-;; Package-Version: 20250822.2314
-;; Package-Revision: a9a7e1711ee1
+;; Package-Version: 20260110.1705
+;; Package-Revision: 2305fcb2b3a0
 ;; Package-Requires: ((emacs "24.3") (s "1.11.0") (dash "2.9.0") (popup "0.5.3"))
 ;; Keywords: programming
 
@@ -1592,8 +1592,8 @@ If nil add also the language type of current src block"
     (:type "type" :supports ("ag" "grep" "rg" "git-grep") :language "jai"
            :regex "\\bJJJ\\s*::"
            :tests ("test ::"))
-    
-    ;; odin    
+
+    ;; odin
     (:type "variable" :supports ("ag" "grep" "rg" "git-grep") :language "odin"
            :regex "\\s*\\bJJJ\\s*:\\s*([^=\\n]+\\s*:|:|[^=\\n]+\\s*=|=)"
            :tests ("test :: struct"
@@ -1612,7 +1612,34 @@ If nil add also the language type of current src block"
                    "test ::proc() {"
                    "test:: proc(a: i32) -> i32 {"
                    "test::proc{}"
-                   "test: :proc \"contextless\" {}")))
+                   "test: :proc \"contextless\" {}"))
+    ;; cobol
+    (:type "variable" :supports ("ag" "grep" "rg" "git-grep") :language "cobol"
+           :regex "^(.{6}[^*/])?\\s*([frs]d|[[:digit:]]{1,2})\\s+JJJ([\\. ]|$)"
+           :tests ("       01 test."
+                   "000350     10 test pic x."
+                   "  88 test value '10'."
+                   "fd  test."
+                   "       sd test.")
+           :not ("      *01 test"
+                 "       05 test-01"
+                 "       05 testing"))
+
+    (:type "section" :supports ("ag" "grep" "rg" "git-grep") :language "cobol"
+           :regex "^(.{6}[^*/])?JJJ(\\s+section)?\\."
+           :tests ("       test."
+                   "       test section."
+                   "test."
+                   "test section.")
+           :not ("        test."
+                 "      *test section."))
+
+    (:type "submodule" :supports ("ag" "grep" "rg" "git-grep") :language "cobol"
+           :regex "^(.{6}[^*/])?program-id\\.\\s*[\"']?JJJ[\"']?.*\\."
+           :tests ("       program-id. test."
+                   "       program-id. 'test'."
+                   "program-id. \"test\".")
+           :not ("        test.")))
 
 
   "List of regex patttern templates organized by language and type to use for generating the grep command."
@@ -1772,7 +1799,10 @@ If nil add also the language type of current src block"
     (:language "apex" :ext "cls" :agtype nil :rgtype nil)
     (:language "apex" :ext "trigger" :agtype nil :rgtype nil)
     (:language "jai" :ext "jai" :agtype nil :rgtype nil)
-    (:language "odin" :ext "odin" :agtype nil :rgtype nil))
+    (:language "odin" :ext "odin" :agtype nil :rgtype nil)
+    (:language "cobol" :ext "cbl" :agtype nil :rgtype nil)
+    (:language "cobol" :ext "cob" :agtype nil :rgtype nil)
+    (:language "cobol" :ext "cpy" :agtype nil :rgtype nil))
 
   "Mapping of programming language(s) to file extensions."
   :group 'dumb-jump
@@ -1802,7 +1832,10 @@ If nil add also the language type of current src block"
     (:language "scheme" :type "function" :right nil :left "($")
     (:language "scheme" :type "variable" :right "^)" :left nil)
     (:language "jai" :type "function" :right "\\s*(" :left nil)
-    (:language "jai" :type "type" :left "\\s*:\\s*" :right nil))
+    (:language "jai" :type "type" :left "\\s*:\\s*" :right nil)
+    (:language "cobol" :type "submodule" :right nil :left "call\s+")
+    (:language "cobol" :type "section" :right nil :left "perform\s+")
+    (:language "cobol" :type "section" :right nil :left "go to\s+"))
 
   "List of under points contexts for each language.
 This helps limit the number of regular expressions we use
@@ -2195,7 +2228,7 @@ associated language or org when outside a src block."
 return a new proplist. The new proplis is PROPLIS
 where a NEWLANG plist(s) is (are) added to PROPLIST.
 The plist(s) value of NEWLANG is (are) copied from
-those of LANG and LANG is replaced by NEWLANG." 
+those of LANG and LANG is replaced by NEWLANG."
   (unless (--filter (string= newlang (plist-get it :language))
                    proplist)
       (--splice
@@ -2205,7 +2238,7 @@ those of LANG and LANG is replaced by NEWLANG."
 
 (defun dumb-jump-make-composite-language (mode lang extension agtype rgtype)
   "Concat one MODE  (usually the string org) with a LANG  (c or python or etc)
-to make a composite language of the form cPLUSorg or pythonPLUSorg or etc. 
+to make a composite language of the form cPLUSorg or pythonPLUSorg or etc.
 Modify `dumb-jump-find-rules' and `dumb-jump-language-file-exts' accordingly
 (using EXTENSION AGTYPE RGTYPE)"
   (let* ((complang (concat lang "PLUS" mode))
@@ -2523,7 +2556,8 @@ current file."
     (:comment "//" :language "pascal")
     (:comment "//" :language "protobuf")
     (:comment "#" :language "hcl")
-    (:comment "//" :language "apex"))
+    (:comment "//" :language "apex")
+    (:comment "*>" :language "cobol"))
   "List of one-line comments organized by language."
   :group 'dumb-jump
   :type
@@ -2696,8 +2730,7 @@ Ffrom the ROOT project CONFIG-FILE."
             :language lang))))
 
 (defun dumb-jump-file-modified-p (path)
-  "Check if PATH is currently open in Emacs and has a modified buffer."
-  (interactive)
+  "Return non-nil if file at PATH is open in Emacs and was modified in buffer."
   (--any?
    (and (buffer-modified-p it)
         (buffer-file-name it)
@@ -2860,7 +2893,8 @@ searcher symbol."
       shell-command-switch))))
 
 (defconst dumb-jump--case-insensitive-languages
-  '("commonlisp"))
+  '("commonlisp"
+    "cobol"))
 
 ;; TODO: rename dumb-jump-run-definition-command
 (defun dumb-jump-run-command
