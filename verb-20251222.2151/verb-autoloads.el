@@ -142,6 +142,11 @@ See `verb--export-to-websocat' for more information." t)
 (register-definition-prefixes "verb" '("verb-"))
 
 
+;;; Generated autoloads from verb-restclient.el
+
+(register-definition-prefixes "verb-restclient" '("verb-restclient--"))
+
+
 ;;; Generated autoloads from verb-util.el
 
 (register-definition-prefixes "verb-util" '("verb-util-"))
