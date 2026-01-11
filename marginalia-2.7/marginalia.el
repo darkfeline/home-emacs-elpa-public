@@ -5,7 +5,7 @@
 ;; Author: Omar Antolín Camarena <omar@matem.unam.mx>, Daniel Mendler <mail@daniel-mendler.de>
 ;; Maintainer: Omar Antolín Camarena <omar@matem.unam.mx>, Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2020
-;; Version: 2.5
+;; Version: 2.7
 ;; Package-Requires: ((emacs "29.1") (compat "30"))
 ;; URL: https://github.com/minad/marginalia
 ;; Keywords: docs, help, matching, completion
@@ -27,7 +27,11 @@
 
 ;;; Commentary:
 
-;; Enrich existing commands with completion annotations
+;; Enrich existing commands with completion annotations.  The information
+;; associated with the completion candidates is shown in the minibuffer or the
+;; *Completions* buffer.  For files the owner and permissions are shown, for
+;; buffers the major mode and modification status and for functions or commands
+;; the docstring is shown.
 
 ;;; Code:
 
@@ -113,9 +117,10 @@ displayed instead."
      (tab ,#'marginalia-annotate-tab)
      (multi-category ,#'marginalia-annotate-multi-category)))
   "Annotator function registry.
-Associates completion categories with annotation functions.
-Each annotation function must return a string,
-which is appended to the completion candidate."
+Associates completion categories with annotation functions.  Each
+annotation function must return a string, which is appended to the
+completion candidate.  The annotation functions are executed in the
+original window and the original buffer, if still alive."
   :type '(alist :key-type symbol :value-type (repeat symbol)))
 
 (defcustom marginalia-classifiers
@@ -458,14 +463,17 @@ Otherwise stay within current buffer."
 (defun marginalia-annotate-multi-category (cand)
   "Annotate multi-category CAND, dispatching to the appropriate annotator."
   (if-let ((multi (get-text-property 0 'multi-category cand))
-           (annotate (marginalia--annotator (car multi))))
+           (fun (marginalia--annotator (car multi))))
       ;; Use the Marginalia annotator corresponding to the multi category.
-      (funcall annotate (cdr multi))
+      (funcall fun (cdr multi))
     ;; Apply the original annotation function on the original candidate. Bypass
     ;; our `marginalia--completion-metadata-get' advice.
-    (when-let (annotate (marginalia--orig-completion-metadata-get
-                         marginalia--metadata 'annotation-function))
-      (funcall annotate cand))))
+    (if-let ((fun (marginalia--orig-completion-metadata-get
+                   marginalia--metadata 'affixation-function)))
+        (caddar (funcall fun (list cand)))
+      (when-let ((fun (marginalia--orig-completion-metadata-get
+                       marginalia--metadata 'annotation-function)))
+        (funcall fun cand)))))
 
 (defconst marginalia--advice-regexp
   (rx bos
@@ -1292,29 +1300,24 @@ completion UIs like Vertico or Icomplete."
   (let* ((width (cl-loop for win in (get-buffer-window-list) minimize (window-width win)))
          (marginalia-field-width (min (/ width 2) marginalia-field-width))
          (marginalia--metadata metadata)
-         (cache marginalia--cache))
+         (cache marginalia--cache)
+         (orig-buf minibuffer--original-buffer))
     (marginalia--align
      ;; Run the annotators in the original window. `with-selected-window'
      ;; is necessary because of `lookup-minor-mode-from-indicator'.
      ;; Otherwise it would suffice to only change the current buffer. We
      ;; need the `selected-window' fallback for Embark Occur.
      (with-selected-window (or (minibuffer-selected-window) (selected-window))
-       (cl-loop for cand in cands collect
-                (let ((ann (or (marginalia--cached cache annotator cand) "")))
-                  (cons cand (if (string-blank-p ann) "" ann))))))))
+       (with-current-buffer (if (buffer-live-p orig-buf) orig-buf (current-buffer))
+         (cl-loop for cand in cands collect
+                  (let ((ann (or (marginalia--cached cache annotator cand) "")))
+                    (cons cand (if (string-blank-p ann) "" ann)))))))))
 
 (defun marginalia--completion-metadata-get (metadata prop)
   "Meant as :before-until advice for `completion-metadata-get'.
 METADATA is the metadata.
 PROP is the property which is looked up."
   (pcase prop
-    ('annotation-function
-     ;; We do want the advice triggered for `completion-metadata-get'.
-     (when-let ((cat (completion-metadata-get metadata 'category))
-                (annotator (marginalia--annotator cat)))
-       (lambda (cand)
-         (let ((ann (caddar (marginalia--affixate metadata annotator (list cand)))))
-           (and (not (equal ann "")) ann)))))
     ('affixation-function
      ;; We do want the advice triggered for `completion-metadata-get'.
      (when-let ((cat (completion-metadata-get metadata 'category))
