@@ -20,7 +20,8 @@ else prompt the user for the project to use.  To prompt for a
 project, call the function specified by `project-prompter', which
 returns the directory in which to look for the project.  If no
 project is found in that directory, return a \"transient\"
-project instance.
+project instance.  When MAYBE-PROMPT is a string, it's passed to the
+prompter function as an argument.
 
 The \"transient\" project instance is a special kind of value
 which denotes a project rooted in that directory and includes all
@@ -36,7 +37,7 @@ of the project instance object.
 (put 'project-vc-include-untracked 'safe-local-variable #'booleanp)
 (put 'project-vc-name 'safe-local-variable #'stringp)
 (put 'project-vc-extra-root-markers 'safe-local-variable (lambda (val) (and (listp val) (not (memq nil (mapcar #'stringp val))))))
-(defvar project-prefix-map (let ((map (make-sparse-keymap))) (define-key map "!" 'project-shell-command) (define-key map "&" 'project-async-shell-command) (define-key map "f" 'project-find-file) (define-key map "F" 'project-or-external-find-file) (define-key map "b" 'project-switch-to-buffer) (define-key map "s" 'project-shell) (define-key map "d" 'project-find-dir) (define-key map "D" 'project-dired) (define-key map "v" 'project-vc-dir) (define-key map "c" 'project-compile) (define-key map "e" 'project-eshell) (define-key map "k" 'project-kill-buffers) (define-key map "p" 'project-switch-project) (define-key map "g" 'project-find-regexp) (define-key map "G" 'project-or-external-find-regexp) (define-key map "r" 'project-query-replace-regexp) (define-key map "x" 'project-execute-extended-command) (define-key map "o" 'project-any-command) (define-key map "\2" 'project-list-buffers) map) "\
+(defvar project-prefix-map (let ((map (make-sparse-keymap))) (define-key map "!" 'project-shell-command) (define-key map "&" 'project-async-shell-command) (define-key map "f" 'project-find-file) (define-key map "F" 'project-or-external-find-file) (define-key map "b" 'project-switch-to-buffer) (define-key map "s" 'project-shell) (define-key map "d" 'project-find-dir) (define-key map "D" 'project-dired) (define-key map "v" 'project-vc-dir) (define-key map "c" 'project-compile) (define-key map "e" 'project-eshell) (define-key map "k" 'project-kill-buffers) (define-key map "p" 'project-switch-project) (define-key map "g" 'project-find-regexp) (define-key map "G" 'project-or-external-find-regexp) (define-key map "r" 'project-query-replace-regexp) (define-key map "x" 'project-execute-extended-command) (define-key map "o" 'project-any-command) (define-key map "\2" 'project-list-buffers) (define-key map "\30s" 'project-save-some-buffers) map) "\
 Keymap for project commands.")
  (define-key ctl-x-map "p" project-prefix-map)
 (autoload 'project-other-window-command "project" "\
@@ -76,6 +77,14 @@ requires quoting, e.g. `\\[quoted-insert]<space>'.
 Find all matches for REGEXP in the project roots or external roots.
 
 (fn REGEXP)" t)
+(autoload 'project-root-find-file "project" "\
+Edit file FILENAME.
+
+Interactively, prompt for FILENAME, defaulting to the root directory of
+the current project.
+
+(fn FILENAME)" t)
+(function-put 'project-root-find-file 'interactive-only 'find-file)
 (autoload 'project-find-file "project" "\
 Visit a file (with completion) in the current project.
 
@@ -100,6 +109,19 @@ interactively, include all files under the project root, except
 for VCS directories listed in `vc-directory-exclusion-list'.
 
 (fn &optional INCLUDE-ALL)" t)
+(autoload 'project-find-matching-buffer "project" "\
+Switch to a matching buffer in another project.
+For most file-visiting buffers, the matching buffer is one visiting a
+file in the other project which has the same file name relative to the
+project root.  See `project-find-matching-file' for details.
+Non-file-visiting major modes may configure a different notion of
+matching buffer; see `project-find-matching-buffer-function'.
+
+When called during switching to another project, this command will
+detect that, and use the override.  Otherwise, it prompts for the
+project to use from the list of known projects.
+When calling from Lisp, bind `project-current-directory-override' to a
+directory under the target project to preempt this prompting." t)
 (autoload 'project-find-dir "project" "\
 Start Dired in a directory inside the current project.
 
@@ -109,18 +131,24 @@ The current buffer's `default-directory' is available as part of
 Start Dired in the current project's root." t)
 (autoload 'project-vc-dir "project" "\
 Run VC-Dir in the current project's root." t)
+(autoload 'project-customize-dirlocals "project" "\
+Run `customize-dirlocals' in current project's root." t)
 (autoload 'project-shell "project" "\
 Start an inferior shell in the current project's root directory.
 If a buffer already exists for running a shell in the project's root,
 switch to it.  Otherwise, create a new shell buffer.
 With \\[universal-argument] prefix arg, create a new inferior shell buffer even
-if one already exists." t)
+if one already exists.
+With numeric prefix arg, switch to the session with that number, or
+create it if it doesn't already exist." t)
 (autoload 'project-eshell "project" "\
 Start Eshell in the current project's root directory.
 If a buffer already exists for running Eshell in the project's root,
 switch to it.  Otherwise, create a new Eshell buffer.
 With \\[universal-argument] prefix arg, create a new Eshell buffer even
-if one already exists." t)
+if one already exists.
+With numeric prefix arg, switch to the session with that number, or
+create it if it doesn't already exist." t)
 (autoload 'project-async-shell-command "project" "\
 Run `async-shell-command' in the current project's root directory." t)
 (function-put 'project-async-shell-command 'interactive-only 'async-shell-command)
@@ -148,6 +176,11 @@ If you exit the `query-replace', you can later continue the
 (autoload 'project-compile "project" "\
 Run `compile' in the project root." t)
 (function-put 'project-compile 'interactive-only 'compile)
+(autoload 'project-recompile "project" "\
+Run `recompile' in the project root with an appropriate buffer.
+
+(fn &optional EDIT-COMMAND)" t)
+(function-put 'project-recompile 'interactive-only 'recompile)
 (autoload 'project-switch-to-buffer "project" "\
 Display buffer BUFFER-OR-NAME in the selected window.
 When called interactively, prompts for a buffer belonging to the
@@ -199,15 +232,26 @@ is non-nil, the command will not ask the user for confirmation.
 NO-CONFIRM is always nil when the command is invoked
 interactively.
 
+If PROJECT is non-nil, kill buffers for that project instead.
+
 Also see the `project-kill-buffers-display-buffer-list' variable.
 
-(fn &optional NO-CONFIRM)" t)
+(fn &optional NO-CONFIRM PROJECT)" t)
+(autoload 'project-save-some-buffers "project" "\
+Like `save-some-buffers', but only for this project's buffers.
+
+(fn ARG)" t)
 (autoload 'project-remember-project "project" "\
 Add project PR to the front of the project list.
+If project PR satisfies `project-list-exclude', then nothing is done.
 Save the result in `project-list-file' if the list of projects
-has changed, and NO-WRITE is nil.
+has changed.
+When called from Lisp, optional argument NO-WRITE non-nil means to
+suppress saving `project-list-file'.
+Optional argument STABLE means don't move PR to the front of the project
+list if it's already present further down the project list.
 
-(fn PR &optional NO-WRITE)")
+(fn PR &optional NO-WRITE STABLE)" t)
 (autoload 'project-forget-project "project" "\
 Remove directory PROJECT-ROOT from the project list.
 PROJECT-ROOT is the root directory of a known project listed in
@@ -261,7 +305,7 @@ This feature requires the presence of the following item in
 `mode-line-format': `(project-mode-line project-mode-line-format)'; it
 is part of the default mode line beginning with Emacs 30.")
 (custom-autoload 'project-mode-line "project" t)
-(register-definition-prefixes "project" '("project-"))
+(register-definition-prefixes "project" '("project-" "vc-"))
 
 ;;; End of scraped data
 
