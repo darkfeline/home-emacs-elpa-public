@@ -1,13 +1,13 @@
 ;;; minions.el --- A minor-mode menu for the mode line  -*- lexical-binding:t -*-
 
-;; Copyright (C) 2018-2025 Jonas Bernoulli
+;; Copyright (C) 2018-2026 Jonas Bernoulli
 
 ;; Author: Jonas Bernoulli <emacs.minions@jonas.bernoulli.dev>
 ;; Homepage: https://github.com/tarsius/minions
 ;; Keywords: convenience
 
-;; Package-Version: 20251101.2032
-;; Package-Revision: 7bd15dd0a12e
+;; Package-Version: 20260101.1837
+;; Package-Revision: 5b73cd443c28
 ;; Package-Requires: (
 ;;     (emacs  "26.1")
 ;;     (compat "30.1"))
@@ -105,20 +105,11 @@ be placed in a sub-menu, even when enabled."
   :group 'mode-line-faces
   :type '(choice (const :tag "No face" nil) face))
 
-(defcustom minions-mode-line-lighter "≡"
+(defcustom minions-mode-line-lighter " ≡"
   "Text used for the mode menu in the mode line."
   :package-version '(minions . "0.2.0")
   :group 'minions
   :type 'string)
-
-;;; Element
-
-(defvar minions--mode-line-minor-modes
-  '(:eval (propertize minions-mode-line-lighter
-                      'face minions-mode-line-face
-                      'mouse-face 'mode-line-highlight
-                      'help-echo "Minions\nmouse-1: Display minor modes menu"
-                      'local-map minions-mode-line-minor-modes-map)))
 
 ;;; Mode
 
@@ -133,7 +124,7 @@ minor modes that is usually displayed directly in the mode line."
   (static-if (boundp 'mode-line-minor-modes)
       (setq-default mode-line-minor-modes
                     (if minions-mode
-                        minions--mode-line-minor-modes
+                        '(:eval (minions--mode-line-minor-modes))
                       '(:eval (mode-line--minor-modes))))
     (setq-default mode-line-format
                   (if minions-mode
@@ -233,19 +224,19 @@ are enabled."
             (fboundp fn)
             (let (global enabled)
               (cond
-               ((and (boundp 'global-minor-modes)
-                     (memq fn global-minor-modes))
-                (setq global t)
-                (setq enabled t))
-               ((and (boundp 'local-minor-modes)
-                     (memq fn local-minor-modes))
-                (setq enabled t))
-               ((or (get fn 'globalized-minor-mode)
-                    (and var (not (local-variable-if-set-p var)))
-                    (string-prefix-p "global-" (symbol-name fn)))
-                (setq global t)
-                (setq enabled (and var (symbol-value var))))
-               ((setq enabled (and var (symbol-value var)))))
+                ((and (boundp 'global-minor-modes)
+                      (memq fn global-minor-modes))
+                 (setq global t)
+                 (setq enabled t))
+                ((and (boundp 'local-minor-modes)
+                      (memq fn local-minor-modes))
+                 (setq enabled t))
+                ((or (get fn 'globalized-minor-mode)
+                     (and var (not (local-variable-if-set-p var)))
+                     (string-prefix-p "global-" (symbol-name fn)))
+                 (setq global t)
+                 (setq enabled (and var (symbol-value var))))
+                ((setq enabled (and var (symbol-value var)))))
               (list (list fn var global
                           (and (not (memq fn minions-demoted-modes))
                                (not (and global
@@ -285,6 +276,24 @@ are enabled."
          (string-match "\\`.+" doc)
          (match-string 0 doc))))
 
+;;; Element
+
+(defun minions--mode-line-minor-modes ()
+  `(""
+    (:propertize ("" ,(minions--prominent-modes))
+                 mouse-face mode-line-highlight
+                 local-map ,mode-line-minor-mode-keymap
+                 help-echo "Minor mode
+mouse-1: Display minor mode menu
+mouse-2: Show help for minor mode
+mouse-3: Toggle minor modes")
+    (:propertize minions-mode-line-lighter
+                 face ,minions-mode-line-face
+                 mouse-face mode-line-highlight
+                 local-map ,minions-mode-line-minor-modes-map
+                 help-echo "Minions
+mouse-1: Display minor modes menu")))
+
 ;;; Backward Compatibility
 
 (static-if (boundp 'mode-line-modes-delimiters)
@@ -317,15 +326,7 @@ mouse-3: Toggle minor modes"
                         'mouse-face 'mode-line-highlight
                         'local-map (make-mode-line-mouse-map
                                     'mouse-2 #'mode-line-widen))
-            `(:propertize ("" (:eval (minions--prominent-modes)))
-                          mouse-face mode-line-highlight
-                          help-echo "Minor mode
-mouse-1: Display minor mode menu
-mouse-2: Show help for minor mode
-mouse-3: Toggle minor modes"
-                          local-map ,mode-line-minor-mode-keymap)
-            '(:eval (and (not (member minions-mode-line-lighter '("" nil))) " "))
-            minions--mode-line-minor-modes
+            '(:eval (minions--mode-line-minor-modes))
             '(:eval (cdr minions-mode-line-delimiters))
             (propertize "%]" 'help-echo recursive-edit-help-echo)
             " "))
@@ -338,5 +339,6 @@ minor modes in a space conserving menu."))
 (provide 'minions)
 ;; Local Variables:
 ;; indent-tabs-mode: nil
+;; lisp-indent-local-overrides: ((cond . 0) (interactive . 0))
 ;; End:
 ;;; minions.el ends here
