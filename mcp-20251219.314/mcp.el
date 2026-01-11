@@ -3,8 +3,8 @@
 ;; Copyright (C) 2025  lizqwer scott
 
 ;; Author: lizqwer scott <lizqwerscott@gmail.com>
-;; Package-Version: 20251029.1132
-;; Package-Revision: 963b4af6ce74
+;; Package-Version: 20251219.314
+;; Package-Revision: 125e0a4478ff
 ;; Package-Requires: ((emacs "30.1") (jsonrpc "1.0.25"))
 ;; Keywords: tools
 ;; URL: https://github.com/lizqwerscott/mcp.el
