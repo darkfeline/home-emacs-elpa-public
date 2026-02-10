@@ -34,6 +34,9 @@ Each root can be either:
   (e.g., (:uri \"file:///home/user/project\" :name \"Project\"))
 Roots define filesystem boundaries that the server can access.
 
+TIMEOUT is the timeout in seconds for jsonrpc async requests.
+Defaults to `jsonrpc-default-request-timeout' when nil.
+
 INITIAL-CALLBACK is a function called when the server completes
 the connection.
 TOOLS-CALLBACK is a function called to handle the list of tools
@@ -51,7 +54,7 @@ This function creates a new process for the server, initializes a connection,
 and sends an initialization message to the server.  The connection is stored
 in the `mcp-server-connections` hash table for future reference.
 
-(fn NAME &key COMMAND ARGS URL ENV TOKEN HEADERS ROOTS INITIAL-CALLBACK TOOLS-CALLBACK PROMPTS-CALLBACK RESOURCES-CALLBACK RESOURCES-TEMPLATES-CALLBACK ERROR-CALLBACK SYNCP)")
+(fn NAME &key COMMAND ARGS URL ENV TOKEN HEADERS ROOTS TIMEOUT INITIAL-CALLBACK TOOLS-CALLBACK PROMPTS-CALLBACK RESOURCES-CALLBACK RESOURCES-TEMPLATES-CALLBACK ERROR-CALLBACK SYNCP)")
 (autoload 'mcp-stop-server "mcp" "\
 Stop the MCP server with the given NAME.
 If the server is running, it will be shutdown and its connection will be removed
