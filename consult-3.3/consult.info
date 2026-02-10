@@ -1,4 +1,4 @@
-This is docDOyA0b.info, produced by makeinfo version 7.1.1 from
+This is consult.info, produced by makeinfo version 7.1.1 from
 consult.texi.
 
 INFO-DIR-SECTION Emacs misc features
@@ -7,10 +7,10 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
 
-File: docDOyA0b.info,  Node: Top,  Next: Available commands,  Up: (dir)
+File: consult.info,  Node: Top,  Next: Available commands,  Up: (dir)
 
-consult.el - Consulting completing-read
-***************************************
+consult.el - Search and navigate via completing-read
+****************************************************
 
 Consult provides search and navigation commands based on the Emacs
 completion function completing-read
@@ -97,6 +97,7 @@ Configuration
 * Custom variables::             Short description of all customization settings
 * Project support::              Project discovery support for search commands
 * Fine-tuning::                  Fine-grained configuration for special requirements
+* Default completion UI with auto update::
 
 Hacking
 
@@ -111,7 +112,7 @@ Indices
 
 
 
-File: docDOyA0b.info,  Node: Available commands,  Next: Special features,  Prev: Top,  Up: Top
+File: consult.info,  Node: Available commands,  Next: Special features,  Prev: Top,  Up: Top
 
 1 Available commands
 ********************
@@ -144,7 +145,7 @@ their descriptions.
 * Miscellaneous::                Various other useful commands
 
 
-File: docDOyA0b.info,  Node: Virtual Buffers,  Next: Editing,  Up: Available commands
+File: consult.info,  Node: Virtual Buffers,  Next: Editing,  Up: Available commands
 
 1.1 Virtual Buffers
 ===================
@@ -188,7 +189,7 @@ File: docDOyA0b.info,  Node: Virtual Buffers,  Next: Editing,  Up: Available com
      ‘recentf-mode’ enables tracking of recent files.
 
 
-File: docDOyA0b.info,  Node: Editing,  Next: Register,  Prev: Virtual Buffers,  Up: Available commands
+File: consult.info,  Node: Editing,  Next: Register,  Prev: Virtual Buffers,  Up: Available commands
 
 1.2 Editing
 ===========
@@ -206,7 +207,7 @@ File: docDOyA0b.info,  Node: Editing,  Next: Register,  Prev: Virtual Buffers,  
    • ‘consult-kmacro’: Select macro from the macro ring and execute it.
 
 
-File: docDOyA0b.info,  Node: Register,  Next: Navigation,  Prev: Editing,  Up: Available commands
+File: consult.info,  Node: Register,  Next: Navigation,  Prev: Editing,  Up: Available commands
 
 1.3 Register
 ============
@@ -237,7 +238,7 @@ File: docDOyA0b.info,  Node: Register,  Next: Navigation,  Prev: Editing,  Up: A
         • ‘C-u 100 M-' x’: Store number in register ‘x’.
 
 
-File: docDOyA0b.info,  Node: Navigation,  Next: Search,  Prev: Register,  Up: Available commands
+File: consult.info,  Node: Navigation,  Next: Search,  Prev: Register,  Up: Available commands
 
 1.4 Navigation
 ==============
@@ -261,7 +262,7 @@ File: docDOyA0b.info,  Node: Navigation,  Next: Search,  Prev: Register,  Up: Av
      imenu-anywhere (https://github.com/vspinu/imenu-anywhere).
 
 
-File: docDOyA0b.info,  Node: Search,  Next: Grep and Find,  Prev: Navigation,  Up: Available commands
+File: consult.info,  Node: Search,  Next: Grep and Find,  Prev: Navigation,  Up: Available commands
 
 1.5 Search
 ==========
@@ -294,7 +295,7 @@ File: docDOyA0b.info,  Node: Search,  Next: Grep and Find,  Prev: Navigation,  U
      region restricts the filtering.
 
 
-File: docDOyA0b.info,  Node: Grep and Find,  Next: Compilation,  Prev: Search,  Up: Available commands
+File: consult.info,  Node: Grep and Find,  Next: Compilation,  Prev: Search,  Up: Available commands
 
 1.6 Grep and Find
 =================
@@ -333,7 +334,7 @@ File: docDOyA0b.info,  Node: Grep and Find,  Next: Compilation,  Prev: Search,  
      ‘consult-find’ work just like those for the consult grep commands.
 
 
-File: docDOyA0b.info,  Node: Compilation,  Next: Histories,  Prev: Grep and Find,  Up: Available commands
+File: consult.info,  Node: Compilation,  Next: Histories,  Prev: Grep and Find,  Up: Available commands
 
 1.7 Compilation
 ===============
@@ -349,7 +350,7 @@ File: docDOyA0b.info,  Node: Compilation,  Next: Histories,  Prev: Grep and Find
      ‘xref-show-xrefs-function’ and ‘xref-show-definitions-function’.
 
 
-File: docDOyA0b.info,  Node: Histories,  Next: Modes,  Prev: Compilation,  Up: Available commands
+File: consult.info,  Node: Histories,  Next: Modes,  Prev: Compilation,  Up: Available commands
 
 1.8 Histories
 =============
@@ -372,7 +373,7 @@ File: docDOyA0b.info,  Node: Histories,  Next: Modes,  Prev: Compilation,  Up: A
      ‘isearch-edit-string’.
 
 
-File: docDOyA0b.info,  Node: Modes,  Next: Org Mode,  Prev: Histories,  Up: Available commands
+File: consult.info,  Node: Modes,  Next: Org Mode,  Prev: Histories,  Up: Available commands
 
 1.9 Modes
 =========
@@ -385,7 +386,7 @@ File: docDOyA0b.info,  Node: Modes,  Next: Org Mode,  Prev: Histories,  Up: Avai
      local-minor/global-minor/major mode via the keys ‘l/g/m’.
 
 
-File: docDOyA0b.info,  Node: Org Mode,  Next: Help,  Prev: Modes,  Up: Available commands
+File: consult.info,  Node: Org Mode,  Next: Help,  Prev: Modes,  Up: Available commands
 
 1.10 Org Mode
 =============
@@ -400,7 +401,7 @@ File: docDOyA0b.info,  Node: Org Mode,  Next: Help,  Prev: Modes,  Up: Available
      live preview and recursive editing.
 
 
-File: docDOyA0b.info,  Node: Help,  Next: Miscellaneous,  Prev: Org Mode,  Up: Available commands
+File: consult.info,  Node: Help,  Next: Miscellaneous,  Prev: Org Mode,  Up: Available commands
 
 1.11 Help
 =========
@@ -425,7 +426,7 @@ File: docDOyA0b.info,  Node: Help,  Next: Miscellaneous,  Prev: Org Mode,  Up: A
      (consult-info-define "magit")
 
 
-File: docDOyA0b.info,  Node: Miscellaneous,  Prev: Help,  Up: Available commands
+File: consult.info,  Node: Miscellaneous,  Prev: Help,  Up: Available commands
 
 1.12 Miscellaneous
 ==================
@@ -433,11 +434,6 @@ File: docDOyA0b.info,  Node: Miscellaneous,  Prev: Help,  Up: Available commands
    • ‘consult-theme’: Select a theme and disable all currently enabled
      themes.  Supports live preview of the theme while scrolling through
      the candidates.
-   • ‘consult-preview-at-point’ and ‘consult-preview-at-point-mode’:
-     Command and minor mode which previews the candidate at point in the
-     ‘*Completions*’ buffer.  This mode is relevant if you use Mct
-     (https://git.sr.ht/~protesilaos/mct) or the default ‘*Completions*’
-     UI.
    • ‘consult-completion-in-region’: In case you don't use Corfu
      (https://github.com/minad/corfu) as your in-buffer completion UI,
      this function can be set as ‘completion-in-region-function’.  Then
@@ -457,7 +453,7 @@ File: docDOyA0b.info,  Node: Miscellaneous,  Prev: Help,  Up: Available commands
      place directly in the original buffer.
 
 
-File: docDOyA0b.info,  Node: Special features,  Next: Configuration,  Prev: Available commands,  Up: Top
+File: consult.info,  Node: Special features,  Next: Configuration,  Prev: Available commands,  Up: Top
 
 2 Special features
 ******************
@@ -481,7 +477,7 @@ advanced features.
 * Embark integration::           Actions, Grep/Occur-buffer export
 
 
-File: docDOyA0b.info,  Node: Live previews,  Next: Narrowing and grouping,  Up: Special features
+File: consult.info,  Node: Live previews,  Next: Narrowing and grouping,  Up: Special features
 
 2.1 Live previews
 =================
@@ -521,9 +517,8 @@ be considered.
       consult-bookmark consult-recent-file consult-xref
       consult-source-bookmark consult-source-file-register
       consult-source-recent-file consult-source-project-recent-file
-      ;; my/command-wrapping-consult    ;; disable auto previews inside my command
-      :preview-key '(:debounce 0.4 any) ;; Option 1: Delay preview
-      ;; :preview-key "M-.")            ;; Option 2: Manual preview
+      :preview-key '(:debounce 0.4 any)) ;; Option 1: Delay preview
+      ;; :preview-key "M-."              ;; Option 2: Manual preview
 
    In this case one may wonder what the difference is between using an
 Embark action on the current candidate in comparison to a manually
@@ -562,7 +557,7 @@ experience.
                           :debounce 1 any))
 
 
-File: docDOyA0b.info,  Node: Narrowing and grouping,  Next: Asynchronous search,  Prev: Live previews,  Up: Special features
+File: consult.info,  Node: Narrowing and grouping,  Next: Asynchronous search,  Prev: Live previews,  Up: Special features
 
 2.2 Narrowing and grouping
 ==========================
@@ -597,7 +592,7 @@ keys are automatically shown in the which-key window after pressing the
 ‘consult-narrow-key’.
 
 
-File: docDOyA0b.info,  Node: Asynchronous search,  Next: Multiple sources,  Prev: Narrowing and grouping,  Up: Special features
+File: consult.info,  Node: Asynchronous search,  Next: Multiple sources,  Prev: Narrowing and grouping,  Up: Special features
 
 2.3 Asynchronous search
 =======================
@@ -645,11 +640,30 @@ character, using a similar syntax as Perl regular expressions.
    • ‘#to#’: Force searching for "to" using grep, since the grep pattern
      must be longer than ‘consult-async-min-input’ characters by
      default.
-   • ‘#defun -- --invert-match#’: Pass argument ‘--invert-match’ to
-     grep.
 
-   Asynchronous processes like ‘find’ and ‘grep’ create an error log
-buffer ‘_*consult-async*’ (note the leading space), which is useful for
+   You can pass options to the underlying command.  The following
+examples apply to ripgrep:
+
+   • ‘#foo bar --invert-match’ or ‘#foo bar -v’: Invert matching.
+   • ‘#foo bar --context=2’ or ‘#foo bar -C2’: Include two lines of
+     context.
+   • ‘#foo bar --hidden’ or ‘#foo bar -.’: Search hidden files.
+   • ‘#foo bar --glob=*.org’ or ‘#foo bar -g *.org’: Search files
+     matching the glob pattern.
+   • ‘#foo bar --type=elisp’ or ‘#foo bar -t elisp’: Search only Elisp
+     files.
+   • ‘#.* -F’: Treat input as fixed string, and not as regular
+     expression.
+   • ‘#foo bar -s’: Treat input as case sensitive (‘-s’), sensitive
+     (‘-i’), or smart case (‘-S’).
+
+   Input can come after the options and the dash can be escaped:
+
+   • ‘#\-foo bar’: Search for ‘-foo’ and ‘bar’ with escaped dash.
+   • ‘#-v -- foo bar’: Inverted search, words come after options.
+
+   The asynchronous processes create an error log buffer
+‘_*consult-async*’ (note the leading space), which you can inspect for
 troubleshooting.  The prompt has a small indicator showing the process
 status:
 
@@ -663,7 +677,7 @@ status:
      provided.
 
 
-File: docDOyA0b.info,  Node: Multiple sources,  Next: Embark integration,  Prev: Asynchronous search,  Up: Special features
+File: consult.info,  Node: Multiple sources,  Next: Embark integration,  Prev: Asynchronous search,  Up: Special features
 
 2.4 Multiple sources
 ====================
@@ -767,7 +781,7 @@ the internal ‘consult--multi’ API.  The function ‘consult--multi’ can be
 used to create new multi-source commands.
 
 
-File: docDOyA0b.info,  Node: Embark integration,  Prev: Multiple sources,  Up: Special features
+File: consult.info,  Node: Embark integration,  Prev: Multiple sources,  Up: Special features
 
 2.5 Embark integration
 ======================
@@ -812,7 +826,7 @@ workflows are symmetric.
      ‘wdired-change-to-wdired-mode’ for editing.
 
 
-File: docDOyA0b.info,  Node: Configuration,  Next: Recommended packages,  Prev: Special features,  Up: Top
+File: consult.info,  Node: Configuration,  Next: Recommended packages,  Prev: Special features,  Up: Top
 
 3 Configuration
 ***************
@@ -836,9 +850,10 @@ binding, since they use lambdas and closures.
 * Custom variables::             Short description of all customization settings
 * Project support::              Project discovery support for search commands
 * Fine-tuning::                  Fine-grained configuration for special requirements
+* Default completion UI with auto update::
 
 
-File: docDOyA0b.info,  Node: Use-package example,  Next: Custom variables,  Up: Configuration
+File: consult.info,  Node: Use-package example,  Next: Custom variables,  Up: Configuration
 
 3.1 Use-package example
 =======================
@@ -917,10 +932,6 @@ additional configuration examples.
               ("M-s" . consult-history)                 ;; orig. next-matching-history-element
               ("M-r" . consult-history))                ;; orig. previous-matching-history-element
 
-       ;; Enable automatic preview at point in the *Completions* buffer. This is
-       ;; relevant when you use the default completion UI.
-       :hook (completion-list-mode . consult-preview-at-point-mode)
-
        ;; The :init configuration is always executed (Not lazy)
        :init
 
@@ -965,7 +976,7 @@ additional configuration examples.
      )
 
 
-File: docDOyA0b.info,  Node: Custom variables,  Next: Project support,  Prev: Use-package example,  Up: Configuration
+File: consult.info,  Node: Custom variables,  Next: Project support,  Prev: Use-package example,  Up: Configuration
 
 3.2 Custom variables
 ====================
@@ -1023,7 +1034,7 @@ consult-themes                     List of themes to be presented for selection
 consult-widen-key                  Widening key during completion
 
 
-File: docDOyA0b.info,  Node: Project support,  Next: Fine-tuning,  Prev: Custom variables,  Up: Configuration
+File: consult.info,  Node: Project support,  Next: Fine-tuning,  Prev: Custom variables,  Up: Configuration
 
 3.3 Project support
 ===================
@@ -1050,7 +1061,7 @@ possible to configure alternative methods via the customization variable
      (setq consult-project-function nil)
 
 
-File: docDOyA0b.info,  Node: Fine-tuning,  Prev: Project support,  Up: Configuration
+File: consult.info,  Node: Fine-tuning,  Next: Default completion UI with auto update,  Prev: Project support,  Up: Configuration
 
 3.4 Fine-tuning of individual commands
 ======================================
@@ -1120,7 +1131,34 @@ by the following techniques:
   5. Write or propose a patch.
 
 
-File: docDOyA0b.info,  Node: Recommended packages,  Next: Bug reports,  Prev: Configuration,  Up: Top
+File: consult.info,  Node: Default completion UI with auto update,  Prev: Fine-tuning,  Up: Configuration
+
+3.5 Default completion UI with auto update
+==========================================
+
+I recommend to use Vertico for best performance and an intuitive UI.
+Nevertheless the default completions buffer UI works decently and
+supports automatic update in newer Emacs versions.  I suggest the
+following configuration on Emacs 31:
+
+     (setq
+      ;; One column view with annotations
+      completions-format 'one-column
+      completions-detailed t
+      completions-group t
+      ;; Sort candidates by history position
+      completions-sort 'historical
+      ;; Allow navigating from the minibuffer
+      minibuffer-visible-completions 'up-down
+      ;; Show completions eagerly and update automatically
+      completion-eager-update t
+      completion-eager-display t
+      ;; Disable noise (inline help also blocks input)
+      completion-show-help nil
+      completion-show-inline-help nil)
+
+
+File: consult.info,  Node: Recommended packages,  Next: Bug reports,  Prev: Configuration,  Up: Top
 
 4 Recommended packages
 **********************
@@ -1166,7 +1204,7 @@ Consult wiki.  These packages integrate Consult with special programs or
 with other packages in the wider Emacs ecosystem.
 
 
-File: docDOyA0b.info,  Node: Bug reports,  Next: Hacking,  Prev: Recommended packages,  Up: Top
+File: consult.info,  Node: Bug reports,  Next: Hacking,  Prev: Recommended packages,  Up: Top
 
 5 Bug reports
 *************
@@ -1229,7 +1267,7 @@ report:
 lexical binding.  Consult relies on lambdas and lexical closures.
 
 
-File: docDOyA0b.info,  Node: Hacking,  Next: Contributions,  Prev: Bug reports,  Up: Top
+File: consult.info,  Node: Hacking,  Next: Contributions,  Prev: Bug reports,  Up: Top
 
 6 Hacking
 *********
@@ -1241,7 +1279,7 @@ File: docDOyA0b.info,  Node: Hacking,  Next: Contributions,  Prev: Bug reports, 
 * Live preview::
 
 
-File: docDOyA0b.info,  Node: Creating simple commands,  Next: Creating asynchronous completion commands,  Up: Hacking
+File: consult.info,  Node: Creating simple commands,  Next: Creating asynchronous completion commands,  Up: Hacking
 
 6.1 Creating simple commands
 ============================
@@ -1295,7 +1333,7 @@ look up the value.
       :lookup #'consult--lookup-candidate)
 
 
-File: docDOyA0b.info,  Node: Creating asynchronous completion commands,  Next: Live preview,  Prev: Creating simple commands,  Up: Hacking
+File: consult.info,  Node: Creating asynchronous completion commands,  Next: Live preview,  Prev: Creating simple commands,  Up: Hacking
 
 6.2 Creating asynchronous completion commands
 =============================================
@@ -1347,7 +1385,7 @@ and ‘consult--process-collection’ can be used for ‘consult--multi’
 sources.  Specify them as ‘:async’ field of the source plist.
 
 
-File: docDOyA0b.info,  Node: Live preview,  Prev: Creating asynchronous completion commands,  Up: Hacking
+File: consult.info,  Node: Live preview,  Prev: Creating asynchronous completion commands,  Up: Hacking
 
 6.3 Live preview
 ================
@@ -1380,7 +1418,7 @@ action argument.  Once defined, we can use this preview function in
       :state #'testibus--preview)
 
 
-File: docDOyA0b.info,  Node: Contributions,  Next: Acknowledgments,  Prev: Hacking,  Up: Top
+File: consult.info,  Node: Contributions,  Next: Acknowledgments,  Prev: Hacking,  Up: Top
 
 7 Contributions
 ***************
@@ -1400,7 +1438,7 @@ contribute to the Consult wiki (https://github.com/minad/consult/wiki),
 in case you want to share small configuration or command snippets.
 
 
-File: docDOyA0b.info,  Node: Acknowledgments,  Next: Indices,  Prev: Contributions,  Up: Top
+File: consult.info,  Node: Acknowledgments,  Next: Indices,  Prev: Contributions,  Up: Top
 
 8 Acknowledgments
 *****************
@@ -1450,7 +1488,7 @@ Manuel Uberti (https://github.com/manuel-uberti), Stefan Monnier
 (https://protesilaos.com).
 
 
-File: docDOyA0b.info,  Node: Indices,  Prev: Acknowledgments,  Up: Top
+File: consult.info,  Node: Indices,  Prev: Acknowledgments,  Up: Top
 
 9 Indices
 *********
@@ -1461,7 +1499,7 @@ File: docDOyA0b.info,  Node: Indices,  Prev: Acknowledgments,  Up: Top
 * Concept index::                List of all Consult-specific concepts
 
 
-File: docDOyA0b.info,  Node: Function index,  Next: Concept index,  Up: Indices
+File: consult.info,  Node: Function index,  Next: Concept index,  Up: Indices
 
 9.1 Function index
 ==================
@@ -1504,8 +1542,6 @@ File: docDOyA0b.info,  Node: Function index,  Next: Concept index,  Up: Indices
 * consult-org-agenda:                    Org Mode.              (line 6)
 * consult-org-heading:                   Org Mode.              (line 6)
 * consult-outline:                       Navigation.            (line 6)
-* consult-preview-at-point:              Miscellaneous.         (line 6)
-* consult-preview-at-point-mode:         Miscellaneous.         (line 6)
 * consult-project-buffer:                Virtual Buffers.       (line 6)
 * consult-recent-file:                   Virtual Buffers.       (line 6)
 * consult-register:                      Register.              (line 6)
@@ -1521,7 +1557,7 @@ File: docDOyA0b.info,  Node: Function index,  Next: Concept index,  Up: Indices
 * consult-yank-replace:                  Editing.               (line 6)
 
 
-File: docDOyA0b.info,  Node: Concept index,  Prev: Function index,  Up: Indices
+File: consult.info,  Node: Concept index,  Prev: Function index,  Up: Indices
 
 9.2 Concept index
 =================
@@ -1554,42 +1590,43 @@ File: docDOyA0b.info,  Node: Concept index,  Prev: Function index,  Up: Indices
 
 
 Tag Table:
-Node: Top223
-Node: Available commands5223
-Node: Virtual Buffers6800
-Node: Editing8977
-Node: Register9833
-Node: Navigation11554
-Node: Search12797
-Node: Grep and Find14708
-Node: Compilation17123
-Node: Histories17835
-Node: Modes19055
-Node: Org Mode19535
-Node: Help20151
-Node: Miscellaneous21355
-Node: Special features23097
-Node: Live previews24226
-Node: Narrowing and grouping28363
-Node: Asynchronous search30366
-Node: Multiple sources33448
-Node: Embark integration38345
-Node: Configuration40565
-Node: Use-package example41634
-Node: Custom variables48168
-Node: Project support52101
-Node: Fine-tuning53366
-Node: Recommended packages56325
-Node: Bug reports58448
-Node: Hacking61443
-Node: Creating simple commands61658
-Node: Creating asynchronous completion commands63291
-Node: Live preview65285
-Node: Contributions66482
-Node: Acknowledgments67394
-Node: Indices69927
-Node: Function index70165
-Node: Concept index73959
+Node: Top221
+Node: Available commands5288
+Node: Virtual Buffers6863
+Node: Editing9038
+Node: Register9892
+Node: Navigation11611
+Node: Search12852
+Node: Grep and Find14761
+Node: Compilation17174
+Node: Histories17884
+Node: Modes19102
+Node: Org Mode19580
+Node: Help20194
+Node: Miscellaneous21396
+Node: Special features22827
+Node: Live previews23954
+Node: Narrowing and grouping28008
+Node: Asynchronous search30009
+Node: Multiple sources33943
+Node: Embark integration38838
+Node: Configuration41056
+Node: Use-package example42166
+Node: Custom variables48489
+Node: Project support52420
+Node: Fine-tuning53683
+Node: Default completion UI with auto update56687
+Node: Recommended packages57689
+Node: Bug reports59810
+Node: Hacking62803
+Node: Creating simple commands63016
+Node: Creating asynchronous completion commands64647
+Node: Live preview66639
+Node: Contributions67834
+Node: Acknowledgments68744
+Node: Indices71275
+Node: Function index71511
+Node: Concept index75157
 
 End Tag Table
 
