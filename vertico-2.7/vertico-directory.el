@@ -1,12 +1,12 @@
 ;;; vertico-directory.el --- Ido-like directory navigation for Vertico -*- lexical-binding: t -*-
 
-;; Copyright (C) 2021-2025 Free Software Foundation, Inc.
+;; Copyright (C) 2021-2026 Free Software Foundation, Inc.
 
 ;; Author: Daniel Mendler <mail@daniel-mendler.de>
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2021
-;; Version: 2.6
-;; Package-Requires: ((emacs "29.1") (compat "30") (vertico "2.6"))
+;; Version: 2.7
+;; Package-Requires: ((emacs "29.1") (compat "30") (vertico "2.7"))
 ;; URL: https://github.com/minad/vertico
 
 ;; This file is part of GNU Emacs.
@@ -38,7 +38,7 @@
 ;; `vertico-multiform-mode'.
 ;;
 ;; (setq vertico-multiform-categories
-;;       '((file (:keymap . vertico-directory-map)))
+;;       '((file (:keymap . vertico-directory-map))))
 ;; (vertico-multiform-mode)
 ;;
 ;; Furthermore a cleanup function for shadowed file paths is provided.
@@ -55,23 +55,23 @@
   "Enter directory or exit completion with current candidate.
 Exit with current input if prefix ARG is given."
   (interactive "P")
-  (if-let (((not arg))
-           ((>= vertico--index 0))
-           ((eq 'file (vertico--metadata-get 'category)))
-           ;; Check vertico--base for stepwise file path completion
-           ((not (equal vertico--base "")))
-           (cand (vertico--candidate))
-           ((or (string-suffix-p "/" cand)
-                (and (vertico--remote-p cand)
-                     (string-suffix-p ":" cand))))
-           ;; Handle /./ and /../ manually instead of via `expand-file-name'
-           ;; and `abbreviate-file-name', such that we don't accidentally
-           ;; perform unwanted substitutions in the existing completion.
-           ((progn
-              (setq cand (string-replace "/./" "/" cand))
-              (unless (string-suffix-p "/../../" cand)
-                (setq cand (replace-regexp-in-string "/[^/|:]+/\\.\\./\\'" "/" cand)))
-              (not (equal (minibuffer-contents-no-properties) cand)))))
+  (if-let* (((not arg))
+            ((>= vertico--index 0))
+            ((eq 'file (vertico--metadata-get 'category)))
+            ;; Check vertico--base for stepwise file path completion
+            ((not (equal vertico--base "")))
+            (cand (vertico--candidate))
+            ((or (string-suffix-p "/" cand)
+                 (and (vertico--remote-p cand)
+                      (string-suffix-p ":" cand))))
+            ;; Handle /./ and /../ manually instead of via `expand-file-name'
+            ;; and `abbreviate-file-name', such that we don't accidentally
+            ;; perform unwanted substitutions in the existing completion.
+            ((progn
+               (setq cand (string-replace "/./" "/" cand))
+               (unless (string-suffix-p "/../../" cand)
+                 (setq cand (replace-regexp-in-string "/[^/|:]+/\\.\\./\\'" "/" cand)))
+               (not (equal (minibuffer-contents-no-properties) cand)))))
       (progn
         (delete-minibuffer-contents)
         (insert cand))

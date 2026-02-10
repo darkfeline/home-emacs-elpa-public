@@ -1,12 +1,12 @@
 ;;; vertico-mouse.el --- Mouse support for Vertico -*- lexical-binding: t -*-
 
-;; Copyright (C) 2021-2025 Free Software Foundation, Inc.
+;; Copyright (C) 2021-2026 Free Software Foundation, Inc.
 
 ;; Author: Daniel Mendler <mail@daniel-mendler.de>
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2021
-;; Version: 2.6
-;; Package-Requires: ((emacs "29.1") (compat "30") (vertico "2.6"))
+;; Version: 2.7
+;; Package-Requires: ((emacs "29.1") (compat "30") (vertico "2.7"))
 ;; URL: https://github.com/minad/vertico
 
 ;; This file is part of GNU Emacs.
@@ -39,8 +39,8 @@
 
 (defun vertico-mouse--index (event)
   "Return candidate index at EVENT."
-  (when-let ((object (posn-object (event-end event)))
-             ((consp object)))
+  (when-let* ((object (posn-object (event-end event)))
+              ((consp object)))
     (get-text-property (cdr object) 'vertico-mouse--index (car object))))
 
 (defun vertico-mouse--click (key)
@@ -49,8 +49,8 @@
     (interactive "e")
     ;; Mouse clicks can even happen if another window is selected.
     (with-selected-window (active-minibuffer-window)
-      (when-let ((vertico--index (vertico-mouse--index event))
-                 (cmd (keymap-local-lookup key)))
+      (when-let* ((vertico--index (vertico-mouse--index event))
+                  (cmd (keymap-local-lookup key)))
         (funcall cmd)))))
 
 (defvar-keymap vertico-mouse-map

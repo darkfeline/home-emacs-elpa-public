@@ -1,12 +1,12 @@
 ;;; vertico-reverse.el --- Reverse the Vertico display -*- lexical-binding: t -*-
 
-;; Copyright (C) 2021-2025 Free Software Foundation, Inc.
+;; Copyright (C) 2021-2026 Free Software Foundation, Inc.
 
 ;; Author: Daniel Mendler <mail@daniel-mendler.de>
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2021
-;; Version: 2.6
-;; Package-Requires: ((emacs "29.1") (compat "30") (vertico "2.6"))
+;; Version: 2.7
+;; Package-Requires: ((emacs "29.1") (compat "30") (vertico "2.7"))
 ;; URL: https://github.com/minad/vertico
 
 ;; This file is part of GNU Emacs.
@@ -59,7 +59,7 @@
   :global t :group 'vertico
   ;; Reset overlays
   (dolist (buf (buffer-list))
-    (when-let ((ov (buffer-local-value 'vertico--candidates-ov buf)))
+    (when-let* ((ov (buffer-local-value 'vertico--candidates-ov buf)))
       (overlay-put ov 'before-string nil)))
   (cl-callf2 rassq-delete-all vertico-reverse-map minor-mode-map-alist)
   (when vertico-reverse-mode

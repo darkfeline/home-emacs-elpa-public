@@ -1,12 +1,12 @@
 ;;; vertico-grid.el --- Grid display for Vertico -*- lexical-binding: t -*-
 
-;; Copyright (C) 2021-2025 Free Software Foundation, Inc.
+;; Copyright (C) 2021-2026 Free Software Foundation, Inc.
 
 ;; Author: Daniel Mendler <mail@daniel-mendler.de>
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2021
-;; Version: 2.6
-;; Package-Requires: ((emacs "29.1") (compat "30") (vertico "2.6"))
+;; Version: 2.7
+;; Package-Requires: ((emacs "29.1") (compat "30") (vertico "2.7"))
 ;; URL: https://github.com/minad/vertico
 
 ;; This file is part of GNU Emacs.
@@ -109,7 +109,7 @@ When scrolling beyond this limit, candidates may be truncated."
   "Grid display for Vertico."
   :global t :group 'vertico
   ;; Shrink current minibuffer window
-  (when-let ((win (active-minibuffer-window)))
+  (when-let* ((win (active-minibuffer-window)))
     (unless (frame-root-window-p win)
       (window-resize win (- (window-pixel-height win)) nil nil 'pixelwise)))
   (cl-callf2 rassq-delete-all vertico-grid-map minor-mode-map-alist)
@@ -157,7 +157,7 @@ When scrolling beyond this limit, candidates may be truncated."
     (cl-loop for row from 0 to (1- (min vertico-count vertico--total)) collect
              (let ((line (list "\n")))
                (cl-loop for col from (1- vertico-grid--columns) downto 0 do
-                        (when-let ((cand (nth (+ row (* col vertico-count)) cands)))
+                        (when-let* ((cand (nth (+ row (* col vertico-count)) cands)))
                           (push cand line)
                           (when (> col 0)
                             (push vertico-grid-separator line)
