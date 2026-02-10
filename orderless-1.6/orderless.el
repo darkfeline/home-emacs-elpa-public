@@ -1,11 +1,11 @@
 ;;; orderless.el --- Completion style for matching regexps in any order  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2021-2025 Free Software Foundation, Inc.
+;; Copyright (C) 2021-2026 Free Software Foundation, Inc.
 
 ;; Author: Omar Antolín Camarena <omar@matem.unam.mx>
 ;; Maintainer: Omar Antolín Camarena <omar@matem.unam.mx>, Daniel Mendler <mail@daniel-mendler.de>
 ;; Keywords: matching, completion
-;; Version: 1.5
+;; Version: 1.6
 ;; URL: https://github.com/oantolin/orderless
 ;; Package-Requires: ((emacs "27.1") (compat "30"))
 
@@ -124,7 +124,7 @@ The returned regexps can be either strings or s-expressions in
 the entire match is highlighted, otherwise just the captured
 groups are.  Several are provided with this package: try
 customizing this variable to see a list of them."
-  :type 'hook
+  :type '(repeat function)
   :options (list #'orderless-regexp
                  #'orderless-literal
                  #'orderless-initialism
@@ -173,10 +173,10 @@ style associated to the character."
        ;; Ignore single dispatcher character
        ((and (= len 1) (alist-get (aref component 0) alist)) #'ignore)
        ;; Prefix
-       ((when-let ((style (alist-get (aref component 0) alist)))
+       ((when-let* ((style (alist-get (aref component 0) alist)))
           (cons style (substring component 1))))
        ;; Suffix
-       ((when-let ((style (alist-get (aref component (1- len)) alist)))
+       ((when-let* ((style (alist-get (aref component (1- len)) alist)))
           (cons style (substring component 0 -1))))))))
 
 (defcustom orderless-style-dispatchers (list #'orderless-affix-dispatch)
@@ -199,7 +199,7 @@ the component in the `orderless-flex' style.  See
 `orderless-affix-dispatch' and `orderless-affix-dispatch-alist'
 for such a configuration.  For more information on how this
 variable is used, see `orderless-compile'."
-  :type 'hook)
+  :type '(repeat function))
 
 (defcustom orderless-smart-case t
   "Whether to use smart case.
@@ -312,8 +312,8 @@ which can invert any predicate or regexp."
 
 (defun orderless--metadata ()
   "Return completion metadata iff inside minibuffer."
-  (when-let (((minibufferp))
-             (table minibuffer-completion-table))
+  (when-let* (((minibufferp))
+              (table minibuffer-completion-table))
     ;; Return non-nil metadata iff inside minibuffer
     (or (completion-metadata (buffer-substring-no-properties
                               (minibuffer-prompt-end) (point))
@@ -323,11 +323,11 @@ which can invert any predicate or regexp."
 (defun orderless-annotation (pred regexp)
   "Match candidates where the annotation matches PRED and REGEXP."
   (let ((md (orderless--metadata)))
-    (if-let ((fun (compat-call completion-metadata-get md 'affixation-function)))
+    (if-let* ((fun (compat-call completion-metadata-get md 'affixation-function)))
         (lambda (str)
           (cl-loop for s in (cdar (funcall fun (list str)))
                    thereis (orderless--match-p pred regexp s)))
-      (when-let ((fun (compat-call completion-metadata-get md 'annotation-function)))
+      (when-let* ((fun (compat-call completion-metadata-get md 'annotation-function)))
           (lambda (str) (orderless--match-p pred regexp (funcall fun str)))))))
 
 ;;; Highlighting matches
@@ -370,7 +370,7 @@ converted to a list of regexps according to the value of
                   "\\\\\\\\\\|\\\\ "
                   (lambda (x) (if (equal x "\\ ") (string 0) x))
                   string 'fixedcase 'literal)
-                 " +" t)))
+                 " +")))
 
 (defun orderless--dispatch (dispatchers default string index total)
   "Run DISPATCHERS to compute matching styles for STRING.
@@ -425,8 +425,8 @@ DEFAULT as the list of styles."
    for res = (condition-case nil
                  (funcall style newcomp)
                (wrong-number-of-arguments
-                (when-let ((res (orderless--compile-component
-                                 newcomp index total styles dispatchers)))
+                (when-let* ((res (orderless--compile-component
+                                  newcomp index total styles dispatchers)))
                   (funcall style (car res) (cdr res)))))
    if (functionp res) do (cl-callf orderless--predicate-and pred res)
    else if res collect (if (stringp res) `(regexp ,res) res) into regexps
@@ -457,9 +457,10 @@ string as argument."
   (unless dispatchers (setq dispatchers orderless-style-dispatchers))
   (cl-loop
    with predicate = nil
-   with components = (if (functionp orderless-component-separator)
-                         (funcall orderless-component-separator pattern)
-                       (split-string pattern orderless-component-separator t))
+   with temp = (if (functionp orderless-component-separator)
+                   (funcall orderless-component-separator pattern)
+                 (split-string pattern orderless-component-separator))
+   with components = (if (equal (car (last temp)) "") (nbutlast temp) temp)
    with total = (length components)
    for comp in components and index from 0
    for (pred . regexp) = (orderless--compile-component
@@ -552,7 +553,7 @@ matching portions of each candidate are highlighted.
 This function is part of the `orderless' completion style."
   (pcase-let ((`(,prefix ,regexps ,ignore-case ,pred)
                (orderless--compile string table pred)))
-    (when-let ((completions (orderless--filter prefix regexps ignore-case table pred)))
+    (when-let* ((completions (orderless--filter prefix regexps ignore-case table pred)))
       (if completion-lazy-hilit
           (setq completion-lazy-hilit-fn
                 (apply-partially #'orderless--highlight regexps ignore-case))
