@@ -12,34 +12,44 @@
 ;;; Generated autoloads from dumb-jump.el
 
 (defvar dumb-jump-mode-map (let ((map (make-sparse-keymap))) (define-key map (kbd "C-M-g") 'dumb-jump-go) (define-key map (kbd "C-M-p") 'dumb-jump-back) (define-key map (kbd "C-M-q") 'dumb-jump-quick-look) map))
+(autoload 'dumb-jump-show-detected-problems "dumb-jump" "\
+Print all problems detected by dumb-jump environment in *Message*.
+Erase the accumulated list unless the command is issued with any prefix
+key (such as `\\[universal-argument]').
+
+(fn KEEP)" t)
 (autoload 'dumb-jump-back "dumb-jump" "\
 Jump back to where the last jump was done." t)
 (autoload 'dumb-jump-quick-look "dumb-jump" "\
-Run dumb-jump-go in quick look mode.  That is, show a tooltip of where it would jump instead." t)
+Run `dumb-jump-go' in quick look mode.
+That is, show a tooltip of where it would jump instead." t)
 (autoload 'dumb-jump-go-other-window "dumb-jump" "\
-Like 'dumb-jump-go' but use 'find-file-other-window' instead of 'find-file'." t)
+Like dumb-jump-go' but use `find-file-other-window' instead of `find-file'." t)
 (autoload 'dumb-jump-go-current-window "dumb-jump" "\
-Like dumb-jump-go but always use 'find-file'." t)
+Like `dumb-jump-go' but always use `find-file'." t)
 (autoload 'dumb-jump-go-prefer-external "dumb-jump" "\
-Like dumb-jump-go but prefer external matches from the current file." t)
+Like `dumb-jump-go' but prefer external matches from the current file." t)
 (autoload 'dumb-jump-go-prompt "dumb-jump" "\
-Like dumb-jump-go but prompts for function instead of using under point" t)
+Like `dumb-jump-go' but prompt for function instead of using under point." t)
 (autoload 'dumb-jump-go-prefer-external-other-window "dumb-jump" "\
-Like dumb-jump-go-prefer-external but use 'find-file-other-window' instead of 'find-file'." t)
+Like `dumb-jump-go-prefer-external' but create another window.
+It uses `find-file-other-window' instead of `find-file'." t)
 (autoload 'dumb-jump-go "dumb-jump" "\
 Go to the function/variable declaration for thing at point.
 When USE-TOOLTIP is t a tooltip jump preview will show instead.
 When PREFER-EXTERNAL is t it will sort external matches before
 current file.
+The optional ENTERED-NAME string is the name of the item to jump to
+manually selected by user as response to a prompt.
 
-(fn &optional USE-TOOLTIP PREFER-EXTERNAL PROMPT)" t)
+(fn &optional USE-TOOLTIP PREFER-EXTERNAL ENTERED-NAME)" t)
 (defvar dumb-jump-mode nil "\
 Non-nil if Dumb-Jump mode is enabled.
 See the `dumb-jump-mode' command
 for a description of this minor mode.")
 (custom-autoload 'dumb-jump-mode "dumb-jump" nil)
 (autoload 'dumb-jump-mode "dumb-jump" "\
-Minor mode for jumping to variable and function definitions
+Minor mode for jumping to variable and function definitions.
 
 This is a global minor mode.  If called interactively, toggle the
 `Dumb-Jump mode' mode.  If the prefix argument is positive, enable the
@@ -61,7 +71,7 @@ disabled.
 (autoload 'dumb-jump-xref-activate "dumb-jump" "\
 Function to activate xref backend.
 Add this function to `xref-backend-functions' to dumb jump to be
-activiated, whenever it finds a project. It is recommended to add
+activated, whenever it finds a project.  It is recommended to add
 it to the end, so that it only gets activated when no better
 option is found.")
 (register-definition-prefixes "dumb-jump" '("dumb-jump-"))
