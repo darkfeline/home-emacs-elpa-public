@@ -2,6 +2,11 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Version 2.8 (2026-03-09)
+
+- Do not set ~completion-show-inline-help~ locally in the minibuffer.
+- ~vertico-mouse-mode~: Support ~vertico-reverse-mode~.
+
 * Version 2.7 (2026-01-18)
 
 - =vertico-multiform-mode=: Check state of modes during minibuffer setup.
