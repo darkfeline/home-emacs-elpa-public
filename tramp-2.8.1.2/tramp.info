@@ -1,4 +1,4 @@
-This is tramp.info, produced by makeinfo version 7.1.1 from tramp.texi.
+This is tramp.info, produced by makeinfo version 7.2 from tramp.texi.
 
 Copyright © 1999-2026 Free Software Foundation, Inc.
 
@@ -21,10 +21,10 @@ END-INFO-DIR-ENTRY
 
 File: tramp.info,  Node: Top,  Next: Overview,  Prev: (dir),  Up: (dir)
 
-TRAMP 2.8.1.1 User Manual
+TRAMP 2.8.1.2 User Manual
 *************************
 
-This file documents TRAMP 2.8.1.1, a remote file editing package for
+This file documents TRAMP 2.8.1.2, a remote file editing package for
 Emacs.
 
    TRAMP stands for "Transparent Remote (file) Access, Multiple
@@ -129,7 +129,6 @@ How file names, directories and localnames are mangled and managed
 * External packages::           Integration with external Lisp packages.
 * Extension packages::          Adding new methods to TRAMP.
 * New operations::              Handling further operations in TRAMP.
-
 
 
 File: tramp.info,  Node: Overview,  Next: Obtaining TRAMP,  Up: Top
@@ -4975,8 +4974,8 @@ its process sentinel with this code:
 directory, it is most likely sufficient to make the ‘default-directory’
 of the process buffer as the root directory.
 
-8.3.3 Timers, process filters, process sentinels, redisplay
------------------------------------------------------------
+8.3.3 Timers, process filters, process sentinels, special events, redisplay
+---------------------------------------------------------------------------
 
 Timers run asynchronously at any time when Emacs is waiting for sending
 a string to a process, or waiting for process output.  They can run any
@@ -4991,7 +4990,13 @@ as follows:
        ...)
 
    A similar problem could happen with process filters, process
-sentinels, and redisplay (updating the mode line).
+sentinels, special event handlers, and redisplay (updating the mode
+line).
+
+   *Note* that TRAMP raises a ‘remote-file-error’ error for any
+connection-related problem.  You can protect against all such problems
+with the code snippet above (or with a ‘condition-case’ / ‘handler-bind’
+form with a ‘remote-file-error’ handler).
 
 
 File: tramp.info,  Node: Extension packages,  Next: New operations,  Prev: External packages,  Up: Files directories and localnames
@@ -5218,6 +5223,12 @@ following settings are required:
 
      (setq debug-on-error t
            debug-on-signal t)
+
+   Sometimes, TRAMP shows the connection buffer for more information
+when an error has appeared.  The buffer is shown for
+‘tramp-error-show-message-timeout’ seconds, or until an input event
+arrives.  You can change this variable to another value.  If it isn't a
+natural number (for example, ‘nil’), the buffer isn't shown.
 
    TRAMP warnings are displayed in the ‘*Warnings*’ buffer, which pops
 up.  If you don't want to see this buffer for every TRAMP warning, set
@@ -5984,6 +5995,7 @@ Variable Index
 * tramp-distrobox-program:               Inline methods.      (line 216)
 * tramp-docker-program:                  Inline methods.      (line 176)
 * tramp-encoding-shell:                  Remote shell setup.  (line  32)
+* tramp-error-show-message-timeout:      Traces and Profiles. (line  41)
 * tramp-file-name-regexp:                Change file name syntax.
                                                               (line  28)
 * tramp-file-name-with-method:           Ad-hoc multi-hops.   (line  87)
@@ -6050,7 +6062,7 @@ Variable Index
 * tramp-wrong-passwd-regexp:             Remote shell setup.  (line  73)
 * trash-directory:                       Frequently Asked Questions.
                                                               (line 390)
-* warning-suppress-types:                Traces and Profiles. (line  41)
+* warning-suppress-types:                Traces and Profiles. (line  47)
 * XDG_DATA_HOME, environment variable:   Frequently Asked Questions.
                                                               (line 402)
 * XDG_RUNTIME_DIR, environment variable: Frequently Asked Questions.
@@ -6471,94 +6483,94 @@ Concept Index
 * ZIP file archive suffix:               Archive file names.  (line  87)
 * zsh setup:                             Remote shell setup.  (line   9)
 
-
 
 Tag Table:
-Node: Top919
-Node: Overview5987
-Ref: Overview-Footnote-111376
-Node: Obtaining TRAMP11412
-Node: Quick Start Guide13943
-Ref: Quick Start Guide File name syntax14724
-Ref: Quick Start Guide ssh and plink methods15818
-Ref: Quick Start Guide su, sudo, doas, run0, androidsu and sg methods16365
-Ref: Quick Start Guide Combining ssh, plink, su, sudo, doas and run0 methods17255
-Ref: Quick Start Guide sudoedit method17850
-Ref: Quick Start Guide smb method18260
-Ref: Quick Start Guide GVFS-based methods18591
-Ref: Quick Start Guide GNOME Online Accounts based methods19035
-Ref: Quick Start Guide FUSE-based methods19577
-Ref: Quick Start Guide Android20448
-Node: Configuration20682
-Node: Optional methods23720
-Node: Connection types24616
-Node: Inline methods26056
-Node: External methods36145
-Node: GVFS-based methods45846
-Node: FUSE-based methods50092
-Node: Default Method52724
-Ref: Default Method-Footnote-155943
-Node: Default User56051
-Node: Default Host57580
-Node: Multi-hops58851
-Node: Firewalls63046
-Node: Customizing Methods64516
-Node: Customizing Completion66526
-Node: Password handling70016
-Ref: Using an authentication file70486
-Ref: Caching passwords72883
-Ref: Password handling-Footnote-173818
-Ref: Password handling-Footnote-273889
-Node: Connection caching73939
-Node: Predefined connection information74869
-Ref: Predefined connection information-Footnote-179672
-Node: Remote programs79768
-Node: Remote shell setup82679
-Node: Ssh setup93404
-Ref: Using ssh connection sharing95359
-Node: FUSE setup101729
-Ref: Setup of rclone method102713
-Ref: Setup of sshfs method103623
-Ref: FUSE setup-Footnote-1104115
-Node: Android shell setup104151
-Node: Kubernetes setup107449
-Node: Auto-save File Lock and Backup108521
-Node: Keeping files encrypted112971
-Node: Usage117800
-Node: File name syntax119222
-Node: Change file name syntax121319
-Node: File name completion122749
-Node: Ad-hoc multi-hops125810
-Ref: tramp-show-ad-hoc-proxies126941
-Ref: tramp-save-ad-hoc-proxies127632
-Node: Home directories131603
-Node: Remote processes133330
-Ref: Managing remote shell history139355
-Ref: Running a debugger on a remote host144966
-Ref: Running remote processes on MS Windows hosts146098
-Ref: Improving performance of asynchronous remote processes153531
-Node: Cleanup remote connections157332
-Node: Renaming remote files160198
-Node: Archive file names164515
-Node: Bug Reports169235
-Node: Frequently Asked Questions173176
-Ref: Frequently Asked Questions-Footnote-1206187
-Node: Files directories and localnames206252
-Node: Temporary directory206883
-Node: Localname deconstruction207983
-Node: External packages208664
-Node: Extension packages211697
-Node: New operations215937
-Node: Traces and Profiles219540
-Node: GNU Free Documentation License222557
-Node: Function Index247730
-Node: Variable Index252614
-Node: Key Index269639
-Node: Concept Index269921
+Node: Top917
+Node: Overview5984
+Ref: Overview-Footnote-111373
+Node: Obtaining TRAMP11409
+Node: Quick Start Guide13940
+Ref: Quick Start Guide File name syntax14721
+Ref: Quick Start Guide ssh and plink methods15815
+Ref: Quick Start Guide su, sudo, doas, run0, androidsu and sg methods16362
+Ref: Quick Start Guide Combining ssh, plink, su, sudo, doas and run0 methods17252
+Ref: Quick Start Guide sudoedit method17847
+Ref: Quick Start Guide smb method18257
+Ref: Quick Start Guide GVFS-based methods18588
+Ref: Quick Start Guide GNOME Online Accounts based methods19032
+Ref: Quick Start Guide FUSE-based methods19574
+Ref: Quick Start Guide Android20445
+Node: Configuration20679
+Node: Optional methods23717
+Node: Connection types24613
+Node: Inline methods26053
+Node: External methods36142
+Node: GVFS-based methods45843
+Node: FUSE-based methods50089
+Node: Default Method52721
+Ref: Default Method-Footnote-155940
+Node: Default User56048
+Node: Default Host57577
+Node: Multi-hops58848
+Node: Firewalls63043
+Node: Customizing Methods64513
+Node: Customizing Completion66523
+Node: Password handling70013
+Ref: Using an authentication file70483
+Ref: Caching passwords72880
+Ref: Password handling-Footnote-173815
+Ref: Password handling-Footnote-273886
+Node: Connection caching73936
+Node: Predefined connection information74866
+Ref: Predefined connection information-Footnote-179669
+Node: Remote programs79765
+Node: Remote shell setup82676
+Node: Ssh setup93401
+Ref: Using ssh connection sharing95356
+Node: FUSE setup101726
+Ref: Setup of rclone method102710
+Ref: Setup of sshfs method103620
+Ref: FUSE setup-Footnote-1104112
+Node: Android shell setup104148
+Node: Kubernetes setup107446
+Node: Auto-save File Lock and Backup108518
+Node: Keeping files encrypted112968
+Node: Usage117797
+Node: File name syntax119219
+Node: Change file name syntax121316
+Node: File name completion122746
+Node: Ad-hoc multi-hops125807
+Ref: tramp-show-ad-hoc-proxies126938
+Ref: tramp-save-ad-hoc-proxies127629
+Node: Home directories131600
+Node: Remote processes133327
+Ref: Managing remote shell history139352
+Ref: Running a debugger on a remote host144963
+Ref: Running remote processes on MS Windows hosts146095
+Ref: Improving performance of asynchronous remote processes153528
+Node: Cleanup remote connections157329
+Node: Renaming remote files160195
+Node: Archive file names164512
+Node: Bug Reports169232
+Node: Frequently Asked Questions173173
+Ref: Frequently Asked Questions-Footnote-1206184
+Node: Files directories and localnames206249
+Node: Temporary directory206880
+Node: Localname deconstruction207980
+Node: External packages208661
+Node: Extension packages212017
+Node: New operations216257
+Node: Traces and Profiles219860
+Node: GNU Free Documentation License223209
+Node: Function Index248382
+Node: Variable Index253266
+Node: Key Index270364
+Node: Concept Index270646
 
 End Tag Table
 
 
 Local Variables:
 coding: utf-8
+Info-documentlanguage: en
 End:
