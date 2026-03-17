@@ -6,8 +6,8 @@
 ;; Homepage: https://github.com/magit/ghub
 ;; Keywords: tools
 
-;; Package-Version: 20260101.1852
-;; Package-Revision: 278d9fb5f3f6
+;; Package-Version: 20260316.1811
+;; Package-Revision: 42ebf0971f7d
 ;; Package-Requires: (
 ;;     (emacs   "29.1")
 ;;     (compat  "30.1")
@@ -443,14 +443,15 @@ this function is called with nil for PAYLOAD."
 Signal an error if the id cannot be determined."
   (or (pcase forge
         ((or 'nil 'github)
-         (let-alist (ghub-graphql
-                     '(query (repository [(owner $owner String!)
-                                          (name  $name  String!)]
-                                         id))
-                     `((owner . ,owner)
-                       (name  . ,name))
-                     :username username :auth auth :host host)
-           .data.repository.id))
+         (let-alist (ghub-query
+                      '(query (repository [(owner $owner String!)
+                                           (name  $name  String!)]
+                                          id))
+                      `((owner . ,owner)
+                        (name  . ,name))
+                      :synchronous t
+                      :username username :auth auth :host host)
+           .repository.id))
         ('gitlab
          (number-to-string
           (alist-get
@@ -526,15 +527,20 @@ Signal an error if the id cannot be determined."
                       (err       (plist-get status :error)))
                   (cond ((and err errorback)
                          (setf (ghub--req-url req) prev)
-                         (funcall (if (eq errorback t)
-                                      'ghub--errorback
-                                    errorback)
-                                  err headers status req))
+                         (when (eq errorback t)
+                           (setq errorback #'ghub--errorback))
+                         (condition-case nil
+                             (funcall errorback err headers status req)
+                           (wrong-number-of-arguments
+                            (funcall errorback err))))
                         (callback
                          (save-current-buffer
                            (when (buffer-live-p req-buf)
                              (set-buffer req-buf))
-                           (funcall callback value headers status req)))
+                           (condition-case nil
+                               (funcall callback value headers status req)
+                             (wrong-number-of-arguments
+                              (funcall callback value)))))
                         (t value))))))
       (when (and (buffer-live-p buf)
                  (not (buffer-local-value 'ghub-debug buf)))
@@ -815,7 +821,6 @@ or (info \"(ghub)Getting Started\") for instructions."
 ;;; _
 (provide 'ghub)
 (require 'ghub-graphql)
-(require 'ghub-legacy)
 ;; Local Variables:
 ;; read-symbol-shorthands: (
 ;;   ("and-let"   . "cond-let--and-let")
