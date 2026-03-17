@@ -1,4 +1,4 @@
-This is docRssChQ.info, produced by makeinfo version 7.1.1 from
+This is with-editor.info, produced by makeinfo version 7.2 from
 with-editor.texi.
 
      Copyright (C) 2015-2026 Jonas Bernoulli
@@ -20,7 +20,7 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
 
-File: docRssChQ.info,  Node: Top,  Next: Using the With-Editor package,  Up: (dir)
+File: with-editor.info,  Node: Top,  Next: Using the With-Editor package,  Up: (dir)
 
 With-Editor User Manual
 ***********************
@@ -40,7 +40,7 @@ library is made available as a separate package.  It also defines some
 additional functionality which makes it useful even for end-users, who
 don't use Magit or another package which uses it internally.
 
-This manual is for With-Editor version 3.4.8.
+This manual is for With-Editor version 3.4.9.
 
      Copyright (C) 2015-2026 Jonas Bernoulli
      <emacs.with-editor@jonas.bernoulli.dev>
@@ -70,9 +70,8 @@ Using the With-Editor package
 * Configuring With-Editor::
 * Using With-Editor commands::
 
-
 
-File: docRssChQ.info,  Node: Using the With-Editor package,  Next: Using With-Editor as a library,  Prev: Top,  Up: Top
+File: with-editor.info,  Node: Using the With-Editor package,  Next: Using With-Editor as a library,  Prev: Top,  Up: Top
 
 1 Using the With-Editor package
 *******************************
@@ -91,7 +90,7 @@ Magit.
 * Using With-Editor commands::
 
 
-File: docRssChQ.info,  Node: Configuring With-Editor,  Next: Using With-Editor commands,  Up: Using the With-Editor package
+File: with-editor.info,  Node: Configuring With-Editor,  Next: Using With-Editor commands,  Up: Using the With-Editor package
 
 1.1 Configuring With-Editor
 ===========================
@@ -186,7 +185,7 @@ it receives a signal.
      support floats, then by using ‘nanosleep’ instead.
 
 
-File: docRssChQ.info,  Node: Using With-Editor commands,  Prev: Configuring With-Editor,  Up: Using the With-Editor package
+File: with-editor.info,  Node: Using With-Editor commands,  Prev: Configuring With-Editor,  Up: Using the With-Editor package
 
 1.2 Using With-Editor commands
 ==============================
@@ -258,7 +257,7 @@ appropriate mode hooks:
      ‘$HG_EDITOR’.
 
 
-File: docRssChQ.info,  Node: Using With-Editor as a library,  Next: Debugging,  Prev: Using the With-Editor package,  Up: Top
+File: with-editor.info,  Node: Using With-Editor as a library,  Next: Debugging,  Prev: Using the With-Editor package,  Up: Top
 
 2 Using With-Editor as a library
 ********************************
@@ -302,7 +301,7 @@ package::.
      NO-STANDARD-FILTER.
 
 
-File: docRssChQ.info,  Node: Debugging,  Next: Function and Command Index,  Prev: Using With-Editor as a library,  Up: Top
+File: with-editor.info,  Node: Debugging,  Next: Function and Command Index,  Prev: Using With-Editor as a library,  Up: Top
 
 3 Debugging
 ***********
@@ -321,7 +320,7 @@ about your Emacs installation.  Most importantly how did you install
 Emacs and what is the output of ‘M-x with-editor-debug RET’.
 
 
-File: docRssChQ.info,  Node: Function and Command Index,  Next: Variable Index,  Prev: Debugging,  Up: Top
+File: with-editor.info,  Node: Function and Command Index,  Next: Variable Index,  Prev: Debugging,  Up: Top
 
 Appendix A Function and Command Index
 *************************************
@@ -349,7 +348,7 @@ Appendix A Function and Command Index
                                                                (line 31)
 
 
-File: docRssChQ.info,  Node: Variable Index,  Prev: Function and Command Index,  Up: Top
+File: with-editor.info,  Node: Variable Index,  Prev: Function and Command Index,  Up: Top
 
 Appendix B Variable Index
 *************************
@@ -364,21 +363,21 @@ Appendix B Variable Index
 * with-editor-sleeping-editor:           Configuring With-Editor.
                                                                (line 56)
 
-
 
 Tag Table:
 Node: Top799
-Node: Using the With-Editor package2607
-Node: Configuring With-Editor3190
-Node: Using With-Editor commands7734
-Node: Using With-Editor as a library11032
-Node: Debugging13058
-Node: Function and Command Index13948
-Node: Variable Index15444
+Node: Using the With-Editor package2608
+Node: Configuring With-Editor3193
+Node: Using With-Editor commands7739
+Node: Using With-Editor as a library11039
+Node: Debugging13067
+Node: Function and Command Index13959
+Node: Variable Index15457
 
 End Tag Table
 
 
 Local Variables:
 coding: utf-8
+Info-documentlanguage: en
 End:
