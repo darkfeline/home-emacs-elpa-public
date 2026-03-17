@@ -1,4 +1,4 @@
-This is consult.info, produced by makeinfo version 7.1.1 from
+This is consult.info, produced by makeinfo version 7.2 from
 consult.texi.
 
 INFO-DIR-SECTION Emacs misc features
@@ -109,7 +109,6 @@ Indices
 
 * Function index::               List of all Consult commands
 * Concept index::                List of all Consult-specific concepts
-
 
 
 File: consult.info,  Node: Available commands,  Next: Special features,  Prev: Top,  Up: Top
@@ -1153,9 +1152,12 @@ following configuration on Emacs 31:
       ;; Show completions eagerly and update automatically
       completion-eager-update t
       completion-eager-display t
-      ;; Disable noise (inline help also blocks input)
-      completion-show-help nil
-      completion-show-inline-help nil)
+      completion-auto-help 'always
+      ;; Disable noise in the *Completions* buffer
+      completion-show-help nil)
+
+     ;; Unbind `minibuffer-complete-word'
+     (keymap-unset minibuffer-local-completion-map "SPC")
 
 
 File: consult.info,  Node: Recommended packages,  Next: Bug reports,  Prev: Configuration,  Up: Top
@@ -1587,50 +1589,50 @@ File: consult.info,  Node: Concept index,  Prev: Function index,  Up: Indices
 * use-package:                           Use-package example.   (line 6)
 * virtual buffers:                       Virtual Buffers.       (line 6)
 
-
 
 Tag Table:
-Node: Top221
-Node: Available commands5288
-Node: Virtual Buffers6863
-Node: Editing9038
-Node: Register9892
-Node: Navigation11611
-Node: Search12852
-Node: Grep and Find14761
-Node: Compilation17174
-Node: Histories17884
-Node: Modes19102
-Node: Org Mode19580
-Node: Help20194
-Node: Miscellaneous21396
-Node: Special features22827
-Node: Live previews23954
-Node: Narrowing and grouping28008
-Node: Asynchronous search30009
-Node: Multiple sources33943
-Node: Embark integration38838
-Node: Configuration41056
-Node: Use-package example42166
-Node: Custom variables48489
-Node: Project support52420
-Node: Fine-tuning53683
-Node: Default completion UI with auto update56687
-Node: Recommended packages57689
-Node: Bug reports59810
-Node: Hacking62803
-Node: Creating simple commands63016
-Node: Creating asynchronous completion commands64647
-Node: Live preview66639
-Node: Contributions67834
-Node: Acknowledgments68744
-Node: Indices71275
-Node: Function index71511
-Node: Concept index75157
+Node: Top219
+Node: Available commands5285
+Node: Virtual Buffers6860
+Node: Editing9035
+Node: Register9889
+Node: Navigation11608
+Node: Search12849
+Node: Grep and Find14758
+Node: Compilation17171
+Node: Histories17881
+Node: Modes19099
+Node: Org Mode19577
+Node: Help20191
+Node: Miscellaneous21393
+Node: Special features22824
+Node: Live previews23951
+Node: Narrowing and grouping28005
+Node: Asynchronous search30006
+Node: Multiple sources33940
+Node: Embark integration38835
+Node: Configuration41053
+Node: Use-package example42163
+Node: Custom variables48486
+Node: Project support52417
+Node: Fine-tuning53680
+Node: Default completion UI with auto update56684
+Node: Recommended packages57780
+Node: Bug reports59901
+Node: Hacking62894
+Node: Creating simple commands63107
+Node: Creating asynchronous completion commands64738
+Node: Live preview66730
+Node: Contributions67925
+Node: Acknowledgments68835
+Node: Indices71366
+Node: Function index71602
+Node: Concept index75248
 
 End Tag Table
 
 
 Local Variables:
 coding: utf-8
+Info-documentlanguage: en
 End:

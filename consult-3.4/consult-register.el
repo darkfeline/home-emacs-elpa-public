@@ -124,11 +124,7 @@ Each element of the list must have the form (char . name).")
 BUFFER is the window buffer.
 SHOW-EMPTY must be t if the window should be shown for an empty register list.
 Optional argument PRED specifies the types of register to show."
-  (let ((regs (consult-register--alist 'noerror pred))
-        (separator
-         (and (display-graphic-p)
-              (propertize #(" \n" 0 1 (display (space :align-to right)))
-                          'face '(:inherit consult-separator :height 1 :underline t)))))
+  (let ((regs (consult-register--alist 'noerror pred)))
     (when (or show-empty regs)
       (with-current-buffer-window buffer
           (cons 'display-buffer-at-bottom
@@ -141,10 +137,7 @@ Optional argument PRED specifies the types of register to show."
                     window-min-height 1
                     window-resize-pixelwise t
                     scroll-margin 0)
-        (insert (mapconcat
-                 (lambda (reg)
-                   (concat (consult-register-format reg) separator))
-                 regs nil))))))
+        (insert (mapconcat #'consult-register-format regs))))))
 
 ;;;###autoload
 (defun consult-register-format (reg &optional completion)

@@ -5,7 +5,7 @@
 ;; Author: Daniel Mendler and Consult contributors
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2020
-;; Version: 3.3
+;; Version: 3.4
 ;; Package-Requires: ((emacs "29.1") (compat "30"))
 ;; URL: https://github.com/minad/consult
 ;; Keywords: matching, files, completion
@@ -498,13 +498,6 @@ Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
   '((t :inherit consult-line-number-prefix :inherit warning :weight normal))
   "Face used to highlight line number prefixes after wrap around.")
 
-(defface consult-separator
-  '((((class color) (min-colors 88) (background light))
-     :foreground "#ccc")
-    (((class color) (min-colors 88) (background dark))
-     :foreground "#333"))
-  "Face used for thin line separators in `consult-register-window'.")
-
 ;;;; Input history variables
 
 (defvar consult--path-history nil)
@@ -565,11 +558,11 @@ outside the minibuffer.")
 (defvar consult--annotate-align-width 0
   "Maximum candidate width used for annotation alignment.")
 
-(defconst consult--tofu-char #x200000
-  "Special character used to encode line prefixes for disambiguation.
-We use invalid characters outside the Unicode range.")
+(defconst consult--tofu-char #x100000
+  "Special character used to encode line suffixes for disambiguation.
+We use characters in the Unicode PUA-B.")
 
-(defconst consult--tofu-range #x100000
+(defconst consult--tofu-range #xFFFE
   "Special character range.")
 
 (defconst consult--tofu-regexp
@@ -1114,11 +1107,11 @@ than `consult--tofu-range'."
 See `consult--tofu-append'."
   (- (aref cand (1- (length cand))) consult--tofu-char))
 
-;; We must disambiguate the lines by adding a prefix such that two lines with
+;; We must disambiguate the lines by adding a suffix such that two lines with
 ;; the same text can be distinguished.  In order to avoid matching the line
 ;; number, such that the user can search for numbers with `consult-line', we
-;; encode the line number as characters outside the Unicode range.  By doing
-;; that, no accidental matching can occur.
+;; encode the line number as Unicode PUA-B characters.  This way accidental
+;; matching is unlikely.
 (defun consult--tofu-encode (n)
   "Return tofu-encoded number N as a string.
 Large numbers are encoded as multiple tofu characters."
@@ -3275,7 +3268,7 @@ Optional source fields:
       (setf (plist-get (symbol-value cmd) prop) (eval form 'lexical)))
      ((functionp cmd)
       (setf (plist-get (alist-get cmd consult--customize-alist) prop) form))
-     (t (user-error "%s is neither a Command command nor a source" cmd))))
+     (t (warn "consult-customize: %s is neither a command nor a source" cmd))))
   nil)
 
 (defmacro consult-customize (&rest args)
@@ -3341,18 +3334,18 @@ of functions and in `consult-completion-in-region'."
           ;; Use the `before-string' property since the overlay might be empty.
           (overlay-put ov 'before-string cand)))))))
 
-(defun consult--in-region (start end collection predicate)
+(defun consult--in-region (start end table predicate)
   "Internal `completion-in-region-function'.
-The arguments START, END, COLLECTION and PREDICATE and
+The arguments START, END, TABLE and PREDICATE and
 expected return value are as specified for `completion-in-region'."
   (barf-if-buffer-read-only)
   (let* ((initial (buffer-substring-no-properties start end))
-         (metadata (completion-metadata initial collection predicate))
+         (metadata (completion-metadata initial table predicate))
          ;; bug#75910: category instead of `minibuffer-completing-file-name'
          (minibuffer-completing-file-name
           (eq 'file (completion-metadata-get metadata 'category)))
          (threshold (completion--cycle-threshold metadata))
-         (all (completion-all-completions initial collection predicate
+         (all (completion-all-completions initial table predicate
                                           (if (<= start (point) end)
                                               (- (point) start)
                                             (length initial))
@@ -3362,7 +3355,8 @@ expected return value are as specified for `completion-in-region'."
       (setcdr last nil))
     (if (or (eq threshold t) (length< all (1+ (or threshold 1)))
             (and completion-cycling completion-all-sorted-completions))
-        (completion--in-region start end collection predicate)
+        (let (completion-auto-help)
+          (completion--in-region start end table predicate))
       ;; Wrap all annotation functions to ensure that they are executed
       ;; in the original buffer.
       (let* ((exit-fun (plist-get completion-extra-properties :exit-function))
@@ -3386,7 +3380,7 @@ expected return value are as specified for `completion-in-region'."
                 ;; some completion tables in particular by lsp-mode.
                 ;; See gh:minad/vertico#61.
                 (consult--read
-                 (consult--completion-table-in-buffer collection)
+                 (consult--completion-table-in-buffer table)
                  :command #'consult-completion-in-region
                  :prompt (if (minibufferp)
                              ;; Use existing minibuffer prompt and input
@@ -3405,22 +3399,21 @@ expected return value are as specified for `completion-in-region'."
                    ;; If completion is finished and cannot be further
                    ;; completed, return `finished'.  Otherwise return
                    ;; `exact'.
-                   (if (eq (try-completion completion collection predicate) t)
+                   (if (eq (try-completion completion table predicate) t)
                        'finished 'exact)))
         t))))
 
 ;;;###autoload
-(defun consult-completion-in-region (start end collection predicate)
+(defun consult-completion-in-region (start end table predicate)
   "Use minibuffer completion as the UI for `completion-at-point'.
 
-The arguments START, END, COLLECTION and PREDICATE and expected return
-value are as specified for `completion-in-region'.  Use this function as
-a value for `completion-in-region-function'."
-  (if (and (eq completing-read-function #'completing-read-default)
-           (not (bound-and-true-p vertico-mode))
-           (not (bound-and-true-p icomplete-mode)))
-      (completion--in-region start end collection predicate)
-    (consult--in-region start end collection predicate)))
+The arguments START, END, TABLE and PREDICATE and expected return value
+are as specified for `completion-in-region'.  Use this function as a
+value for `completion-in-region-function'."
+  (if (and (or (bound-and-true-p vertico-mode) (bound-and-true-p icomplete-mode))
+           (not (eq table minibuffer-completion-table)))
+      (consult--in-region start end table predicate)
+    (completion--in-region start end table predicate)))
 
 ;;;;; Command: consult-outline
 
@@ -5570,12 +5563,14 @@ details regarding the asynchronous search."
 (defun consult--man-action (page &optional nodisplay)
   "Create man PAGE buffer, do not display if NODISPLAY is non-nil."
   (dlet ((Man-prefer-synchronous-call t)
-         (Man-notify-method (and (not nodisplay) 'aggressive)))
-    (let* ((inhibit-message nil) (message-log-max nil) (buf (man page)))
-      (when (buffer-live-p buf)
-        (with-current-buffer buf
-          (goto-char (point-min))
-          (current-buffer))))))
+         (Man-notify-method (and (not nodisplay) 'aggressive))
+         (inhibit-message t)
+         (message-log-max nil))
+    (when-let* ((buf (man page))
+                ((buffer-live-p buf)))
+      (with-current-buffer buf
+        (goto-char (point-min))
+        (current-buffer)))))
 
 (consult--define-state man)
 
@@ -5600,18 +5595,6 @@ the asynchronous search."
    :initial initial
    :add-history (thing-at-point 'symbol)
    :history '(:input consult--man-history)))
-
-;;;; Obsolete preview at point (enabled automatically)
-
-(defvar consult-preview-at-point-mode nil)
-(defun consult-preview-at-point-mode () "Obsolete." (interactive))
-(defun consult-preview-at-point () "Obsolete." (interactive))
-(make-obsolete 'consult-preview-at-point-mode nil
-               "Obsolete since preview is enabled automatically.")
-(make-obsolete-variable 'consult-preview-at-point-mode nil
-                        "Obsolete since preview is enabled automatically.")
-(make-obsolete 'consult-preview-at-point nil
-               "Obsolete since preview is enabled automatically.")
 
 ;;;; Integration with completion systems
 

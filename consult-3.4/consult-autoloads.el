@@ -14,11 +14,11 @@
 (autoload 'consult-completion-in-region "consult" "\
 Use minibuffer completion as the UI for `completion-at-point'.
 
-The arguments START, END, COLLECTION and PREDICATE and expected return
-value are as specified for `completion-in-region'.  Use this function as
-a value for `completion-in-region-function'.
+The arguments START, END, TABLE and PREDICATE and expected return value
+are as specified for `completion-in-region'.  Use this function as a
+value for `completion-in-region-function'.
 
-(fn START END COLLECTION PREDICATE)")
+(fn START END TABLE PREDICATE)")
 (autoload 'consult-outline "consult" "\
 Jump to an outline heading, obtained by matching against `outline-regexp'.
 
