@@ -1,10 +1,10 @@
-;;; dumb-jump.el --- Jump to definition for 50+ languages without configuration -*- lexical-binding: t; -*-
-;; Copyright (C) 2015-2021 jack angers
+;;; dumb-jump.el --- Jump to definition for 60+ languages without configuration -*- lexical-binding: t; -*-
+;; Copyright (C) 2015-2026 jack angers
 ;; Author: jack angers and contributors
 ;; Url: https://github.com/jacktasia/dumb-jump
-;; Package-Version: 20260209.1904
-;; Package-Revision: 58cc6e070f4f
-;; Package-Requires: ((emacs "24.4") (s "1.11.0") (dash "2.9.0") (popup "0.5.3"))
+;; Package-Version: 20260308.619
+;; Package-Revision: a2285fc46c41
+;; Package-Requires: ((emacs "26.1"))
 ;; Keywords: programming
 
 ;; Dumb Jump is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
 
 ;;; Commentary:
 
-;; Dumb Jump is an Emacs "jump to definition" package with support for 50+ programming languages that favors
+;; Dumb Jump is an Emacs "jump to definition" package with support for 60+ programming languages that favors
 ;; "just working" over speed or accuracy.  This means minimal -- and ideally zero -- configuration with absolutely
 ;; no stored indexes (TAGS) or persistent background processes.
 ;;
@@ -40,16 +40,115 @@
 ;; where it is defined, or a list of candidates if uncertain.  This
 ;; list can be navigated using M-g M-n (next-error) and M-g M-p
 ;; (previous-error).
-
 ;;; Code:
-(unless (require 'xref nil :noerror)
-  (require 'etags))
-(require 's)
-(require 'dash)
-(require 'popup)
-(require 'cl-generic nil :noerror)
+(require 'xref)
+(require 'cl-generic)
 (require 'cl-lib)
-(require 'subr-x)                       ; use: `string-blank-p'
+(require 'seq)
+(require 'subr-x)
+(require 'json)
+(require 'project nil 'noerror)
+
+(defun dumb-jump--chop-prefix (prefix text)
+  "Remove PREFIX from TEXT when present."
+  (if (and (stringp prefix)
+           (stringp text)
+           (string-prefix-p prefix text))
+      (substring text (length prefix))
+    text))
+
+(defun dumb-jump--contains-p (needle text &optional ignore-case)
+  "Return non-nil when TEXT contains NEEDLE as a literal substring.
+When IGNORE-CASE is non-nil, match without case sensitivity."
+  (and (stringp needle)
+       (stringp text)
+       (save-match-data
+         (let ((case-fold-search ignore-case))
+           (if (string-match-p (regexp-quote needle) text) t nil)))))
+
+(defun dumb-jump--index-of (needle text)
+  "Return the index of NEEDLE in TEXT, or nil when not found."
+  (when (and (stringp needle) (stringp text))
+    (save-match-data
+      (string-match-p (regexp-quote needle) text))))
+
+(defun dumb-jump--join (separator strings)
+  "Join STRINGS using SEPARATOR."
+  (mapconcat #'identity strings separator))
+
+(defun dumb-jump--match (regexp text &optional start)
+  "Return list of REGEXP matches in TEXT from START, or nil."
+  (when (and (stringp regexp)
+             (stringp text))
+    (save-match-data
+      (when (string-match regexp text start)
+        (let* ((group-count (/ (length (match-data t)) 2))
+               (i 0)
+               matches)
+          (while (< i group-count)
+            (push (match-string i text) matches)
+            (setq i (1+ i)))
+          (nreverse matches))))))
+
+(defun dumb-jump--matched-positions-all (regexp text &optional start)
+  "Return a list of match ranges for REGEXP in TEXT from START.
+Each element is a cons cell of the form (START . END)."
+  (when (and (stringp regexp) (stringp text))
+    (save-match-data
+      (let ((pos (or start 0))
+            matches)
+        (while (string-match regexp text pos)
+          (let ((beg (match-beginning 0))
+                (end (match-end 0)))
+            (push (cons beg end) matches)
+            ;; Avoid infinite loops if REGEXP can match empty strings.
+            (setq pos (if (= beg end) (1+ end) end))))
+        (nreverse matches)))))
+
+(defun dumb-jump--replace (old new text)
+  "Replace all OLD literal matches in TEXT with NEW."
+  (replace-regexp-in-string (regexp-quote old) (or new "") (or text "") t t))
+
+(defun dumb-jump--split (regexp text &optional omit-nulls)
+  "Split TEXT on REGEXP and optionally OMIT-NULLS."
+  (split-string (or text "") regexp omit-nulls))
+
+(defun dumb-jump--trim (text)
+  "Trim leading and trailing whitespace from TEXT."
+  (string-trim (or text "")))
+
+(defun dumb-jump--select-choice (choices &optional prompt)
+  "Choose one of CHOICES with `completing-read'.
+PROMPT defaults to \"Jump to: \"."
+  (completing-read (or prompt "Jump to: ") choices nil t))
+
+(defun dumb-jump--show-preview (text)
+  "Display TEXT preview to the user."
+  (message "%s" text))
+
+(defun dumb-jump--find-index (pred list)
+  "Return index of first element in LIST satisfying PRED, or nil."
+  (let ((i 0))
+    (catch 'found
+      (dolist (elem list)
+        (when (funcall pred elem)
+          (throw 'found i))
+        (setq i (1+ i)))
+      nil)))
+
+(defun dumb-jump--zip-pair (list1 list2)
+  "Return list of cons pairs from LIST1 and LIST2."
+  (cl-mapcar #'cons list1 list2))
+
+(defun dumb-jump--splice (pred rep list)
+  "Replace elements in LIST matching PRED with result of calling REP on them.
+REP can return a list to splice in multiple elements."
+  (apply #'append
+         (mapcar (lambda (it)
+                   (if (funcall pred it)
+                       (funcall rep it)
+                     (list it)))
+                 list)))
 
 (defgroup dumb-jump nil
   "Easily jump to project function and variable definitions."
@@ -63,6 +162,9 @@
     (define-key map (kbd "C-M-p") 'dumb-jump-back)
     (define-key map (kbd "C-M-q") 'dumb-jump-quick-look)
     map))
+
+(defvar dumb-jump--search-mode 'definitions
+  "Current search mode: `definitions' (default) or `references'.")
 
 (defcustom dumb-jump-window
   'current
@@ -79,19 +181,17 @@ Valid options are \\='current (default) or \\='other."
   :type 'boolean)
 
 (defcustom dumb-jump-selector
-  'popup
+  'completing-read
   "Which selector to use when there is multiple choices.
 The available selectors are:
-- popup: https://github.com/auto-complete/popup-el
 - helm : https://emacs-helm.github.io/helm/
 - ivy  : https://github.com/abo-abo/swiper
 - Completing Read: Emacs default `completing-read'.
 
 When selecting helm or ivy, if the corresponding package is not installed,
-the selector defaults to popup."
+the selector falls back to `completing-read'."
   :group 'dumb-jump
-  :type '(choice (const :tag "Popup" popup)
-                 (const :tag "Helm" helm)
+  :type '(choice (const :tag "Helm" helm)
                  (const :tag "Ivy" ivy)
                  (const :tag "Completing Read" completing-read)))
 
@@ -427,12 +527,10 @@ If nil add also the language type of current src block."
                  "(setq tester"
                  "(setq test?" "(setq test-"))
 
-    ;; The following regex identifying let-bound variables is the reason why
-    ;; searching for an elisp function cause a set of false positive on all
-    ;; locations where the function is invoked.
     (:language "elisp" :type "variable" ; let bound variables
                :supports ("ag" "grep" "rg" "git-grep")
                :regex "\\(JJJ\\s+"
+               :skip-ref-filter t
                :tests ("(let ((test 123)))"
                        "(let* ((test 123)))")
                :not ("(let ((test-2 123)))"
@@ -914,6 +1012,16 @@ If nil add also the language type of current src block."
            :not ("if test == 1234:"
                  "int nottest = 44"))
 
+    (:language "csharp" :type "variable"
+           :supports ("ag" "rg")
+           :regex "\\bforeach\\s*\\(\\s*[\\w\\[\\]<>,\\.?]+\\s+JJJ\\s+in\\b"
+           :tests ("foreach (int test in items)"
+                   "foreach (var test in items)"
+                   "foreach (string test in items)"
+                   "foreach (List<int> test in items)")
+           :not ("foreach (int nottest in items)"
+                 "test in items"))
+
     (:type "type"
            :supports ("ag" "grep" "rg" "git-grep")
            :language "csharp"
@@ -955,6 +1063,31 @@ If nil add also the language type of current src block."
            :not ("class testnot:"
                  "public class testnot implements Something"))
 
+    (:language "java" :type "type"
+           :supports ("ag" "grep" "rg" "git-grep")
+           :regex "\\benum\\s+JJJ\\b"
+           :tests ("enum test {"
+                   "public enum test {")
+           :not ("enum testnot {"))
+
+    (:language "java" :type "type"
+           :supports ("ag" "grep" "rg" "git-grep")
+           :regex "@interface\\s+JJJ\\b"
+           :tests ("@interface test {"
+                   "public @interface test {")
+           :not ("@interface testnot {"))
+
+    ;; grep/git-grep fallback: requires access modifier because grep lacks
+    ;; PCRE features (?:...) and {n,m} used by the ag/rg rule above.
+    (:language "java" :type "function"
+           :supports ("grep" "git-grep")
+           :regex "(public|protected|private|static)[^(]+JJJ\\s*\\\("
+           :tests ("public int test()"
+                   "private static String test(param)"
+                   "protected List<String> test()")
+           :not ("test()"
+                 "new test()"))
+
     ;;-- vala (again just like c#, exactly the same..)
     (:language "vala" :type "function"
            :supports ("ag" "rg")
@@ -987,49 +1120,49 @@ If nil add also the language type of current src block."
 
     ;;-- coq (renamed Rocq in March 2025)
     (:language "coq" :type "function"
-           :supports ("ag" "rg" "git-grep")
+           :supports ("ag" "rg" "grep" "git-grep")
            :regex "\\s*Variable\\s+JJJ\\b"
            :tests ("Variable test")
            :not ("Variable testx"))
 
     (:language "coq" :type "function"
-           :supports ("ag" "rg" "git-grep")
+           :supports ("ag" "rg" "grep" "git-grep")
            :regex "\\s*Inductive\\s+JJJ\\b"
            :tests ("Inductive test")
            :not ("Inductive testx"))
 
     (:language "coq" :type "function"
-           :supports ("ag" "rg" "git-grep")
+           :supports ("ag" "rg" "grep" "git-grep")
            :regex "\\s*Lemma\\s+JJJ\\b"
            :tests ("Lemma test")
            :not ("Lemma testx"))
 
     (:language "coq" :type "function"
-           :supports ("ag" "rg" "git-grep")
+           :supports ("ag" "rg" "grep" "git-grep")
            :regex "\\s*Definition\\s+JJJ\\b"
            :tests ("Definition test")
            :not ("Definition testx"))
 
     (:language "coq" :type "function"
-           :supports ("ag" "rg" "git-grep")
+           :supports ("ag" "rg" "grep" "git-grep")
            :regex "\\s*Hypothesis\\s+JJJ\\b"
            :tests ("Hypothesis test")
            :not ("Hypothesis testx"))
 
     (:language "coq" :type "function"
-           :supports ("ag" "rg" "git-grep")
-           :regex "\\s*Theorm\\s+JJJ\\b"
-           :tests ("Theorm test")
-           :not ("Theorm testx"))
+           :supports ("ag" "rg" "grep" "git-grep")
+           :regex "\\s*Theorem\\s+JJJ\\b"
+           :tests ("Theorem test")
+           :not ("Theorem testx"))
 
     (:language "coq" :type "function"
-           :supports ("ag" "rg" "git-grep")
+           :supports ("ag" "rg" "grep" "git-grep")
            :regex "\\s*Fixpoint\\s+JJJ\\b"
            :tests ("Fixpoint test")
            :not ("Fixpoint testx"))
 
     (:language "coq" :type "function"
-           :supports ("ag" "rg" "git-grep")
+           :supports ("ag" "rg" "grep" "git-grep")
            :regex "\\s*Module\\s+JJJ\\b"
            :tests ("Module test")
            :not ("Module testx"))
@@ -1042,11 +1175,30 @@ If nil add also the language type of current src block."
 
     ;;-- python
     (:language "python" :type "variable"
-           :supports ("ag" "grep" "rg" "git-grep")
-           :regex "\\s*\\bJJJ\\s*=[^=\\n]+"
-           :tests ("test = 1234")
+           :supports ("ag" "rg")
+           :regex "\\s*\\bJJJ\\b(\\s*:[^=\\n]+)?\\s*=[^=\\n]+"
+           :tests ("test = 1234"
+                   "test: int = 1234"
+                   "test: int | None = 1234"
+                   "test: List[Optional[int]] = [1234, None]")
            :not ("if test == 1234:"
-                 "_test = 1234"))
+                 "_test = 1234"
+                 "if (test := 3):"
+                 "while test:"
+                 "test['key'] = 1234"))
+
+        (:language "python" :type "variable"
+           :supports ("grep" "git-grep")
+           :regex "\\s*\\bJJJ\\b(\\s*:[^=]+)?\\s*=[^=]+"
+           :tests ("test = 1234"
+                   "test: int = 1234"
+                   "test: int | None = 1234"
+                   "test: List[Optional[int]] = [1234, None]")
+           :not ("if test == 1234:"
+                 "_test = 1234"
+                 "if (test := 3):"
+                 "while test:"
+                 "test['key'] = 1234"))
 
     (:language "python" :type "function"
            :supports ("ag" "grep" "rg" "git-grep")
@@ -1063,6 +1215,22 @@ If nil add also the language type of current src block."
                    "class test:")
            :not ("class testnot:"
                  "class testnot(object):"))
+
+    (:language "python" :type "function"
+           :supports ("ag" "grep" "rg" "git-grep")
+           :regex "async\\s+def\\s*JJJ\\b\\s*\\\("
+           :tests ("async def test(param)"
+                   "async def test()")
+           :not ("async def testnot(param)"
+                 "async def testnot()"))
+
+    (:language "python" :type "function"
+           :supports ("ag" "grep" "rg" "git-grep")
+           :regex "^\\s*JJJ\\s*=\\s*lambda\\b"
+           :tests ("test = lambda x: x"
+                   "test = lambda: None")
+           :not ("testnot = lambda x: x"
+                 "foo(test=lambda x: x)"))
 
     ;;-- matlab
     (:language "matlab" :type "variable"
@@ -1398,6 +1566,12 @@ If nil add also the language type of current src block."
            :tests ("contract test{"
                    "contract test {"
                    "contract test is foo"))
+    
+    (:language "solidity" :type "type" 
+           :supports ("ag" "grep" "rg" "git-grep") 
+           :regex  "struct\\s*JJJ\\s*\\\{"
+           :tests ("struct test{"
+                   "struct test {"))
 
     ;;-- R
     (:language "r" :type "variable"
@@ -1642,6 +1816,37 @@ If nil add also the language type of current src block."
            :tests ("class test(object) {"
                    "class test{"))
 
+    ;;-- dlang
+    (:language "dlang" :type "function"
+           :supports ("ag" "grep" "rg" "git-grep")
+           :regex "^[[:space:]]*([][[:alnum:]_!.*<>]+[[:space:]]+)+JJJ[[:space:]]*\\\([^;{}]*\\\)([[:space:]]+@?[[:alnum:]_]+)*[[:space:]]*[{]"
+           :tests ("void test() {"
+                   "public static int test(int value) {"
+                   "auto test(T)(T value) {"
+                   "void test() pure {"
+                   "void test() @safe {")
+           :not ("return test();"
+                 "auto value = test(arg);"
+                 "test();"))
+
+    (:language "dlang" :type "variable"
+           :supports ("ag" "grep" "rg" "git-grep")
+           :regex "\\s*\\bJJJ\\s*=[^=\\n)]+"
+           :tests ("int test = 1234;"
+                   "immutable test = 1;"
+                   "auto test = foo();")
+           :not ("if (test == 1234)"
+                 "int nottest = 44;"))
+
+    (:language "dlang" :type "type"
+           :supports ("ag" "grep" "rg" "git-grep")
+           :regex "(class|interface|struct|union|enum|alias)\\s+JJJ\\b"
+           :tests ("class test {"
+                   "struct test {"
+                   "alias test = int;")
+           :not ("class testnot {"
+                 "alias nottest = test;"))
+
     ;;-- faust
     (:language "faust" :type "function"
            :supports ("ag" "grep" "rg" "git-grep")
@@ -1732,6 +1937,23 @@ If nil add also the language type of current src block."
            :supports ("ag" "grep" "rg" "git-grep")
            :regex "type\\s+JJJ\\s+struct\\s+\\\{"
            :tests ("type test struct {"))
+
+    (:language "go" :type "type"
+           :supports ("ag" "grep" "rg" "git-grep")
+           :regex "type\\s+JJJ(\\\[[^]]+\\\])?\\s+interface\\s*\\\{"
+           :tests ("type test interface {"
+                   "type test[T comparable] interface {")
+           :not ("type testnot interface {"))
+
+    (:language "go" :type "type"
+           :supports ("ag" "grep" "rg" "git-grep")
+           :regex "type\\s+JJJ(\\\[[^]]+\\\])?\\s+"
+           :tests ("type test int"
+                   "type test[T any] []byte"
+                   "type test = string"
+                   "type test []byte"
+                   "type test string")
+           :not ("type testnot int"))
 
     ;;-- javascript extended
     (:language "javascript" :tags ("angular") :type "function"
@@ -1837,13 +2059,64 @@ If nil add also the language type of current src block."
 
     (:language "typescript" :type "function"
            :supports ("ag" "grep" "rg" "git-grep")
-           :regex "class\\s*JJJ\\s*[\\\(\\\{]"
-           :tests ("class test{"))
+           :regex "class\\s*JJJ(\\s*<[^>]*>)?\\s*[\\\(\\\{]"
+           :tests ("class test{"
+                   "class test<T>{"))
 
     (:language "typescript" :type "function"
            :supports ("ag" "grep" "rg" "git-grep")
-           :regex "class\\s*JJJ\\s+extends"
-           :tests ("class test extends Component{"))
+           :regex "class\\s*JJJ(\\s*<[^>]*>)?\\s+extends"
+           :tests ("class test extends Component{"
+                   "class test<T> extends Component{"))
+
+    (:language "typescript" :type "type"
+           :supports ("ag" "grep" "rg" "git-grep")
+           :regex "class\\s*JJJ(\\s*<[^>]*>)?\\s*[\\\(\\\{]"
+           :tests ("class test{"
+                   "class test<T>{"))
+
+    (:language "typescript" :type "type"
+           :supports ("ag" "grep" "rg" "git-grep")
+           :regex "class\\s*JJJ(\\s*<[^>]*>)?\\s+extends"
+           :tests ("class test extends Component{"
+                   "class test<T> extends Component{"))
+
+    (:language "typescript" :type "type"
+           :supports ("ag" "grep" "rg" "git-grep")
+           :regex "(export\\s+)?interface\\s+JJJ\\b"
+           :tests ("interface test{"
+                   "interface test extends Thing{"
+                   "export interface test{")
+           :not ("interface testnot{"))
+
+    (:language "typescript" :type "type"
+           :supports ("ag" "grep" "rg" "git-grep")
+           :regex "(export\\s+)?type\\s+JJJ\\b"
+           :tests ("type test = number"
+                   "type test<T> = T"
+                   "export type test = number")
+           :not ("type testnot = number"))
+
+    (:language "typescript" :type "type"
+           :supports ("ag" "grep" "rg" "git-grep")
+           :regex "(export\\s+)?enum\\s+JJJ\\b"
+           :tests ("enum test{"
+                   "export enum test{")
+           :not ("enum testnot{"))
+
+    (:language "typescript" :type "module"
+           :supports ("ag" "grep" "rg" "git-grep")
+           :regex "(declare\\s+)?namespace\\s+JJJ\\b"
+           :tests ("declare namespace test"
+                   "namespace test")
+           :not ("declare testnot"))
+
+    (:language "typescript" :type "module"
+           :supports ("ag" "grep" "rg" "git-grep")
+           :regex "(export\\s+)?module\\s+JJJ\\b"
+           :tests ("export module test"
+                   "module test")
+           :not ("module testnot"))
 
     (:language "typescript" :type "function"
            :supports ("ag" "grep" "rg" "git-grep")
@@ -1924,13 +2197,14 @@ If nil add also the language type of current src block."
 
     ;;-- haskell
     (:language "haskell" :type "module"
-           :supports ("ag")
+           :supports ("ag" "rg" "grep" "git-grep")
            :regex "^module\\s+JJJ\\s+"
-           :tests ("module Test (exportA, exportB) where"))
+           :tests ("module test (exportA, exportB) where")
+           :not ("-- module test" "import test"))
 
                                         ; TODO Doesn't support any '=' in arguments. E.g. 'foo A{a = b,..} = bar'.
     (:language "haskell" :type "top level function"
-           :supports ("ag")
+           :supports ("ag" "rg")
            :regex "^\\bJJJ(?!(\\s+::))\\s+((.|\\s)*?)=\\s+"
            :tests ("test n = n * 2"
                    "test X{..} (Y a b c) \n bcd \n =\n x * y"
@@ -1944,28 +2218,28 @@ If nil add also the language type of current src block."
                  "test :: Sometype -> AnotherType aoeu kek = undefined"))
 
     (:language "haskell" :type "type-like"
-           :supports ("ag")
+           :supports ("ag" "rg" "grep" "git-grep")
            :regex "^\\s*((data(\\s+family)?)|(newtype)|(type(\\s+family)?))\\s+JJJ\\s+"
-           :tests ("newtype Test a = Something { b :: Kek }"
-                   "data Test a b = Somecase a | Othercase b"
-                   "type family Test (x :: *) (xs :: [*]) :: Nat where"
-                   "data family Test "
-                   "type Test = TestAlias")
-           :not ("newtype NotTest a = NotTest (Not a)"
-                 "data TestNot b = Aoeu"))
+           :tests ("newtype test a = Something { b :: Kek }"
+                   "data test a b = Somecase a | Othercase b"
+                   "type family test (x :: *) (xs :: [*]) :: Nat where"
+                   "data family test "
+                   "type test = TestAlias")
+           :not ("newtype nottest a = nottest (Not a)"
+                 "data testnot b = Aoeu"))
 
                                         ; datatype contstuctor that doesn't match type definition.
     (:language "haskell" :type "(data)type constructor 1"
-           :supports ("ag")
+           :supports ("ag" "rg")
            :regex "(data|newtype)\\s{1,3}(?!JJJ\\s+)([^=]{1,40})=((\\s{0,3}JJJ\\s+)|([^=]{0,500}?((?<!(-- ))\\|\\s{0,3}JJJ\\s+)))"
-           :tests ("data Something a = Test { b :: Kek }"
-                   "data Mem a = TrueMem { b :: Kek } | Test (Mem Int) deriving Mda"
-                   "newtype SafeTest a = Test (Kek a) deriving (YonedaEmbedding)")
-           :not ("data Test = Test { b :: Kek }"))
+           :tests ("data Something a = test { b :: Kek }"
+                   "data Mem a = TrueMem { b :: Kek } | test (Mem Int) deriving Mda"
+                   "newtype SafeTest a = test (Kek a) deriving (YonedaEmbedding)")
+           :not ("data test = test { b :: Kek }"))
 
 
     (:language "haskell" :type "data/newtype record field"
-           :supports ("ag")
+           :supports ("ag" "rg")
            :regex "(data|newtype)([^=]*)=[^=]*?({([^=}]*?)(\\bJJJ)\\s+::[^=}]+})"
            :tests ("data Mem = Mem { \n mda :: A \n  , test :: Kek \n , \n aoeu :: E \n }"
                    "data Mem = Mem { \n test :: A \n  , mda :: Kek \n , \n aoeu :: E \n }"
@@ -1980,17 +2254,17 @@ If nil add also the language type of current src block."
            :not ("data Heh = Mda { sometest :: Kek, testsome :: Mem }"))
 
     (:language "haskell" :type "typeclass"
-           :supports ("ag")
+           :supports ("ag" "rg" "grep" "git-grep")
            :regex "^class\\s+(.+=>\\s*)?JJJ\\s+"
            :tests (
-                   "class (Constr1 m, Constr 2) => Test (Kek a) where"
-                   "class  Test  (Veryovka a)  where ")
-           :not ("class Test2 (Kek a) where"
-                 "class MakeTest (AoeuTest x y z) where"))
+                   "class (Constr1 m, Constr 2) => test (Kek a) where"
+                   "class  test  (Veryovka a)  where ")
+           :not ("class test2 (Kek a) where"
+                 "class maketest (AoeuTest x y z) where"))
 
     ;;-- ocaml
     (:language "ocaml" :type "type"
-           :supports ("ag" "rg")
+           :supports ("ag" "rg" "grep" "git-grep")
            :regex "^\\s*(and|type)\\s+.*\\bJJJ\\b"
            :tests ("type test ="
                    "and test ="
@@ -1998,33 +2272,74 @@ If nil add also the language type of current src block."
                    "type ('a, _, 'c) test"))
 
     (:language "ocaml" :type "variable"
-           :supports ("ag" "rg")
+           :supports ("ag" "rg" "grep" "git-grep")
            :regex "let\\s+JJJ\\b"
            :tests ("let test ="
                    "let test x y ="))
 
     (:language "ocaml" :type "variable"
-           :supports ("ag" "rg")
+           :supports ("ag" "rg" "grep" "git-grep")
            :regex "let\\s+rec\\s+JJJ\\b"
            :tests ("let rec test ="
                    "let rec  test x y ="))
 
     (:language "ocaml" :type "variable"
-           :supports ("ag" "rg")
+           :supports ("ag" "rg" "grep" "git-grep")
            :regex "\\s*val\\s*\\bJJJ\\b\\s*"
            :tests ("val test"))
 
     (:language "ocaml" :type "module"
-           :supports ("ag" "rg")
+           :supports ("ag" "rg" "grep" "git-grep")
            :regex "^\\s*module\\s*\\bJJJ\\b"
            :tests ("module test ="))
 
-    (:language "ocaml" :type "module"
-           :supports ("ag" "rg")
-           :regex "^\\s*module\\s*type\\s*\\bJJJ\\b"
-           :tests ("module type test ="))
+     (:language "ocaml" :type "module"
+            :supports ("ag" "rg" "grep" "git-grep")
+            :regex "^\\s*module\\s*type\\s*\\bJJJ\\b"
+            :tests ("module type test ="))
 
-    ;; lua
+    ;;-- purescript
+    (:language "purescript" :type "function"
+           :supports ("ag" "grep" "rg" "git-grep")
+           :regex "^\\s*\\bJJJ\\b\\s+(::|[^=]*\\s=[^=])"
+           :tests ("test :: Int -> String"
+                   "test :: Number -> Number -> Number"
+                   "  test :: Int -> String"
+                   "test x y = x + y"
+                   "test (Just x) = x"
+                   "test { x } = x")
+           :not ("nottest :: Int -> String"
+                 "testing x = 1"
+                 "test x == y"
+                 "test >>= bar"))
+
+    (:language "purescript" :type "variable"
+           :supports ("ag" "grep" "rg" "git-grep")
+           :regex "^\\s*\\bJJJ\\s*=[^=]"
+           :tests ("test = 42"
+                   "test = \\x -> x + 1"
+                   "  test = compute x")
+           :not ("test == 42"
+                 "-- test = 42"))
+
+    (:language "purescript" :type "variable"
+           :supports ("ag" "grep" "rg" "git-grep")
+           :regex "\\blet\\s+JJJ\\s*(\\::|=[^=])"
+           :tests ("let test = 42"
+                   "let test :: Int")
+           :not ("let testing = 42"
+                 "let test == 42"))
+
+    (:language "purescript" :type "type"
+           :supports ("ag" "grep" "rg" "git-grep")
+           :regex "^\\s*(type|newtype|data)\\s+JJJ\\b"
+           :tests ("type test = Int"
+                   "newtype test = test Int"
+                   "data test = test Int | Other String")
+           :not ("type testOther = Int"
+                 "data testOther = testOther Int"))
+
+     ;; lua
     (:language "lua" :type "variable"
            :supports ("ag" "grep" "rg" "git-grep")
            :regex "\\s*\\bJJJ\\s*=[^=\\n]+"
@@ -2467,7 +2782,7 @@ If nil add also the language type of current src block."
 
     ;;-- f#
     (:language "fsharp" :type "variable"
-           :supports ("ag" "grep" "git-grep")
+           :supports ("ag" "rg" "grep" "git-grep")
            :regex "let\\s+JJJ\\b.*\\\="
            :tests ("let test = 1234"
                    "let test() = 1234"
@@ -2477,7 +2792,7 @@ If nil add also the language type of current src block."
                  "let testnot abc def = 1234"))
 
     (:language "fsharp" :type "interface"
-           :supports ("ag" "grep" "git-grep")
+           :supports ("ag" "rg" "grep" "git-grep")
            :regex "member(\\b.+\\.|\\s+)JJJ\\b.*\\\="
            :tests ("member test = 1234"
                    "member this.test = 1234")
@@ -2485,7 +2800,7 @@ If nil add also the language type of current src block."
                  "member this.testnot = 1234"))
 
     (:language "fsharp" :type "type"
-           :supports ("ag" "grep" "git-grep")
+           :supports ("ag" "rg" "grep" "git-grep")
            :regex "type\\s+JJJ\\b.*\\\="
            :tests ("type test = 1234")
            :not ("type testnot = 1234"))
@@ -2605,6 +2920,27 @@ If nil add also the language type of current src block."
                    "test::proc{}"
                    "test: :proc \"contextless\" {}"))
 
+    (:language "odin" :type "function"
+           :supports ("ag" "grep" "rg" "git-grep")
+           :regex "\\bJJJ\\s*:\\s*:\\s*proc\\s*[({]"
+           :tests ("test :: proc(a: int)"
+                   "test ::proc()"
+                   "test:: proc(a: i32) -> i32 {"
+                   "test::proc{}")
+           :not ("testnot :: proc()"
+                 "test: proc()"))
+
+    (:language "odin" :type "type"
+           :supports ("ag" "grep" "rg" "git-grep")
+           :regex "\\bJJJ\\s*:\\s*:\\s*(struct|enum|union|bit_set|bit_field)\\b"
+           :tests ("test :: struct {"
+                   "test :: enum {"
+                   "test :: union {"
+                   "test :: bit_set {"
+                   "test :: bit_field {")
+           :not ("testnot :: struct {"
+                 "test :: structure_builder"))
+
     ;;-- cobol
     (:language "cobol" :type "variable"
                :supports ("ag" "grep" "rg" "git-grep")
@@ -2697,6 +3033,7 @@ More information using the search tool command line help."
     (:language "c++"           :ext "hh"          :agtype "cpp"       :rgtype "cpp")
     (:language "c++"           :ext "c++"         :agtype nil         :rgtype nil)
     (:language "c++"           :ext "h++"         :agtype nil         :rgtype nil)
+    (:language "c++"           :ext "ino"         :agtype "cpp"       :rgtype nil)
     (:language "coq"           :ext "v"           :agtype nil         :rgtype nil)
     (:language "ocaml"         :ext "ml"          :agtype "ocaml"     :rgtype "ocaml")
     (:language "ocaml"         :ext "mli"         :agtype "ocaml"     :rgtype "ocaml")
@@ -2744,6 +3081,8 @@ More information using the search tool command line help."
     (:language "typescript"    :ext "tsx"         :agtype "ts"        :rgtype "ts")
     (:language "typescript"    :ext "vue"         :agtype "ts"        :rgtype "ts")
     (:language "dart"          :ext "dart"        :agtype nil         :rgtype "dart")
+    (:language "dlang"         :ext "d"           :agtype "dlang"     :rgtype "d")
+    (:language "dlang"         :ext "di"          :agtype "dlang"     :rgtype "d")
     (:language "lua"           :ext "lua"         :agtype "lua"       :rgtype "lua")
     ;; the extension "m" is also used by obj-c so must use matlab-mode
     ;; since obj-c will win by file extension, but here for searcher types
@@ -2763,9 +3102,10 @@ More information using the search tool command line help."
     (:language "php"           :ext "php3"        :agtype "php"       :rgtype "php")
     (:language "php"           :ext "php4"        :agtype "php"       :rgtype "php")
     (:language "php"           :ext "php5"        :agtype "php"       :rgtype "php")
-    (:language "php"           :ext "phtml"       :agtype "php"       :rgtype "php")
-    (:language "php"           :ext "inc"         :agtype "php"       :rgtype nil)
-    (:language "python"        :ext "py"          :agtype "python"    :rgtype "py")
+     (:language "php"           :ext "phtml"       :agtype "php"       :rgtype "php")
+     (:language "php"           :ext "inc"         :agtype "php"       :rgtype nil)
+     (:language "purescript"    :ext "purs"        :agtype nil         :rgtype nil)
+     (:language "python"        :ext "py"          :agtype "python"    :rgtype "py")
     (:language "r"             :ext "R"           :agtype "r"         :rgtype "r")
     (:language "r"             :ext "r"           :agtype "r"         :rgtype "r")
     (:language "r"             :ext "Rmd"         :agtype "r"         :rgtype "r")
@@ -2847,6 +3187,8 @@ type for that tool."
     (:language "javascript" :type "variable"  :left nil           :right "^\\." )
     (:language "javascript" :type "variable"  :left nil           :right "^;" )
     (:language "typescript" :type "function"  :left nil           :right "^(" )
+    (:language "typescript" :type "type"      :left "\\(?:[:<>,|&]\\|\\_<\\(?:as\\|extends\\|implements\\)\\_>\\)\\s-*$" :right nil)
+    (:language "typescript" :type "type"      :left "\\_<\\(?:type\\|interface\\|enum\\|class\\)\\_>\\s-+$" :right nil)
     (:language "perl"       :type "function"  :left nil           :right "^(" )
     (:language "tcl"        :type "function"  :left "\\[$"        :right nil)
     (:language "tcl"        :type "function"  :left "^\\s*$"      :right nil)
@@ -2890,7 +3232,8 @@ a symbol then it's probably a function call."
     "Makefile"
     "PkgInfo"
     "-pkg.el"
-    "_FOSSIL_")
+    "_FOSSIL_"
+    "Cargo.toml")
   "Files and directories that signify a directory is a project root.
 If any of these denoting files are present in project sub-directories
 (like Makefile) then you can either remove the culprit denoter from the
@@ -2908,6 +3251,42 @@ list or create a .dumbjumpignore file in the project sub-directory."
 This should only be needed in the rarest of cases."
   :group 'dumb-jump
   :type 'string)
+
+(defcustom dumb-jump-rust-search-dependencies nil
+  "When non-nil, automatically include Rust dependency source paths.
+Uses `cargo metadata' to discover crate source directories.
+Requires `cargo' to be installed and a Cargo.toml in the project."
+  :group 'dumb-jump
+  :type 'boolean)
+
+(defcustom dumb-jump-extra-search-paths-function nil
+  "Function to compute extra search paths for jump-to-definition lookups.
+When non-nil, this function is called with two arguments: LANG (a
+string naming the programming language, or nil if undetected) and
+PROJ-ROOT (the project root directory).  It should return a list of
+directory path strings to include in the search, or nil.
+
+Returned paths may be absolute or relative to PROJ-ROOT (relative
+entries are expanded via `expand-file-name').  Non-existent
+directories and non-string entries are silently ignored.
+
+This is useful for dynamically adding paths such as virtualenv
+site-packages, installed library sources, or SDK directories.
+
+Example:
+
+  (setq dumb-jump-extra-search-paths-function
+        (lambda (lang proj-root)
+          (when (string= lang \"python\")
+            (let* ((default-directory proj-root)
+                   (path (string-trim
+                          (shell-command-to-string
+                           \"poetry run python -c \\\"import site; print(site.getsitepackages()[0])\\\"\"))))
+              (when (file-directory-p path)
+                (list path))))))"
+  :group 'dumb-jump
+  :type '(choice (const :tag "None" nil)
+                 function))
 
 (defcustom dumb-jump-before-jump-hook nil
   "Hooks called before jumping."
@@ -2956,7 +3335,7 @@ If nil, jump without confirmation but print a warning."
   ;; Fist transform each of ARGS to string with `prin1-to-string' then
   ;; pass them as arguments to message by making a list used the third
   ;; parameter to apply.
-  (apply 'message format-str (-map 'prin1-to-string args)))
+  (apply 'message format-str (mapcar #'prin1-to-string args)))
 
 ;; ---------------------------------------------------------------------------
 ;; Search tool presence checkers
@@ -2992,7 +3371,7 @@ key (such as `\\[universal-argument]')."
   "Return t if ag is installed."
   (if (eq dumb-jump--ag-installed? 'unset)
       (setq dumb-jump--ag-installed?
-            (s-contains? "ag version"
+            (dumb-jump--contains-p "ag version"
                          (shell-command-to-string
                           (concat dumb-jump-ag-cmd " --version"))))
     dumb-jump--ag-installed?))
@@ -3041,7 +3420,7 @@ variable `dumb-jump--detected-env-problems'."
   "Return t if git-grep is installed."
   (if (eq dumb-jump--git-grep-installed? 'unset)
       (setq dumb-jump--git-grep-installed?
-            (s-contains? "fatal: no pattern given"
+            (dumb-jump--contains-p "fatal: no pattern given"
                          (shell-command-to-string
                           (concat dumb-jump-git-grep-cmd))))
     dumb-jump--git-grep-installed?))
@@ -3053,8 +3432,8 @@ Return \\='gnu if GNU grep is installed, \\='bsd if BSD grep is installed."
   (if (eq dumb-jump--grep-installed? 'unset)
       (let* ((version (shell-command-to-string
                        (concat dumb-jump-grep-cmd " --version")))
-             (variant (cond ((s-match "GNU grep" version) 'gnu)
-                            ((s-match "[0-9]+\\.[0-9]+" version) 'bsd)
+             (variant (cond ((dumb-jump--match "GNU grep" version) 'gnu)
+                            ((dumb-jump--match "[0-9]+\\.[0-9]+" version) 'bsd)
                             (t nil))))
         (setq dumb-jump--grep-installed? variant))
     dumb-jump--grep-installed?))
@@ -3123,9 +3502,9 @@ RULE: the complete `dumb-jump-find-rules' rule used for this test."
   "Test all the grep rules and return count of those that fail.
 Optionally pass t for RUN-NOT-TESTS to see a list of all failed rules."
   (let ((variant (if (eq (dumb-jump-grep-installed?) 'gnu) 'gnu-grep 'grep)))
-    (-mapcat
+    (mapcan
      (lambda (rule)
-       (-mapcat
+       (mapcan
         (lambda (test)
           (let* ((cmd (concat "grep -En -e "
                               (shell-quote-argument
@@ -3133,7 +3512,7 @@ Optionally pass t for RUN-NOT-TESTS to see a list of all failed rules."
                                 (plist-get rule :regex) "test" variant))))
                  (resp (dumb-jump-run-test test cmd)))
             (when (or
-                   (and (not run-not-tests) (not (s-contains? test resp)))
+                   (and (not run-not-tests) (not (dumb-jump--contains-p test resp)))
                    (and run-not-tests (> (length resp) 0)))
               (list (dumb-jump--search-failure-msg "grep"
                                                    test
@@ -3142,14 +3521,14 @@ Optionally pass t for RUN-NOT-TESTS to see a list of all failed rules."
                                                    cmd
                                                    (plist-get rule :regex))))))
         (plist-get rule (if run-not-tests :not :tests))))
-     (--filter (member "grep" (plist-get it :supports)) dumb-jump-find-rules))))
+     (seq-filter (lambda (it) (member "grep" (plist-get it :supports))) dumb-jump-find-rules))))
 
 (defun dumb-jump-test-ag-rules (&optional run-not-tests)
   "Test all the ag rules and return count of those that fail.
 Optionally pass t for RUN-NOT-TESTS to see a list of all failed rules."
-  (-mapcat
+  (mapcan
    (lambda (rule)
-     (-mapcat
+     (mapcan
       (lambda (test)
         (let* ((cmd (concat "ag --nocolor --nogroup --nonumber "
                             (shell-quote-argument
@@ -3157,7 +3536,7 @@ Optionally pass t for RUN-NOT-TESTS to see a list of all failed rules."
                               (plist-get rule :regex) "test" 'ag))))
                (resp (dumb-jump-run-ag-test test cmd)))
           (when (or
-                 (and (not run-not-tests) (not (s-contains? test resp)))
+                 (and (not run-not-tests) (not (dumb-jump--contains-p test resp)))
                  (and run-not-tests (> (length resp) 0)))
             (list (dumb-jump--search-failure-msg "ag"
                                                  test
@@ -3166,14 +3545,14 @@ Optionally pass t for RUN-NOT-TESTS to see a list of all failed rules."
                                                  cmd
                                                  rule)))))
       (plist-get rule (if run-not-tests :not :tests))))
-   (--filter (member "ag" (plist-get it :supports)) dumb-jump-find-rules)))
+   (seq-filter (lambda (it) (member "ag" (plist-get it :supports))) dumb-jump-find-rules)))
 
 (defun dumb-jump-test-rg-rules (&optional run-not-tests)
   "Test all the rg rules and return count of those that fail.
 Optionally pass t for RUN-NOT-TESTS to see a list of all failed rules."
-  (-mapcat
+  (mapcan
    (lambda (rule)
-     (-mapcat
+     (mapcan
       (lambda (test)
         (let* ((cmd (concat "rg --color never --no-heading -U --pcre2 "
                             (shell-quote-argument
@@ -3181,7 +3560,7 @@ Optionally pass t for RUN-NOT-TESTS to see a list of all failed rules."
                               (plist-get rule :regex) "test" 'rg))))
                (resp (dumb-jump-run-test test cmd)))
           (when (or
-                 (and (not run-not-tests) (not (s-contains? test resp)))
+                 (and (not run-not-tests) (not (dumb-jump--contains-p test resp)))
                  (and run-not-tests (> (length resp) 0)))
             (list (dumb-jump--search-failure-msg "rg"
                                                  test
@@ -3190,35 +3569,34 @@ Optionally pass t for RUN-NOT-TESTS to see a list of all failed rules."
                                                  cmd
                                                  rule)))))
       (plist-get rule (if run-not-tests :not :tests))))
-   (--filter (member "rg" (plist-get it :supports)) dumb-jump-find-rules)))
+   (seq-filter (lambda (it) (member "rg" (plist-get it :supports))) dumb-jump-find-rules)))
 
 (defun dumb-jump-test-git-grep-rules (&optional run-not-tests)
   "Test all the git grep rules and return count of those that fail.
-Optionally pass t for RUN-NOT-TESTS to see a list of all failed rules."
-  (-mapcat
+Optionally pass t for RUN-NOT-TESTS to see a list of all failed rules.
+
+Note: Tests rules that support \"grep\" since git-grep uses the same
+ERE syntax. Testing actual git-grep would require temp git repos."
+  (mapcan
    (lambda (rule)
-     (-mapcat
+     (mapcan
       (lambda (test)
-        ;; -h: suppress output of filename on each match
-        ;; --untracked : in addition to searching tracked file in working
-        ;;               tree , search also in untracked files.
-        ;; -E : POSIX extended/basic regexp to search.
         (let* ((cmd (concat "git grep --color=never -h --untracked -E  "
                             (shell-quote-argument
                              (dumb-jump-populate-regex
                               (plist-get rule :regex) "test" 'git-grep))))
                (resp (dumb-jump-run-git-grep-test test cmd)))
           (when (or
-                 (and (not run-not-tests) (not (s-contains? test resp)))
+                 (and (not run-not-tests) (not (dumb-jump--contains-p test resp)))
                  (and run-not-tests (> (length resp) 0)))
-            (list (dumb-jump--search-failure-msg "git-grep"
-                                                 test
-                                                 run-not-tests
-                                                 resp
-                                                 cmd
-                                                 rule)))))
+             (list (dumb-jump--search-failure-msg "git-grep"
+                                                  test
+                                                  run-not-tests
+                                                  resp
+                                                  cmd
+                                                  rule)))))
       (plist-get rule (if run-not-tests :not :tests))))
-   (--filter (member "grep" (plist-get it :supports)) dumb-jump-find-rules)))
+   (seq-filter (lambda (it) (member "grep" (plist-get it :supports))) dumb-jump-find-rules)))
 
 ;; ---------------------------------------------------------------------------
 
@@ -3270,7 +3648,7 @@ Optionally pass t for RUN-NOT-TESTS to see a list of all failed rules."
 
 (defun dumb-jump-to-selected (results choices selected)
   "With RESULTS use CHOICES to find the SELECTED choice from multiple options."
-  (let* ((result-index (--find-index (string= selected it) choices))
+  (let* ((result-index (dumb-jump--find-index (lambda (it) (string= selected it)) choices))
          (result (when result-index
                    (nth result-index results))))
     (when result
@@ -3297,16 +3675,16 @@ This is the persistent action (\\[helm-execute-persistent-action]) for helm."
 (defun dumb-jump--format-result (proj-root result)
   "Return file:line:target formatted RESULT as a string stripped of PROJ-ROOT."
   (format "%s:%s: %s"
-          (s-replace proj-root "" (plist-get result :path))
+          (dumb-jump--replace proj-root "" (plist-get result :path))
           (plist-get result :line)
-          (s-trim (plist-get result :context))))
+          (dumb-jump--trim (plist-get result :context))))
 
 (defun dumb-jump-ivy-jump-to-selected (results choices _proj)
   "Offer CHOICES as candidates through `ivy-read'.
 Then execute dumb-jump-result-follow' on the selected choice RESULTS.
 Ignore _PROJ."
   (if (fboundp 'ivy-read)
-      (ivy-read "Jump to: " (-zip-pair choices results)
+      (ivy-read "Jump to: " (dumb-jump--zip-pair choices results)
                 :action (lambda (cand)
                           (dumb-jump-result-follow (cdr cand)))
                 :caller 'dumb-jump-ivy-jump-to-selected)
@@ -3316,12 +3694,12 @@ Ignore _PROJ."
   "Prompt user to select one of the identified RESULTS in PROJ-ROOT.
 Strip the PROJ-ROOT (project root path) from the file name shown in each entry.
 Prompt with the mechanism selected by `dumb-jump-selector' user-option if
-available otherwise default to `popup-menu'."
-  (let ((choices (--map (dumb-jump--format-result proj-root it) results)))
+available otherwise default to `completing-read'."
+  (let ((choices (mapcar (lambda (it) (dumb-jump--format-result proj-root it)) results)))
     (cond
      ((eq dumb-jump-selector 'completing-read)
       (dumb-jump-to-selected results choices
-                             (completing-read "Jump to: " choices)))
+                             (dumb-jump--select-choice choices "Jump to: ")))
      ;;
      ((and (eq dumb-jump-selector 'ivy)
            (fboundp 'ivy-read))
@@ -3334,22 +3712,73 @@ available otherwise default to `popup-menu'."
             (with-no-warnings
               (helm-make-source "Jump to: " 'helm-source-sync
                 :action '(("Jump to match" . dumb-jump-result-follow))
-                :candidates (-zip-pair choices results)
+                :candidates (dumb-jump--zip-pair choices results)
                 :persistent-action 'dumb-jump-helm-persist-action))
             :buffer "*helm dumb jump choices*"))
-     ;; or popup
-     (t (dumb-jump-to-selected results choices (popup-menu* choices))))))
+     ;; fallback for unsupported selector values
+     (t (dumb-jump-to-selected results choices
+                               (dumb-jump--select-choice choices "Jump to: "))))))
 
 (defun dumb-jump-get-project-root (filepath)
   "Return project root holding FILEPATH.
-Keep looking at the parent dir of FILEPATH until we find a denoter file/dir.
+Keep looking at the parent dir of FILEPATH until a denoter file/dir is found.
+Fall back to `project.el' when available and no denoter is found.
 Return a directory name without the trailing slash."
-  (directory-file-name
-   (expand-file-name
-    (or
-     dumb-jump-project
-     (locate-dominating-file filepath #'dumb-jump-get-config)
-     dumb-jump-default-project))))
+  (let* ((path (expand-file-name filepath))
+         (dir (if (file-directory-p path)
+                  (file-name-as-directory path)
+                (file-name-directory path)))
+         (project-el-root
+          (when (and (null dumb-jump-project)
+                     dir
+                     (fboundp 'project-current))
+            (let ((default-directory dir))
+              (let ((proj (ignore-errors (project-current nil))))
+                (when proj
+                  (if (fboundp 'project-root)
+                      (project-root proj)
+                    (car (project-roots proj)))))))))
+    (directory-file-name
+     (expand-file-name
+      (or dumb-jump-project
+          (locate-dominating-file path #'dumb-jump-get-config)
+          project-el-root
+          dumb-jump-default-project)))))
+
+(defvar dumb-jump--rust-deps-cache (make-hash-table :test 'equal)
+  "Cache of Rust dependency paths keyed by project root.")
+
+(defun dumb-jump-get-rust-dependency-paths (proj-root)
+  "Return list of source directories for Rust dependencies in PROJ-ROOT.
+Uses `cargo metadata' to discover dependency crate source paths.
+Results are cached per project root."
+  (let ((cached (gethash proj-root dumb-jump--rust-deps-cache 'dumb-jump--no-cache)))
+    (if (not (eq cached 'dumb-jump--no-cache))
+        cached
+      (let ((dep-paths
+             (when (file-exists-p (expand-file-name "Cargo.toml" proj-root))
+               (let* ((default-directory proj-root)
+                      (json-output (with-temp-buffer
+                                     (let ((exit-code (call-process "cargo" nil t nil
+                                                                    "metadata" "--format-version=1")))
+                                       (when (eq exit-code 0)
+                                         (buffer-string)))))
+                      (json-data (ignore-errors (when json-output (json-read-from-string json-output))))
+                      (packages (when json-data (cdr (assoc 'packages json-data))))
+                      (paths (when packages
+                               (seq-uniq
+                                (seq-filter
+                                 #'file-directory-p
+                                 (mapcar (lambda (pkg)
+                                           (file-name-directory
+                                            (cdr (assoc 'manifest_path pkg))))
+                                         packages))))))
+                 (seq-remove
+                  (lambda (p) (string= (directory-file-name p)
+                                       (directory-file-name proj-root)))
+                  paths)))))
+        (puthash proj-root dep-paths dumb-jump--rust-deps-cache)
+        dep-paths))))
 
 (defun dumb-jump-get-config (dir)
   "If a project denoter is in DIR then return it, otherwise nil.
@@ -3357,8 +3786,8 @@ However, if DIR contains a `.dumbjumpignore' it returns nil to keep
 looking for another root."
   (if (file-exists-p (expand-file-name ".dumbjumpignore" dir))
       nil
-    (car (--filter
-          (file-exists-p (expand-file-name it dir))
+    (car (seq-filter
+          (lambda (it) (file-exists-p (expand-file-name it dir)))
           dumb-jump-project-denoters))))
 
 (defun dumb-jump-get-language (file)
@@ -3378,9 +3807,9 @@ looking for another root."
             (save-buffer))))
     (if (string= language "org")
         (setq language (dumb-jump-get-language-in-org)))
-    (if (member language (-distinct
-                          (--map (plist-get it :language)
-                                 dumb-jump-find-rules)))
+    (if (member language (seq-uniq
+                          (mapcar (lambda (it) (plist-get it :language))
+                                  dumb-jump-find-rules)))
         language
       (format ".%s file" (or (file-name-extension file) "")))))
 
@@ -3406,12 +3835,12 @@ return a new proplist.  The new proplis is PROPLIS
 where a NEWLANG plist(s) is (are) added to PROPLIST.
 The plist(s) value of NEWLANG is (are) copied from
 those of LANG and LANG is replaced by NEWLANG."
-  (unless (--filter (string= newlang (plist-get it :language))
-                   proplist)
-      (--splice
-       (string= lang (plist-get it :language))
-       (list it (plist-put (copy-tree it) :language newlang))
-       proplist)))
+  (unless (seq-filter (lambda (it) (string= newlang (plist-get it :language)))
+                      proplist)
+    (dumb-jump--splice
+     (lambda (it) (string= lang (plist-get it :language)))
+     (lambda (it) (list it (plist-put (copy-tree it) :language newlang)))
+     proplist)))
 
 (defun dumb-jump-make-composite-language (mode lang extension agtype rgtype)
   "Concat one MODE  (usually the string org) with a LANG  (c or python or etc)
@@ -3419,37 +3848,37 @@ to make a composite language of the form cPLUSorg or pythonPLUSorg or etc.
 Modify `dumb-jump-find-rules' and `dumb-jump-language-file-exts' accordingly
 \(using EXTENSION AGTYPE RGTYPE)"
   (let* ((complang (concat lang "PLUS" mode))
-         (alreadyextension (--filter (and
-                                      (string= complang (plist-get it :language))
-                                      (string= extension (plist-get it :ext))
-                                      (string= agtype (plist-get it :agtype))
-                                      (string= rgtype (plist-get it :rgtype)))
-                                     dumb-jump-language-file-exts))
+         (alreadyextension (seq-filter (lambda (it)
+                                         (and
+                                          (string= complang (plist-get it :language))
+                                          (string= extension (plist-get it :ext))
+                                          (string= agtype (plist-get it :agtype))
+                                          (string= rgtype (plist-get it :rgtype))))
+                                       dumb-jump-language-file-exts))
          (newfindrule (dumb-jump-add-language-to-proplist complang dumb-jump-find-rules lang))
          (newfileexts (dumb-jump-add-language-to-proplist complang dumb-jump-language-file-exts lang)))
-    ;; add (if needed) composite language to dumb-jump-find-rules
     (when newfindrule
       (set-default 'dumb-jump-find-rules newfindrule))
-    ;; add (if needed) composite language to dumb-jump-language-file-exts
     (unless dumb-jump-search-type-org-only-org
       (when newfileexts
         (set-default 'dumb-jump-language-file-exts newfileexts)))
-    ;; add (if needed) a new extension to dumb-jump-language-file-exts
     (unless alreadyextension
-        (set-default 'dumb-jump-language-file-exts
-                     (cons `(:language ,complang
-                             :ext ,extension
-                             :agtype ,agtype
-                             :rgtype ,rgtype)
-                           dumb-jump-language-file-exts)))
+      (set-default 'dumb-jump-language-file-exts
+                   (cons `(:language ,complang
+                           :ext ,extension
+                           :agtype ,agtype
+                           :rgtype ,rgtype)
+                         dumb-jump-language-file-exts)))
     complang))
 
 (defcustom dumb-jump-language-aliases-alist
   '(("sh" . "shell")
+    ("d" . "dlang")
     ("cperl" . "perl")
     ("octave" . "matlab")
     ("emacs-lisp" . "elisp")
-    ("R" . "r"))
+    ("R" . "r")
+    ("arduino" . "c++"))
   "An alist of language alias to language name.
 Aliases are major mode base name sometimes used for some files.
 For example: \"cperl\" for the \"perl\" language."
@@ -3465,7 +3894,7 @@ Return nil if LANG is not one of the supported aliases."
 
 (defun dumb-jump-get-mode-base-name ()
   "Get the base name of the mode."
-  (s-replace "-mode" "" (symbol-name major-mode)))
+  (dumb-jump--replace "-mode" "" (symbol-name major-mode)))
 
 (defun dumb-jump-get-language-from-mode ()
   "Extract the language from the `major-mode' name.
@@ -3480,8 +3909,8 @@ Currently just everything before \"-mode\"."
   (let* ((filename (if (string-suffix-p ".gz" file)
                        (file-name-sans-extension file)
                      file))
-         (result (--filter
-                  (string-suffix-p (concat "." (plist-get it :ext)) filename)
+         (result (seq-filter
+                  (lambda (it) (string-suffix-p (concat "." (plist-get it :ext)) filename))
                   dumb-jump-language-file-exts)))
     (when (and result (eq (length result) 1))
       (plist-get (car result) :language))))
@@ -3529,8 +3958,7 @@ Return the dumb-jump alist result:
              (dumb-jump-grep-installed?)))
     (dumb-jump-issue-result "nogrep"))
    ;; Inside a shell or eshell buffer,
-   ((or (string= (buffer-name) "*shell*")
-        (string= (buffer-name) "*eshell*"))
+   ((derived-mode-p 'shell-mode 'eshell-mode)
     (dumb-jump-fetch-shell-results entered-name))
    ;; When inside a normal buffer but no string specified by ENTERED-NAME,
    ;; point or region does not identify something to search,
@@ -3586,41 +4014,37 @@ Return the dumb-jump alist result:
 For instance, remove clojure namespace prefix."
   (cond
    ((and (string= lang "commonlisp")
-         (s-contains? ":" look-for)
+         (dumb-jump--contains-p ":" look-for)
          (not (string-prefix-p ":" look-for)))
-    (nth 1 (s-split ":" look-for 'omit-nulls)))
+    (nth 1 (dumb-jump--split ":" look-for 'omit-nulls)))
    ((and (string= lang "clojure")
-         (s-contains? "/" look-for))
-    (nth 1 (s-split "/" look-for)))
+         (dumb-jump--contains-p "/" look-for))
+    (nth 1 (dumb-jump--split "/" look-for)))
    ((and (string= lang "fennel")
-         (s-contains? "." look-for))
-    (-last-item (s-split "\\." look-for)))
+         (dumb-jump--contains-p "." look-for))
+    (car (last (dumb-jump--split "\\." look-for))))
    ((and (string= lang "ruby")
-         (s-contains? "::" look-for))
-    (-last-item (s-split "::" look-for)))
+         (dumb-jump--contains-p "::" look-for))
+    (car (last (dumb-jump--split "::" look-for))))
    ((and (or (string= lang "ruby")
              (string= lang "crystal"))
          (string-prefix-p ":" look-for))
-    (s-chop-prefix ":" look-for))
+    (dumb-jump--chop-prefix ":" look-for))
    ((and (string= lang "systemverilog")
          (string-prefix-p "`" look-for))
-    (s-chop-prefix "`" look-for))
+    (dumb-jump--chop-prefix "`" look-for))
    (t
     look-for)))
 
 (defun dumb-jump-get-point-line ()
   "Get line at point."
-  (if (version< emacs-version "24.4")
-      (thing-at-point 'line)
-    (thing-at-point 'line t)))
+  (thing-at-point 'line t))
 
 (defun dumb-jump-get-point-symbol ()
   "Get symbol at point."
   (if (region-active-p)
       (buffer-substring-no-properties (region-beginning) (region-end))
-    (if (version< emacs-version "24.4")
-        (thing-at-point 'symbol)
-      (thing-at-point 'symbol t))))
+    (thing-at-point 'symbol t)))
 
 (defun dumb-jump--get-symbol-start ()
   "Get the start of symbol at point."
@@ -3633,12 +4057,13 @@ For instance, remove clojure namespace prefix."
   "Return languages in BUFFER by checking if file extension is mentioned."
   (let* ((buffer-contents (with-current-buffer buffer
                             (buffer-string)))
+         (found (seq-filter (lambda (it)
+                              (dumb-jump--match (concat "\\." (regexp-quote (plist-get it :ext)) "\\b")
+                                                buffer-contents))
+                            dumb-jump-language-file-exts)))
+    (mapcar (lambda (it) (plist-get it :language)) found)))
 
-         (found (--filter (s-match (concat "\\." (plist-get it :ext) "\\b") buffer-contents)
-                          dumb-jump-language-file-exts)))
-    (--map (plist-get it :language) found)))
-
-(defun dumb-jump-fetch-results (cur-file proj-root lang _config
+(defun dumb-jump-fetch-results (cur-file proj-root lang config
                                          &optional entered-name)
   "Search for symbol in ENTERED-NAME or symbol at point.
 
@@ -3658,9 +4083,6 @@ The returned property list has the following members:
 - :file    : string: file name
 - :root    : string: project root."
   (let* ((cur-line-num (line-number-at-pos))
-         (proj-config (dumb-jump-get-config proj-root))
-         (config (when (string-suffix-p ".dumbjump" proj-config)
-                   (dumb-jump-read-config proj-root proj-config)))
          (found-symbol (or entered-name (dumb-jump-get-point-symbol)))
          (look-for (dumb-jump-process-symbol-by-lang lang found-symbol))
          (pt-ctx (if entered-name
@@ -3670,31 +4092,99 @@ The returned property list has the following members:
                     look-for
                     (dumb-jump--get-symbol-start))))
          (ctx-type
-          (dumb-jump-get-ctx-type-by-language lang pt-ctx))
+          (unless (eq dumb-jump--search-mode 'references)
+            (dumb-jump-get-ctx-type-by-language lang pt-ctx)))
 
          (gen-funcs (dumb-jump-pick-grep-variant proj-root))
          (parse-fn (plist-get gen-funcs :parse)) ; dumb-jump-parse-TOOL-response
          (generate-fn (plist-get gen-funcs :generate))
          (searcher (plist-get gen-funcs :searcher))
 
-         (regexes (dumb-jump-get-contextual-regexes lang ctx-type searcher))
+         (regexes (if (eq dumb-jump--search-mode 'references)
+                      ;; Broad symbol search with a left boundary that also
+                      ;; works for Lisp-family identifiers like *foo*.
+                      (list "(^|[^a-zA-Z0-9\\?\\*-])JJJ\\j")
+                    (dumb-jump-get-contextual-regexes lang ctx-type searcher)))
+
+         ;; If selected searcher has no rules for this language, try alternatives.
+         ;; Only block fallback when dumb-jump-force-searcher is a direct
+         ;; searcher symbol.  When it's a function or directory list that
+         ;; didn't match this project, the auto-selected searcher should
+         ;; still be eligible for fallback.
+         (_alt-searcher
+          (when (and (null regexes)
+                     (not (eq dumb-jump--search-mode 'references))
+                     (not (memq dumb-jump-force-searcher
+                                '(ag rg grep gnu-grep git-grep
+                                     git-grep-plus-ag))))
+            (let ((alt (seq-find
+                        (lambda (s)
+                          (and (not (eq s searcher))
+                               (if (eq s 'gnu-grep)
+                                   (eq (dumb-jump-grep-installed?) 'gnu)
+                                 (funcall (plist-get
+                                           (dumb-jump-generators-by-searcher s)
+                                           :installed)))
+                               (dumb-jump-get-rules-by-language lang s)))
+                        '(ag rg git-grep gnu-grep grep))))
+              (when alt
+                (setq gen-funcs (dumb-jump-generators-by-searcher alt))
+                (setq parse-fn (plist-get gen-funcs :parse))
+                (setq generate-fn (plist-get gen-funcs :generate))
+                (setq searcher (plist-get gen-funcs :searcher))
+                (setq regexes (dumb-jump-get-contextual-regexes
+                               lang ctx-type searcher))))))
 
          (exclude-paths (when config (plist-get config :exclude)))
          (include-paths (when config (plist-get config :include)))
+         (rust-dep-paths (when (and (string= lang "rust")
+                                    dumb-jump-rust-search-dependencies)
+                           (dumb-jump-get-rust-dependency-paths proj-root)))
+         (extra-paths
+          (when dumb-jump-extra-search-paths-function
+            (let* ((hook-lang (if (and (stringp lang)
+                                      (string-match "\\`\\(.+\\)PLUS" lang))
+                                 (match-string 1 lang)
+                               lang))
+                   (paths (funcall dumb-jump-extra-search-paths-function
+                                   hook-lang proj-root)))
+              (when (listp paths)
+                (mapcan
+                 (lambda (p)
+                   (when (stringp p)
+                     (let ((expanded (expand-file-name p proj-root)))
+                       (if (file-directory-p expanded)
+                           (list expanded)
+                         (when dumb-jump-debug
+                           (dumb-jump-message
+                            "Dumb Jump: extra-search-paths dropping %S (not a directory)"
+                            expanded))
+                         nil))))
+                 paths)))))
          ;; we will search proj root and all include paths
-         (search-paths (-distinct (-concat (list proj-root) include-paths)))
-         ;; run command for all
-         (raw-results (--mapcat
-                       ;; TODO: should only pass exclude paths to actual project root
-                       (dumb-jump-run-command look-for it
-                                              regexes lang
-                                              exclude-paths cur-file
-                                              cur-line-num parse-fn
-                                              generate-fn)
+         (search-paths (seq-uniq (append (list proj-root)
+                                         include-paths
+                                         (or rust-dep-paths '())
+                                         (or extra-paths '()))))
+         (_search-paths-debug
+          (when dumb-jump-debug
+            (dumb-jump-message "Dumb Jump: search-paths = %S" search-paths)))
+         (raw-results (mapcan
+                       (lambda (it)
+                         (dumb-jump-run-command look-for it
+                                                regexes lang
+                                                exclude-paths cur-file
+                                                cur-line-num parse-fn
+                                                generate-fn))
                        search-paths))
 
          (results
-          (delete-dups (--map (plist-put it :target look-for) raw-results))))
+          (let ((deduped (delete-dups
+                          (mapcar (lambda (it) (plist-put it :target look-for))
+                                  raw-results))))
+            (if (eq dumb-jump--search-mode 'references)
+                (dumb-jump-filter-definition-results deduped lang look-for searcher)
+              deduped))))
 
     `(:results ,results
       :lang ,(if (null lang) "" lang)
@@ -3748,6 +4238,17 @@ That is, show a tooltip of where it would jump instead."
   (interactive)
   (with-no-warnings
     (dumb-jump-go nil t)))
+
+;;;###autoload
+(defun dumb-jump-find-references ()
+  "Find references/usages of the symbol at point.
+This is the inverse of `dumb-jump-go' -- it finds where a symbol
+is used rather than where it is defined."
+  ;; Note: independent of the Emacs xref interface.
+  (interactive)
+  (let ((dumb-jump--search-mode 'references)
+        (dumb-jump-aggressive nil))
+    (dumb-jump-go)))
 
 ;;;###autoload
 (defun dumb-jump-go-prompt ()
@@ -3810,12 +4311,15 @@ Please install ag or rg, or add a .dumbjump file to '%s' with path exclusions"
                                 (plist-get info :ctx-type)
                                 look-for use-tooltip prefer-external lang))
      ((= result-count 0)
-      (dumb-jump-message "'%s' %s %s declaration not found."
+      (dumb-jump-message "'%s' %s %s %s not found."
                          look-for
                          (if (string-blank-p (or lang ""))
                              "with unknown language so"
                            lang)
-                         (plist-get info :ctx-type))))))
+                         (plist-get info :ctx-type)
+                         (if (eq dumb-jump--search-mode 'references)
+                             "references"
+                           "declaration"))))))
 
 (defcustom dumb-jump-language-comments
   '((:comment "//" :language "c++")
@@ -3825,6 +4329,9 @@ Please install ag or rg, or add a .dumbjump file to '%s' with path exclusions"
     (:comment "//" :language "javascript")
     (:comment "//" :language "typescript")
     (:comment "//" :language "dart")
+    (:comment "//" :language "dlang")
+    (:comment "/*" :language "dlang")
+    (:comment "/+" :language "dlang")
     (:comment "--" :language "haskell")
     (:comment "--" :language "lua")
     (:comment "//" :language "rust")
@@ -3841,9 +4348,10 @@ Please install ag or rg, or add a .dumbjump file to '%s' with path exclusions"
     (:comment "//" :language "zig")
     (:comment "#"  :language "perl")
     (:comment "#"  :language "tcl")
-    (:comment "//" :language "php")
-    (:comment "#"  :language "php")
-    (:comment "#"  :language "python")
+     (:comment "//" :language "php")
+     (:comment "#"  :language "php")
+     (:comment "--" :language "purescript")
+     (:comment "#"  :language "python")
     (:comment "%"  :language "matlab")
     (:comment "#"  :language "r")
     (:comment ";"  :language "racket")
@@ -3867,6 +4375,8 @@ Please install ag or rg, or add a .dumbjump file to '%s' with path exclusions"
     (:comment "//" :language "protobuf")
     (:comment "#"  :language "hcl")
     (:comment "//" :language "apex")
+    (:comment "//" :language "odin")
+    (:comment "/*" :language "odin")
     (:comment "*>" :language "cobol"))
   "List of one-line comments organized by language.
 A language may have more than 1 comment string."
@@ -3879,9 +4389,9 @@ A language may have more than 1 comment string."
 
 (defun dumb-jump-get-comment-by-language (lang)
   "Return a list of the one-line comment or comments for the given LANG."
-  (let* ((entries (-distinct
-                   (--filter (string= (plist-get it :language) lang)
-                             dumb-jump-language-comments))))
+  (let* ((entries (seq-uniq
+                   (seq-filter (lambda (it) (string= (plist-get it :language) lang))
+                               dumb-jump-language-comments))))
     (if (> (length entries) 0)
         (mapcar (lambda (pl) (plist-get pl :comment)) entries)
       nil)))
@@ -3902,11 +4412,11 @@ A language may have more than 1 comment string."
   "Filter out RESULTS with a :context starting with a LANG comment in file."
   (let ((comments (dumb-jump-get-comment-by-language lang)))
     (if comments
-        (-concat
-         (--filter (not (dumb-jump--context-startswith-comment
-                         (plist-get it :context)
-                         comments))
-                   results))
+        (seq-filter (lambda (it)
+                      (not (dumb-jump--context-startswith-comment
+                            (plist-get it :context)
+                            comments)))
+                    results)
       results)))
 
 (defun dumb-jump-handle-results (results cur-file proj-root
@@ -3937,9 +4447,15 @@ LANGUAGE is an optional language to pass to `dumb-jump-process-results'."
      prefer-external
      proj-root
      cur-file)
-    (cond
-     (use-tooltip ;; quick-look mode
-      (popup-menu* (--map (dumb-jump--format-result proj-root it) results)))
+     (cond
+      (use-tooltip ;; quick-look mode
+       (let* ((choices (mapcar (lambda (it) (dumb-jump--format-result proj-root it)) results))
+              (selected-choice (dumb-jump--select-choice choices "Matches: "))
+              (selected-result (cdr (assoc selected-choice
+                                           (dumb-jump--zip-pair choices results)))))
+         (when selected-result
+           (dumb-jump--show-preview
+            (dumb-jump--format-result proj-root selected-result)))))
      (do-var-jump
       (dumb-jump-result-follow var-to-jump use-tooltip proj-root))
      (t
@@ -3969,10 +4485,10 @@ LANGUAGE is the optional given language, if nil it will be found by
 `dumb-jump-get-language-by-filename'.
 Figure which of the RESULTS to jump to.  Favoring the CUR-FILE."
   (let* ((lang (if language language
-                 (dumb-jump-get-language-by-filename cur-file)))
-         (match-sorted (-sort (lambda (x y)
-                                (< (plist-get x :diff) (plist-get y :diff)))
-                              results))
+                  (dumb-jump-get-language-by-filename cur-file)))
+         (match-sorted (seq-sort (lambda (x y)
+                                   (< (plist-get x :diff) (plist-get y :diff)))
+                                 results))
          (match-no-comments (dumb-jump-filter-no-start-comments match-sorted
                                                                 lang))
 
@@ -4000,35 +4516,36 @@ Figure which of the RESULTS to jump to.  Favoring the CUR-FILE."
          ;; PREFER-EXTERNAL then put them last.
          (match-cur-file-front
           (if (not prefer-external)
-              (-concat
-               (--filter (and (> (plist-get it :diff) 0)
-                              (or (string= (plist-get it :path) cur-file)
-                                  (string= (plist-get it :path) rel-cur-file)))
-                         match-no-comments)
-               (--filter (and (<= (plist-get it :diff) 0)
-                              (or (string= (plist-get it :path) cur-file)
-                                  (string= (plist-get it :path) rel-cur-file)))
-                         match-no-comments)
-
-               ;; Sort non-current files by path length so the nearest file is
-               ;; more likely to be sorted higher to the top. Also sorts by
-               ;; line number for sanity.
-               (-sort #'dumb-jump--candidate-x<y
-                      (--filter (not (or (string= (plist-get it :path) cur-file)
-                                         (string= (plist-get it :path) rel-cur-file)))
-                                match-no-comments)))
-            (-concat
-             (-sort #'dumb-jump--candidate-x<y
-                    (--filter (not (or (string= (plist-get it :path) cur-file)
-                                       (string= (plist-get it :path) rel-cur-file)))
-                              match-no-comments))
-             (--filter (or (string= (plist-get it :path) cur-file)
-                           (string= (plist-get it :path) rel-cur-file))
-                       match-no-comments))))
+              (append
+               (seq-filter (lambda (it)
+                             (and (> (plist-get it :diff) 0)
+                                  (or (string= (plist-get it :path) cur-file)
+                                      (string= (plist-get it :path) rel-cur-file))))
+                           match-no-comments)
+               (seq-filter (lambda (it)
+                             (and (<= (plist-get it :diff) 0)
+                                  (or (string= (plist-get it :path) cur-file)
+                                      (string= (plist-get it :path) rel-cur-file))))
+                           match-no-comments)
+               (seq-sort #'dumb-jump--candidate-x<y
+                         (seq-filter (lambda (it)
+                                       (not (or (string= (plist-get it :path) cur-file)
+                                                (string= (plist-get it :path) rel-cur-file))))
+                                     match-no-comments)))
+            (append
+             (seq-sort #'dumb-jump--candidate-x<y
+                       (seq-filter (lambda (it)
+                                     (not (or (string= (plist-get it :path) cur-file)
+                                              (string= (plist-get it :path) rel-cur-file))))
+                                   match-no-comments))
+             (seq-filter (lambda (it)
+                           (or (string= (plist-get it :path) cur-file)
+                               (string= (plist-get it :path) rel-cur-file)))
+                         match-no-comments))))
 
          (matches
           (if (not prefer-external)
-              (-distinct
+              (seq-uniq
                (append
                 (dumb-jump-current-file-results cur-file match-cur-file-front)
                 (dumb-jump-current-file-results rel-cur-file match-cur-file-front)))
@@ -4083,12 +4600,12 @@ Ffrom the ROOT project CONFIG-FILE."
 
 (defun dumb-jump-file-modified-p (path)
   "Return non-nil if file at PATH is open in Emacs and has a modified buffer."
-  (--any?
-   (and (buffer-modified-p it)
-        (buffer-file-name it)
-        (file-exists-p (buffer-file-name it))
-        (file-equal-p (buffer-file-name it) path))
-   (buffer-list)))
+  (seq-some (lambda (it)
+              (and (buffer-modified-p it)
+                   (buffer-file-name it)
+                   (file-exists-p (buffer-file-name it))
+                   (file-equal-p (buffer-file-name it) path)))
+            (buffer-list)))
 
 (defun dumb-jump-result-follow (result &optional use-tooltip proj)
   "Jump to location identified by RESULT.
@@ -4120,16 +4637,16 @@ Before jumping, record the jump to be able to jump back later.
 
 With optional USE-TOOLTIP non-nil, pop a tool-tip showing the project
 PROJ and RESULT information."
-  (let* ((target-boundary (s-matched-positions-all
+  (let* ((target-boundary (dumb-jump--matched-positions-all
                            (concat "\\b"
                                    (regexp-quote (plist-get result :target))
                                    "\\b")
                            (plist-get result :context)))
          ;; column position is either via tpos from ag or by using the regex
-         ;; above or last using old s-index-of
+         ;; above or last using old dumb-jump--index-of
          (column (if target-boundary
                      (car (car target-boundary))
-                   (s-index-of (plist-get result :target)
+                   (dumb-jump--index-of (plist-get result :target)
                                (plist-get result :context))))
 
          (result-path (plist-get result :path))
@@ -4148,24 +4665,17 @@ PROJ and RESULT information."
          (line (plist-get result :line)))
     (when thef
       (if use-tooltip
-          (popup-tip (dumb-jump--format-result proj result))
+          (dumb-jump--show-preview (dumb-jump--format-result proj result))
         (dumb-jump-goto-file-line thef line column)))
     ;; return the file for test
     thef))
 
 (defun dumb-jump-goto-file-line (thefile theline column)
   "Open THEFILE, move point to line THELINE at COLUMN.
-Push current position in the xref stack if available or inside
-the old `find-tag-marker-ring' otherwise.
+Push current position to the xref marker stack.
 Run the `dumb-jump-before-jump-hook' hooks before jumping and
 the `dumb-jump-after-jump-hook' hooks after the jump."
-  ;; Push current position
-  (if (fboundp 'xref-push-marker-stack)
-      ;; On Emacs 25 and later: use xref
-      (xref-push-marker-stack)
-    ;; on older Emacs use the obsolete mechanism (but don't warn)
-    (with-no-warnings
-      (ring-insert find-tag-marker-ring (point-marker))))
+  (xref-push-marker-stack)
   ;; Run the before-jump hooks
   (with-demoted-errors "Error running `dumb-jump-before-jump-hook': %S"
     (run-hooks 'dumb-jump-before-jump-hook))
@@ -4189,7 +4699,7 @@ the `dumb-jump-after-jump-hook' hooks after the jump."
 
 (defun dumb-jump-current-file-results (path results)
   "Return the PATH's RESULTS."
-  (let ((matched (--filter (string= path (plist-get it :path)) results)))
+  (let ((matched (seq-filter (lambda (it) (string= path (plist-get it :path))) results)))
     matched))
 
 (defun dumb-jump-generators-by-searcher (searcher)
@@ -4345,49 +4855,61 @@ The parameters are:
                       proj))
          (cmd (funcall generate-fn look-for cur-file proj-root regexes lang exclude-args))
          (shell-command-switch (dumb-jump-shell-command-switch))
-         (rawresults (shell-command-to-string cmd)))
+         (rawresults ""))
 
-    (dumb-jump-debug-message cmd rawresults)
-    (when (and (string-blank-p rawresults) dumb-jump-fallback-search)
+    (dumb-jump-debug-message cmd)
+    (setq rawresults (shell-command-to-string cmd))
+    (dumb-jump-debug-message rawresults)
+    (when (string-match-p "^PCRE2 is not available" rawresults)
+      (dumb-jump-message "dumb-jump: Ripgrep PCRE2 support is not available. Install ripgrep with PCRE2 support or customize `dumb-jump-rg-search-args' to remove \"--pcre2\".")
+      (dumb-jump-env-problem "Ripgrep PCRE2 support is not available in the current build."))
+    (when (and (string-blank-p rawresults)
+               dumb-jump-fallback-search
+               (not (eq dumb-jump--search-mode 'references)))
       (setq regexes (list dumb-jump-fallback-regex))
       (setq cmd (funcall generate-fn
                          look-for cur-file
                          proj-root regexes
                          lang exclude-args))
+      (dumb-jump-debug-message cmd)
       (setq rawresults (shell-command-to-string cmd))
-      (dumb-jump-debug-message cmd rawresults))
+      (dumb-jump-debug-message rawresults))
     (unless (string-blank-p (or cmd ""))
       (let ((results (funcall parse-fn rawresults cur-file line-num))
             (ignore-case (member lang dumb-jump--case-insensitive-languages)))
-        (--filter (s-contains? look-for
-                               (plist-get it :context) ignore-case)
-                  results)))))
+        (seq-filter (lambda (it)
+                      (dumb-jump--contains-p look-for
+                                             (plist-get it :context) ignore-case))
+                    results)))))
 
 (defun dumb-jump-parse-response-line (resp-line cur-file)
   "Parse a search program's single RESP-LINE for CUR-FILE.
 Return a list of (path line context)."
-  (let* ((parts (--remove (string= it "")
-                          (s-split "\\(?:^\\|:\\)[0-9]+:"  resp-line)))
-         (line-num-raw (s-match "\\(?:^\\|:\\)\\([0-9]+\\):" resp-line)))
+  (let* ((parts (seq-remove (lambda (it) (string= it ""))
+                            (dumb-jump--split "\\(?:^\\|:\\)[0-9]+:"  resp-line)))
+         (line-num-raw (dumb-jump--match "\\(?:^\\|:\\)\\([0-9]+\\):" resp-line))
+         (line-num (and line-num-raw
+                        (> (length line-num-raw) 1)
+                        (nth 1 line-num-raw))))
 
     (cond
      ;; fixes rare bug where context is blank  but file is defined "/somepath/file.txt:14:"
      ;; OR: (and (= (length parts) 1) (file-name-exists (nth 0 parts)))
-     ((s-match ":[0-9]+:$" resp-line)
+     ((dumb-jump--match ":[0-9]+:$" resp-line)
       nil)
-     ((and parts line-num-raw)
+     ((and parts line-num)
       (if (= (length parts) 2)
           (list (let ((path (expand-file-name (nth 0 parts))))
                   (if (file-name-absolute-p (nth 0 parts))
                       path
                     (file-relative-name path)))
-                (nth 1 line-num-raw) (nth 1 parts))
+                line-num (nth 1 parts))
                                         ; this case is when they are searching a particular file...
         (list (let ((path (expand-file-name cur-file)))
                 (if (file-name-absolute-p cur-file)
                     path
                   (file-relative-name path)))
-              (nth 1 line-num-raw) (nth 0 parts)))))))
+              line-num (nth 0 parts)))))))
 
 ;; --
 ;; Parse Search Tool Results: indirectly called by `dumb-jump-run-command'
@@ -4401,20 +4923,22 @@ Return a list of (path line context)."
 (defun dumb-jump-parse-response-lines (parsed cur-file cur-line-num)
   "Turn PARSED response lines into a list of property lists.
 Using CUR-FILE and CUR-LINE-NUM to exclude jump origin."
-  (let* ((records (--mapcat
-                   (when it
-                     (let* ((line-num (string-to-number (nth 1 it)))
-                            (diff (- cur-line-num line-num)))
-                       (list `(:path ,(nth 0 it)
-                                     :line ,line-num
-                                     :context ,(nth 2 it)
-                                     :diff ,diff))))
+  (let* ((records (mapcan
+                   (lambda (it)
+                     (when it
+                       (let* ((line-num (string-to-number (nth 1 it)))
+                              (diff (- cur-line-num line-num)))
+                         (list `(:path ,(nth 0 it)
+                                       :line ,line-num
+                                       :context ,(nth 2 it)
+                                       :diff ,diff)))))
                    parsed))
-         (results (-non-nil records)))
-    (--filter
-     (not (and
-           (string= (plist-get it :path) cur-file)
-           (= (plist-get it :line) cur-line-num)))
+         (results (delq nil records)))
+    (seq-filter
+     (lambda (it)
+       (not (and
+             (string= (plist-get it :path) cur-file)
+             (= (plist-get it :line) cur-line-num))))
      results)))
 
 (defun dumb-jump-parse-grep-response (resp cur-file cur-line-num)
@@ -4422,38 +4946,49 @@ Using CUR-FILE and CUR-LINE-NUM to exclude jump origin."
 - CUR-FILE:     current file.
 - CUR-LINE-NUM: current line number."
   (let* ((resp-no-warnings
-          (--filter (and (not (string-prefix-p "grep:" it))
-                         (not (s-contains? "No such file or" it)))
-                    (s-split "\n" (s-trim resp))))
-         (parsed (--map (dumb-jump-parse-response-line it cur-file)
-                        resp-no-warnings)))
+          (seq-filter (lambda (it)
+                        (and (not (string-prefix-p "grep:" it))
+                             (not (dumb-jump--contains-p "No such file or" it))))
+                      (dumb-jump--split "\n" (dumb-jump--trim resp))))
+         (parsed (mapcar (lambda (it) (dumb-jump-parse-response-line it cur-file))
+                         resp-no-warnings)))
     (dumb-jump-parse-response-lines parsed cur-file cur-line-num)))
+
+(defun dumb-jump--clean-wsl-response (resp)
+  "Clean up RESP for Windows WSL/UNC path issues.
+Filters CMD.exe UNC path warnings and fixes /wsl$/ to //wsl$/."
+  (let* ((cleaned (replace-regexp-in-string
+                   "CMD\\.EXE was started with the above path as the current directory\\.\nUNC paths are not supported\\..*?\n"
+                   "" resp))
+         (fixed (replace-regexp-in-string "^/wsl\\$/" "//wsl$/" cleaned)))
+    (replace-regexp-in-string "\n/wsl\\$/" "\n//wsl$/" fixed)))
 
 (defun dumb-jump-parse-ag-response (resp cur-file cur-line-num)
   "Parse raw ag search response RESP into a list of plists.
 - CUR-FILE:     current file.
 - CUR-LINE-NUM: current line number."
-  (let* ((resp-lines (s-split "\n" (s-trim resp)))
-         (parsed (--map (dumb-jump-parse-response-line it cur-file)
-                        resp-lines)))
+  (let* ((cleaned (dumb-jump--clean-wsl-response resp))
+         (resp-lines (dumb-jump--split "\n" (dumb-jump--trim cleaned)))
+         (parsed (mapcar (lambda (it) (dumb-jump-parse-response-line it cur-file))
+                         resp-lines)))
     (dumb-jump-parse-response-lines parsed cur-file cur-line-num)))
 
 (defun dumb-jump-parse-rg-response (resp cur-file cur-line-num)
   "Parse raw rg search response RESP into a list of plists.
 - CUR-FILE:     current file.
 - CUR-LINE-NUM: current line number."
-  (let* ((resp-lines (s-split "\n" (s-trim resp)))
-         (parsed (--map (dumb-jump-parse-response-line it cur-file)
-                        resp-lines)))
+  (let* ((resp-lines (dumb-jump--split "\n" (dumb-jump--trim resp)))
+         (parsed (mapcar (lambda (it) (dumb-jump-parse-response-line it cur-file))
+                         resp-lines)))
     (dumb-jump-parse-response-lines parsed cur-file cur-line-num)))
 
 (defun dumb-jump-parse-git-grep-response (resp cur-file cur-line-num)
   "Parse raw git grep response RESP into a list of plists.
 - CUR-FILE:     current file.
 - CUR-LINE-NUM: current line number."
-  (let* ((resp-lines (s-split "\n" (s-trim resp)))
-         (parsed (--map (dumb-jump-parse-response-line it cur-file)
-                        resp-lines)))
+  (let* ((resp-lines (dumb-jump--split "\n" (dumb-jump--trim resp)))
+         (parsed (mapcar (lambda (it) (dumb-jump-parse-response-line it cur-file))
+                         resp-lines)))
     (dumb-jump-parse-response-lines parsed cur-file cur-line-num)))
 
 ;; --
@@ -4461,27 +4996,29 @@ Using CUR-FILE and CUR-LINE-NUM to exclude jump origin."
 (defun dumb-jump-re-match (re s)
   "Does regular expression RE match string S. If RE is nil return nil."
   (when (and re s)
-    (s-match re s)))
+    (dumb-jump--match re s)))
 
 (defun dumb-jump-get-ctx-type-by-language (lang pt-ctx)
   "Detect the type of context by the language LANG and its context PT-CTX.
 PT-CTX is assumed to be a property list with the :left and :right attributes
 that are both strings."
-  (let* ((contexts (--filter (string= (plist-get it ':language)
-                                      lang)
-                             dumb-jump-language-contexts))
+  (let* ((contexts (seq-filter (lambda (it)
+                                 (string= (plist-get it ':language) lang))
+                               dumb-jump-language-contexts))
          (usable-ctxs
           (when (> (length contexts) 0)
-            (--filter (and (or (null (plist-get it :left))
-                               (dumb-jump-re-match (plist-get it :left)
-                                                   (plist-get pt-ctx :left)))
-                           (or (null (plist-get it :right))
-                               (dumb-jump-re-match (plist-get it :right)
-                                                   (plist-get pt-ctx :right))))
-                      contexts)))
-         (use-ctx (= (length (--filter
-                              (string= (plist-get it ':type)
-                                       (and usable-ctxs (plist-get (car usable-ctxs) :type)))
+            (seq-filter (lambda (it)
+                          (and (or (null (plist-get it :left))
+                                   (dumb-jump-re-match (plist-get it :left)
+                                                       (plist-get pt-ctx :left)))
+                               (or (null (plist-get it :right))
+                                   (dumb-jump-re-match (plist-get it :right)
+                                                       (plist-get pt-ctx :right)))))
+                        contexts)))
+         (use-ctx (= (length (seq-filter
+                              (lambda (it)
+                                (string= (plist-get it ':type)
+                                         (and usable-ctxs (plist-get (car usable-ctxs) :type))))
                               usable-ctxs))
                      (length usable-ctxs))))
 
@@ -4493,12 +5030,14 @@ that are both strings."
   (let ((exts (dumb-jump-get-file-exts-by-language language)))
     (dumb-jump-arg-joiner
      "--include"
-     (--map (format "\\*.%s" it) exts))))
+     (mapcar (lambda (it) (format "\\*.%s" it)) exts))))
 
 (defun dumb-jump-arg-joiner (prefix values)
   "Helper to generate command arg with its PREFIX for each value in VALUES."
-  (let ((args (s-join (format " %s " prefix) values)))
-    (if (and args values)
+  (let* ((normalized-values (mapcar (lambda (it) (dumb-jump--trim (or it ""))) values))
+         (non-empty-values (seq-filter (lambda (it) (> (length it) 0)) normalized-values))
+         (args (dumb-jump--join (format " %s " prefix) non-empty-values)))
+    (if non-empty-values
         (format " %s %s " prefix args)
       "")))
 
@@ -4513,10 +5052,10 @@ The arguments are:
          (ctx-type (unless dumb-jump-ignore-context ctx-type))
          (ctx-rules
           (if ctx-type
-              (--filter (string= (plist-get it :type) ctx-type) raw-rules)
+              (seq-filter (lambda (it) (string= (plist-get it :type) ctx-type)) raw-rules)
             raw-rules))
          (rules (or ctx-rules raw-rules))
-         (regexes (--map (plist-get it :regex) rules)))
+         (regexes (mapcar (lambda (it) (plist-get it :regex)) rules)))
     regexes))
 
 (defun dumb-jump-populate-regex (it look-for variant)
@@ -4535,10 +5074,10 @@ The arguments are:
                ((eq variant 'git-grep) dumb-jump-git-grep-word-boundary)
                (t dumb-jump-grep-word-boundary))))
     (let ((text it))
-      (setq text (s-replace "\\j" boundary text))
+      (setq text (dumb-jump--replace "\\j" boundary text))
       (when (dumb-jump-use-space-bracket-exp-for variant)
-        (setq text (s-replace "\\s" "[[:space:]]" text)))
-      (setq text (s-replace "JJJ" (regexp-quote look-for) text))
+        (setq text (dumb-jump--replace "\\s" "[[:space:]]" text)))
+      (setq text (dumb-jump--replace "JJJ" (regexp-quote look-for) text))
       text)))
 
 (defun dumb-jump-populate-regexes (look-for regexes variant)
@@ -4550,9 +5089,88 @@ The arguments are:
                             expression.
 - VARIANT: symbol: the search tool variant,
                    one of: ag, rg, git-grep-plus-ag, git-grep."
-  (--map
-   (dumb-jump-populate-regex it look-for variant)
+  (mapcar
+   (lambda (it)
+     (dumb-jump-populate-regex it look-for variant))
    regexes))
+
+(defun dumb-jump-pcre-to-emacs (regex)
+  "Convert a PCRE-style REGEX string to Emacs regex syntax.
+In PCRE and Emacs, +, ?, *, ., ^, $, [ are special without escaping.
+But (, ), |, {, } differ: special unescaped in PCRE, special escaped in Emacs.
+This function swaps the literal/special meaning of (, ), |, {, and }."
+  (let ((i 0)
+        (len (length regex))
+        (out (list)))
+    (while (< i len)
+      (let ((ch (aref regex i)))
+        (cond
+         ;; Backslash sequence
+         ((and (= ch ?\\) (< (1+ i) len))
+          (let ((next (aref regex (1+ i))))
+            (cond
+             ((memq next '(?\( ?\) ?| ?{ ?}))
+              ;; \X (literal in PCRE) → X (literal in Emacs)
+              (push (char-to-string next) out)
+              (setq i (+ i 2)))
+             (t
+              ;; Other backslash sequences (\b, \w, \+, \?, etc.) pass through
+              (push (substring regex i (+ i 2)) out)
+              (setq i (+ i 2))))))
+         ;; (? prefixed groups: (?:, (?!, (?=, (?<=, (?<!, etc.
+         ;; Emit \(? which in Emacs starts a shy group for (?:
+         ;; and produces a valid (if semantically different) group for others.
+         ((and (= ch ?\()
+               (< (1+ i) len)
+               (= (aref regex (1+ i)) ??))
+          (push "\\(?" out)
+          (setq i (+ i 2)))
+         ;; Unescaped chars that differ between PCRE and Emacs
+         ((= ch ?\() (push "\\(" out) (cl-incf i))
+         ((= ch ?\)) (push "\\)" out) (cl-incf i))
+         ((= ch ?|)  (push "\\|" out) (cl-incf i))
+         ((= ch ?{)  (push "\\{" out) (cl-incf i))
+         ((= ch ?})  (push "\\}" out) (cl-incf i))
+         ;; Everything else passes through (including +, ?, *, ., etc.)
+         (t (push (char-to-string ch) out) (cl-incf i)))))
+    (apply #'concat (nreverse out))))
+
+(defun dumb-jump-populate-regex-for-emacs (regex look-for)
+  "Populate dumb-jump generic REGEX for matching LOOK-FOR with Emacs `string-match-p'.
+Replaces dumb-jump meta-patterns and converts PCRE syntax to Emacs regex.
+The \\=\\j boundary is replaced after PCRE conversion with a character class
+matching the tool boundaries: not followed by [a-zA-Z0-9?*-]."
+  (let ((text regex))
+    (setq text (dumb-jump--replace "\\s" "[[:space:]]" text))
+    (setq text (dumb-jump--replace "JJJ" (regexp-quote look-for) text))
+    (setq text (dumb-jump-pcre-to-emacs text))
+    ;; Replace \j after PCRE conversion since the replacement is Emacs syntax.
+    ;; Mirrors the tool boundaries: (?![a-zA-Z0-9\?\*-]) for ag,
+    ;; ($|[^a-zA-Z0-9\?\*-]) for rg/grep.
+    (setq text (dumb-jump--replace "\\j" "\\(?:[^a-zA-Z0-9?*-]\\|$\\)" text))
+    text))
+
+(defun dumb-jump-filter-definition-results (results lang look-for _searcher)
+  "Remove from RESULTS any that match definition patterns for LANG.
+LOOK-FOR is the symbol being searched.  _SEARCHER is unused but kept for API."
+  (let* ((raw-rules (seq-remove
+                     (lambda (it) (plist-get it :skip-ref-filter))
+                     (seq-filter (lambda (it)
+                                   (string= (plist-get it :language) lang))
+                                 dumb-jump-find-rules)))
+         (def-regexes (seq-uniq (mapcar (lambda (it) (plist-get it :regex)) raw-rules)))
+         (emacs-regexes (mapcar (lambda (re)
+                                  (dumb-jump-populate-regex-for-emacs re look-for))
+                                def-regexes)))
+    (seq-filter
+     (lambda (r)
+       (let ((ctx (plist-get r :context)))
+         (not (seq-some (lambda (re)
+                         (condition-case nil
+                             (string-match-p re ctx)
+                           (invalid-regexp nil)))
+                       emacs-regexes))))
+     results)))
 
 ;; --
 (defun dumb-jump-generate-ag-command (look-for
@@ -4585,41 +5203,43 @@ The arguments are:
                       (unless (string-blank-p dumb-jump-ag-search-args)
                         (concat " " dumb-jump-ag-search-args))
                       (if agtypes
-                          (s-join "" (--map (format " --%s" it) agtypes))
-                        ;; there can only be one `-G` arg
+                          (dumb-jump--join "" (mapcar (lambda (it) (format " --%s" it)) agtypes))
                         (concat " -G '("
-                                (s-join "|"
-                                        (--map (format "\\.%s" it) lang-exts))
+                                (dumb-jump--join "|"
+                                        (mapcar (lambda (it) (format "\\.%s" it)) lang-exts))
                                 ")$'"))))
          (exclude-args (dumb-jump-arg-joiner
                         "--ignore-dir"
-                        (--map
-                         (shell-quote-argument (s-replace proj-dir "" it))
+                        (mapcar
+                         (lambda (it)
+                           (shell-quote-argument (dumb-jump--replace proj-dir "" it)))
                          exclude-paths)))
-         (regex-args (shell-quote-argument (s-join "|" filled-regexes))))
+         (regex-args (shell-quote-argument (dumb-jump--join "|" filled-regexes))))
     (if (null regexes)
         ""
-      (dumb-jump-concat-command cmd exclude-args "--" regex-args proj))))
+      (dumb-jump-concat-command cmd exclude-args "--" regex-args (shell-quote-argument proj)))))
 
 ;; --
 (defun dumb-jump-get-git-grep-files-matching-symbol (symbol proj-root)
   "Return a list of file names in PROJ-ROOT holding the literal SYMBOL.
 Search for matching files using git grep."
   (let* ((cmd (format "git grep --full-name -F -c %s %s"
-                      (shell-quote-argument symbol) proj-root))
-         (result (s-trim (shell-command-to-string cmd)))
+                      (shell-quote-argument symbol) (shell-quote-argument proj-root)))
+         (result (dumb-jump--trim (shell-command-to-string cmd)))
          ;; result: '\n\ separated lines of: "path-name:count"
          ;; extract the name of files and return them in a list.
-         (matched-files (--map
-                         (cl-first (s-split ":" it))
-                         (s-split "\n" result))))
+         (matched-files (mapcar
+                         (lambda (it)
+                           (cl-first (dumb-jump--split ":" it)))
+                         (dumb-jump--split "\n" result))))
     matched-files))
 
 (defun dumb-jump-format-files-as-ag-arg (files proj-root)
   "Take a list of FILES and their PROJ-ROOT and return a `ag -G` argument."
-  (format "'(%s)'" (s-join "|" (--map (file-relative-name
-                                       (expand-file-name it proj-root))
-                                      files))))
+  (format "'(%s)'" (dumb-jump--join "|" (mapcar (lambda (it)
+                                                  (file-relative-name
+                                                   (expand-file-name it proj-root)))
+                                                files))))
 
 (defun dumb-jump-get-git-grep-files-matching-symbol-as-ag-arg (symbol proj-root)
   "Return optimized `ag -G` argument string to search for SYMBOL in PROJ-ROOT.
@@ -4664,13 +5284,14 @@ The arguments are:
                       " "))
          (exclude-args (dumb-jump-arg-joiner
                         "--ignore-dir"
-                        (--map
-                         (shell-quote-argument (s-replace proj-dir "" it))
+                        (mapcar
+                         (lambda (it)
+                           (shell-quote-argument (dumb-jump--replace proj-dir "" it)))
                          exclude-paths)))
-         (regex-args (shell-quote-argument (s-join "|" filled-regexes))))
+         (regex-args (shell-quote-argument (dumb-jump--join "|" filled-regexes))))
     (if (null regexes)
         ""
-      (dumb-jump-concat-command cmd exclude-args regex-args proj))))
+      (dumb-jump-concat-command cmd exclude-args regex-args (shell-quote-argument proj)))))
 
 ;; --
 (defun dumb-jump-generate-rg-command (look-for
@@ -4683,30 +5304,34 @@ The arguments are:
 - CUR-FILE:
 - PROJ: string: project root path.
 - REGEXES: list of strings: each string is a dumb-jump generic regular
-                            expression.
+                             expression.
 - LANG: string: handled language.
 - EXCLUDE-PATHS: list of strings: directories to exclude from search."
   (let* ((filled-regexes (dumb-jump-populate-regexes look-for regexes 'rg))
          (rgtypes (dumb-jump-get-rg-type-by-language lang))
+         (rg-nontype-exts (dumb-jump-get-rg-nontype-exts-by-language lang))
          (proj-dir (file-name-as-directory proj))
          (cmd (concat dumb-jump-rg-cmd
                       " --color never --no-heading --line-number -U"
                       (if (member lang dumb-jump--case-insensitive-languages)
                           " --ignore-case"
                         "")
-                      (unless (string-blank-p dumb-jump-rg-search-args)
-                        (concat " " dumb-jump-rg-search-args))
-                      (s-join "" (--map (format " --type %s" it) rgtypes))))
+                       (unless (string-blank-p dumb-jump-rg-search-args)
+                         (concat " " dumb-jump-rg-search-args))
+                       (dumb-jump--join "" (mapcar (lambda (it) (format " --type %s" it)) rgtypes))
+                       (if rgtypes ""
+                         (dumb-jump--join "" (mapcar (lambda (it) (format " -g \"*.%s\"" it)) rg-nontype-exts)))))
          (exclude-args (dumb-jump-arg-joiner
                         "-g"
-                        (--map
-                         (shell-quote-argument
-                          (concat "!" (s-replace proj-dir "" it)))
+                        (mapcar
+                         (lambda (it)
+                           (shell-quote-argument
+                            (concat "!" (dumb-jump--replace proj-dir "" it))))
                          exclude-paths)))
-         (regex-args (shell-quote-argument (s-join "|" filled-regexes))))
+         (regex-args (shell-quote-argument (dumb-jump--join "|" filled-regexes))))
     (if (null regexes)
         ""
-      (dumb-jump-concat-command cmd exclude-args "--" regex-args proj))))
+      (dumb-jump-concat-command cmd exclude-args "--" regex-args (shell-quote-argument proj)))))
 
 (defun dumb-jump-generate-git-grep-command (look-for
                                             cur-file proj
@@ -4735,17 +5360,19 @@ The arguments are:
                       (unless (string-blank-p dumb-jump-git-grep-search-args)
                         (concat " " dumb-jump-git-grep-search-args))
                       " -E"))
-         (fileexps (s-join " "
+         (fileexps (dumb-jump--join " "
                            (or
-                            (--map (shell-quote-argument
-                                    (format "%s/*.%s" proj it))
-                                   ggtypes)
+                            (mapcar (lambda (it)
+                                      (shell-quote-argument
+                                       (format "%s/*.%s" proj it)))
+                                    ggtypes)
                             '(":/"))))
-         (exclude-args (s-join " "
-                               (--map (shell-quote-argument
-                                       (concat ":(exclude)" it))
-                                      exclude-paths)))
-         (regex-args (shell-quote-argument (s-join "|" filled-regexes))))
+         (exclude-args (dumb-jump--join " "
+                               (mapcar (lambda (it)
+                                         (shell-quote-argument
+                                          (concat ":(exclude)" it)))
+                                       exclude-paths)))
+         (regex-args (shell-quote-argument (dumb-jump--join "|" filled-regexes))))
     (if (null regexes)
         ""
       (dumb-jump-concat-command cmd regex-args "--" fileexps exclude-args))))
@@ -4764,8 +5391,8 @@ The arguments are:
 - LANG: string: handled language.
 - EXCLUDE-PATHS: list of strings: directories to exclude from search."
   (let* ((filled-regexes
-          (--map (shell-quote-argument it)
-                 (dumb-jump-populate-regexes look-for regexes 'grep)))
+          (mapcar (lambda (it) (shell-quote-argument it))
+                  (dumb-jump-populate-regexes look-for regexes 'grep)))
          (cmd (concat
                (if (eq system-type 'windows-nt)
                    ""
@@ -4776,14 +5403,20 @@ The arguments are:
          (case-args (if (member lang dumb-jump--case-insensitive-languages)
                         " --ignore-case"
                       ""))
-         (exclude-args (dumb-jump-arg-joiner "--exclude-dir" exclude-paths))
+         (proj-dir (file-name-as-directory proj))
+         (exclude-args (dumb-jump-arg-joiner
+                        "--exclude-dir"
+                        (mapcar
+                         (lambda (it)
+                           (dumb-jump--replace proj-dir "" it))
+                         exclude-paths)))
          (include-args (dumb-jump-get-ext-includes lang))
          (regex-args (dumb-jump-arg-joiner "-e" filled-regexes)))
     (if (null regexes)
         ""
       (dumb-jump-concat-command cmd dumb-jump-grep-args
                                 case-args exclude-args
-                                include-args regex-args proj))))
+                                include-args regex-args (shell-quote-argument proj)))))
 
 (defun dumb-jump-generate-gnu-grep-command (look-for
                                             cur-file proj
@@ -4799,8 +5432,8 @@ The arguments are:
 - LANG: string: handled language.
 - EXCLUDE-PATHS: list of strings: directories to exclude from search."
   (let* ((filled-regexes
-          (--map (shell-quote-argument it)
-                 (dumb-jump-populate-regexes look-for regexes 'gnu-grep)))
+          (mapcar (lambda (it) (shell-quote-argument it))
+                  (dumb-jump-populate-regexes look-for regexes 'gnu-grep)))
          (cmd (concat
                (if (eq system-type 'windows-nt)
                    ""
@@ -4819,43 +5452,60 @@ The arguments are:
         ""
       (dumb-jump-concat-command cmd dumb-jump-gnu-grep-args
                                 case-args exclude-args
-                                include-args regex-args proj))))
+                                include-args regex-args (shell-quote-argument proj)))))
 
 ;; ---------------------------------------------------------------------------
 
 (defun dumb-jump-concat-command (&rest parts)
   "Concat the PARTS of a command if each part has a length."
-  (s-join " " (-map #'s-trim (--filter (> (length it) 0) parts))))
+  (let* ((normalized-parts (mapcar (lambda (it) (dumb-jump--trim (or it ""))) parts))
+         (non-empty-parts (seq-filter (lambda (it) (> (length it) 0)) normalized-parts)))
+    (dumb-jump--join " " non-empty-parts)))
 
 (defun dumb-jump-get-file-exts-by-language (language)
   "Return list of file extensions for a LANGUAGE."
-  (--map (plist-get it :ext)
-         (--filter (string= (plist-get it :language) language)
-                   dumb-jump-language-file-exts)))
+  (mapcar (lambda (it) (plist-get it :ext))
+          (seq-filter (lambda (it) (string= (plist-get it :language) language))
+                      dumb-jump-language-file-exts)))
 
 (defun dumb-jump-get-ag-type-by-language (language)
   "Return list of ag type argument for a LANGUAGE."
-  (-distinct (--map (plist-get it :agtype)
-                    (--filter (and
-                               (plist-get it :agtype)
-                               (string= (plist-get it :language) language))
-                              dumb-jump-language-file-exts))))
+  (seq-uniq (mapcar (lambda (it) (plist-get it :agtype))
+                    (seq-filter (lambda (it)
+                                  (and
+                                   (plist-get it :agtype)
+                                   (string= (plist-get it :language) language)))
+                                dumb-jump-language-file-exts))))
 
 (defun dumb-jump-get-rg-type-by-language (language)
   "Return list of rg type argument for a LANGUAGE."
-  (-distinct (--map (plist-get it :rgtype)
-                    (--filter (and
-                               (plist-get it :rgtype)
-                               (string= (plist-get it :language) language))
-                              dumb-jump-language-file-exts))))
+  (seq-uniq (mapcar (lambda (it) (plist-get it :rgtype))
+                    (seq-filter (lambda (it)
+                                  (and
+                                   (plist-get it :rgtype)
+                                   (string= (plist-get it :language) language)))
+                                dumb-jump-language-file-exts))))
+
+(defun dumb-jump-get-rg-nontype-exts-by-language (language)
+  "Return list of file extensions for a LANGUAGE that have no rgtype.
+These extensions need to be explicitly added as glob patterns since
+they are not covered by ripgrep's built-in type definitions."
+  (seq-uniq (mapcar (lambda (it) (plist-get it :ext))
+                    (seq-filter (lambda (it)
+                                  (and
+                                   (plist-get it :ext)
+                                   (null (plist-get it :rgtype))
+                                   (string= (plist-get it :language) language)))
+                                dumb-jump-language-file-exts))))
 
 (defun dumb-jump-get-git-grep-type-by-language (language)
   "Return list of git grep type argument for a LANGUAGE."
-  (-distinct (--map (plist-get it :ext)
-                    (--filter (and
-                               (plist-get it :ext)
-                               (string= (plist-get it :language) language))
-                              dumb-jump-language-file-exts))))
+  (seq-uniq (mapcar (lambda (it) (plist-get it :ext))
+                    (seq-filter (lambda (it)
+                                  (and
+                                   (plist-get it :ext)
+                                   (string= (plist-get it :language) language)))
+                                dumb-jump-language-file-exts))))
 
 (defun dumb-jump-get-rules-by-language (language searcher)
   "Return a list of rules for the LANGUAGE by SEARCHER."
@@ -4864,13 +5514,23 @@ The arguments are:
                              ((eq 'ag searcher) "ag")
                              ((eq 'git-grep-plus-ag searcher) "ag")
                              (t "grep")))
-         (results (--filter (and
-                             (string= (plist-get it ':language) language)
-                             (member searcher-str (plist-get it ':supports)))
-                            dumb-jump-find-rules)))
+         (results (seq-filter (lambda (it)
+                                (and
+                                 (string= (plist-get it ':language) language)
+                                 (member searcher-str (plist-get it ':supports))))
+                              dumb-jump-find-rules)))
     (if dumb-jump-functions-only
-        (--filter (string= (plist-get it ':type) "function") results)
+        (seq-filter (lambda (it) (string= (plist-get it ':type) "function")) results)
       results)))
+
+;;;###autoload
+(define-minor-mode dumb-jump-local-mode
+  "Buffer-local minor mode for jumping to variable and function definitions.
+Use this to selectively enable dumb-jump in specific major modes, e.g.:
+  (add-hook \\='python-mode-hook #\\='dumb-jump-local-mode)
+For enabling globally, use `dumb-jump-mode' instead."
+  :global nil
+  :keymap dumb-jump-mode-map)
 
 ;;;###autoload
 (define-minor-mode dumb-jump-mode
@@ -4883,97 +5543,151 @@ The arguments are:
 ;; -----------------------------------------------------------------------------
 ;;; Xref Backend
 
-(when (featurep 'xref)
-  (unless dumb-jump-disable-obsolete-warnings
-    (dolist (obsolete
-             '(dumb-jump-mode
-               dumb-jump-go
-               dumb-jump-go-prefer-external-other-window
-               dumb-jump-go-prompt
-               dumb-jump-quick-look
-               dumb-jump-go-other-window
-               dumb-jump-go-current-window
-               dumb-jump-go-prefer-external
-               dumb-jump-go-current-window))
-      (make-obsolete
-       obsolete
-       (format "`%s' has been obsoleted by the xref interface."
-               obsolete)
-       "2020-06-26"))
-    (make-obsolete 'dumb-jump-back
-                   "`dumb-jump-back' has been obsoleted by `xref-pop-marker-stack'."
-                   "2020-06-26"))
+(unless dumb-jump-disable-obsolete-warnings
+  (dolist (obsolete
+            '(dumb-jump-mode
+              dumb-jump-go
+              dumb-jump-go-prefer-external-other-window
+              dumb-jump-go-prompt
+              dumb-jump-quick-look
+              dumb-jump-go-other-window
+              dumb-jump-go-current-window
+              dumb-jump-go-prefer-external))
+    (make-obsolete
+     obsolete
+     (format "`%s' has been obsoleted by the xref interface."
+             obsolete)
+     "2020-06-26"))
+  (make-obsolete 'dumb-jump-back
+                 "`dumb-jump-back' has been obsoleted by `xref-pop-marker-stack'."
+                 "2020-06-26"))
 
-  (cl-defmethod xref-backend-identifier-at-point ((_backend (eql dumb-jump)))
-    (let ((bounds (bounds-of-thing-at-point 'symbol)))
-      (and bounds (let* ((ident (dumb-jump-get-point-symbol))
-			 (start (car bounds))
-			 (col (- start (line-beginning-position)))
-			 (line (dumb-jump-get-point-line))
-			 (ctx (dumb-jump-get-point-context line ident col)))
-		    (propertize ident :dumb-jump-ctx ctx)))))
+(cl-defmethod xref-backend-identifier-at-point ((_backend (eql dumb-jump)))
+  (let ((bounds (bounds-of-thing-at-point 'symbol)))
+    (and bounds (let* ((ident (dumb-jump-get-point-symbol))
+                       (start (car bounds))
+                       (col (- start (line-beginning-position)))
+                       (line (dumb-jump-get-point-line))
+                       (ctx (dumb-jump-get-point-context line ident col)))
+                  (propertize ident :dumb-jump-ctx ctx)))))
 
-  (cl-defmethod xref-backend-definitions ((_backend (eql dumb-jump))
-                                          entered-name)
-    (let* ((info (dumb-jump-get-results entered-name))
-           (results (plist-get info :results))
-           (look-for (or entered-name (plist-get info :symbol)))
-           (proj-root (plist-get info :root))
-           (issue (plist-get info :issue))
-           (lang (plist-get info :lang))
-           (processed (dumb-jump-process-results
-                       results
-                       (plist-get info :file)
-                       proj-root
-                       (plist-get info :ctx-type)
-                       look-for
-                       nil
-                       nil
-                       lang))
-           (results (plist-get processed :results))
-           (do-var-jump (plist-get processed :do-var-jump))
-           (var-to-jump (plist-get processed :var-to-jump))
-           (match-cur-file-front (plist-get processed :match-cur-file-front)))
+(cl-defmethod xref-backend-definitions ((_backend (eql dumb-jump))
+                                        entered-name)
+  (let* ((info (dumb-jump-get-results entered-name))
+         (results (plist-get info :results))
+         (look-for (or entered-name (plist-get info :symbol)))
+         (proj-root (plist-get info :root))
+         (issue (plist-get info :issue))
+         (lang (plist-get info :lang))
+         (processed (dumb-jump-process-results
+                     results
+                     (plist-get info :file)
+                     proj-root
+                     (plist-get info :ctx-type)
+                     look-for
+                     nil
+                     nil
+                     lang))
+         (results (plist-get processed :results))
+         (do-var-jump (plist-get processed :do-var-jump))
+         (var-to-jump (plist-get processed :var-to-jump))
+         (match-cur-file-front (plist-get processed :match-cur-file-front)))
 
-      (dumb-jump-debug-message
-        look-for
-        (plist-get info :ctx-type)
-        var-to-jump
-        (pp-to-string match-cur-file-front)
-        (pp-to-string results)
-        match-cur-file-front
-        proj-root
-        (plist-get info :file))
-      (cond ((eq issue 'nogrep)
-             (dumb-jump-message "Please install ag, rg, git grep or grep!"))
-            ((eq issue 'nosymbol)
-             (dumb-jump-message "No symbol under point."))
-            ((string-suffix-p " file" lang)
-             (dumb-jump-message "Could not find rules for '%s'." lang))
-            ((= (length results) 0)
-             (dumb-jump-message "'%s' %s %s declaration not found."
-                                look-for
-                                (if (string-blank-p (or lang ""))
-                                    "with unknown language so"
-                                  lang)
-                                (plist-get info :ctx-type)))
-            (t (mapcar (lambda (res)
-                         (with-no-warnings
-                           (xref-make
-                            (plist-get res :context)
-                            (xref-make-file-location
-                             (expand-file-name (plist-get res :path))
-                             (plist-get res :line)
-                             0))))
-                       (if do-var-jump
-                           (list var-to-jump)
-                         match-cur-file-front))))))
+    (dumb-jump-debug-message
+      look-for
+      (plist-get info :ctx-type)
+      var-to-jump
+      (pp-to-string match-cur-file-front)
+      (pp-to-string results)
+      match-cur-file-front
+      proj-root
+      (plist-get info :file))
+    (cond ((eq issue 'nogrep)
+           (dumb-jump-message "Please install ag, rg, git grep or grep!"))
+          ((eq issue 'nosymbol)
+           (dumb-jump-message "No symbol under point."))
+          ((string-suffix-p " file" lang)
+           (dumb-jump-message "Could not find rules for '%s'." lang))
+          ((= (length results) 0)
+           (dumb-jump-message "'%s' %s %s declaration not found."
+                              look-for
+                              (if (string-blank-p (or lang ""))
+                                  "with unknown language so"
+                                lang)
+                              (plist-get info :ctx-type)))
+          (t (mapcar (lambda (res)
+                       (with-no-warnings
+                         (xref-make
+                          (plist-get res :context)
+                          (xref-make-file-location
+                           (let* ((path (plist-get res :path))
+                                  (remote-prefix (file-remote-p default-directory)))
+                             (if remote-prefix
+                                 (if (file-name-absolute-p path)
+                                     (concat remote-prefix path)
+                                   (concat default-directory path))
+                               (expand-file-name path)))
+                           (plist-get res :line)
+                           0))))
+                     (if do-var-jump
+                         (list var-to-jump)
+                       match-cur-file-front))))))
 
-  (cl-defmethod xref-backend-apropos ((_backend (eql dumb-jump)) pattern)
-    (xref-backend-definitions 'dumb-jump pattern))
-  (cl-defmethod xref-backend-identifier-completion-table
-    ((_backend (eql dumb-jump)))
-    nil))
+(cl-defmethod xref-backend-references ((_backend (eql dumb-jump))
+                                        entered-name)
+  (let* ((dumb-jump--search-mode 'references)
+         (info (dumb-jump-get-results entered-name))
+         (results (plist-get info :results))
+         (look-for (or entered-name (plist-get info :symbol)))
+         (proj-root (plist-get info :root))
+         (issue (plist-get info :issue))
+         (lang (plist-get info :lang))
+         (processed (dumb-jump-process-results
+                     results
+                     (plist-get info :file)
+                     proj-root
+                     (plist-get info :ctx-type)
+                     look-for
+                     nil
+                     nil
+                     lang))
+         (results (plist-get processed :results))
+         (match-cur-file-front (plist-get processed :match-cur-file-front)))
+
+    (cond ((eq issue 'nogrep)
+           (dumb-jump-message "Please install ag, rg, git grep or grep!"))
+          ((eq issue 'nosymbol)
+           (dumb-jump-message "No symbol under point."))
+          ((string-suffix-p " file" lang)
+           (dumb-jump-message "Could not find rules for '%s'." lang))
+          ((= (length results) 0)
+           (dumb-jump-message "'%s' %s references not found."
+                              look-for
+                              (if (string-blank-p (or lang ""))
+                                  "with unknown language so"
+                                lang)))
+          (t (mapcar (lambda (res)
+                       (with-no-warnings
+                         (xref-make
+                          (plist-get res :context)
+                          (xref-make-file-location
+                           (let* ((path (plist-get res :path))
+                                  (remote-prefix (file-remote-p default-directory)))
+                             (if remote-prefix
+                                 (if (file-name-absolute-p path)
+                                     (concat remote-prefix path)
+                                   (concat default-directory path))
+                               (expand-file-name path)))
+                           (plist-get res :line)
+                           0))))
+                     match-cur-file-front)))))
+
+(cl-defmethod xref-backend-apropos ((_backend (eql dumb-jump)) pattern)
+  (xref-backend-definitions 'dumb-jump pattern))
+
+(cl-defmethod xref-backend-identifier-completion-table
+  ((_backend (eql dumb-jump)))
+  nil)
 
 ;;;###autoload
 (defun dumb-jump-xref-activate ()

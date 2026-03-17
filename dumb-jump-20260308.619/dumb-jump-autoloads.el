@@ -29,6 +29,10 @@ Like dumb-jump-go' but use `find-file-other-window' instead of `find-file'." t)
 Like `dumb-jump-go' but always use `find-file'." t)
 (autoload 'dumb-jump-go-prefer-external "dumb-jump" "\
 Like `dumb-jump-go' but prefer external matches from the current file." t)
+(autoload 'dumb-jump-find-references "dumb-jump" "\
+Find references/usages of the symbol at point.
+This is the inverse of `dumb-jump-go' -- it finds where a symbol
+is used rather than where it is defined." t)
 (autoload 'dumb-jump-go-prompt "dumb-jump" "\
 Like `dumb-jump-go' but prompt for function instead of using under point." t)
 (autoload 'dumb-jump-go-prefer-external-other-window "dumb-jump" "\
@@ -43,6 +47,30 @@ The optional ENTERED-NAME string is the name of the item to jump to
 manually selected by user as response to a prompt.
 
 (fn &optional USE-TOOLTIP PREFER-EXTERNAL ENTERED-NAME)" t)
+(autoload 'dumb-jump-local-mode "dumb-jump" "\
+Buffer-local minor mode for jumping to variable and function definitions.
+
+Use this to selectively enable dumb-jump in specific major modes, e.g.:
+  (add-hook \\='python-mode-hook #\\='dumb-jump-local-mode)
+For enabling globally, use `dumb-jump-mode' instead.
+
+This is a minor mode.  If called interactively, toggle the
+`Dumb-Jump-Local mode' mode.  If the prefix argument is positive, enable
+the mode, and if it is zero or negative, disable the mode.
+
+If called from Lisp, toggle the mode if ARG is `toggle'.  Enable the
+mode if ARG is nil, omitted, or is a positive number.  Disable the mode
+if ARG is a negative number.
+
+To check whether the minor mode is enabled in the current buffer,
+evaluate the variable `dumb-jump-local-mode'.
+
+The mode's hook is called both when the mode is enabled and when it is
+disabled.
+
+\\{dumb-jump-mode-map}
+
+(fn &optional ARG)" t)
 (defvar dumb-jump-mode nil "\
 Non-nil if Dumb-Jump mode is enabled.
 See the `dumb-jump-mode' command
