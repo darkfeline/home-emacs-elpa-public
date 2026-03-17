@@ -6,8 +6,8 @@
 ;; Maintainer: Federico Tedin <federicotedin@gmail.com>
 ;; Homepage: https://github.com/federicotdn/verb
 ;; Keywords: tools
-;; Package-Version: 20251222.2151
-;; Package-Revision: f45e31b2bcde
+;; Package-Version: 20260223.2349
+;; Package-Revision: 0625fb314341
 ;; Package-Requires: ((emacs "26.3"))
 
 ;; This file is NOT part of GNU Emacs.
@@ -304,6 +304,18 @@ no warning will be shown when loading Emacs Lisp external files."
 
 (defface verb-code-tag '((t :inherit italic))
   "Face for highlighting Lisp code tags.")
+
+(defface verb-status-2xx '((t :inherit success))
+  "Face for highlighting 2xx HTTP status codes.")
+
+(defface verb-status-3xx '((t :inherit warning))
+  "Face for highlighting 3xx HTTP status codes.")
+
+(defface verb-status-4xx '((t :inherit error))
+  "Face for highlighting 4xx HTTP status codes.")
+
+(defface verb-status-5xx '((t :inherit error))
+  "Face for highlighting 5xx HTTP status codes.")
 
 (defface verb-json-key '((t :inherit font-lock-doc-face))
   "Face for highlighting JSON keys.")
@@ -1755,6 +1767,16 @@ has finished."
   (let ((buf (verb-restclient--import #'verb-request-spec-from-string)))
     (display-buffer buf)))
 
+(defun verb--status-code-face (status-line)
+  "Return a face for STATUS-LINE based on the HTTP status code.
+Return nil if the status code cannot be determined."
+  (when (string-match "\\([0-9]\\)[0-9][0-9]" status-line)
+    (pcase (match-string 1 status-line)
+      ("2" 'verb-status-2xx)
+      ("3" 'verb-status-3xx)
+      ("4" 'verb-status-4xx)
+      ("5" 'verb-status-5xx))))
+
 (cl-defmethod verb--response-header-line-string ((response verb-response))
   "Return a short description of an HTTP RESPONSE's properties."
   (let ((status-line (oref response status))
@@ -1763,7 +1785,11 @@ has finished."
         (bytes (oref response body-bytes))
         (path (car (url-path-and-query (oref (oref response request) url)))))
     (concat
-     (or status-line "No Response")
+     (if-let ((face (verb--status-code-face (or status-line "")))
+              (parts (split-string status-line " " t))
+              (rest (string-join (cdr parts) " ")))
+         (concat (car parts) " | " (propertize rest 'face face))
+       (or status-line "No Response"))
      " | "
      (format "%.4gs" elapsed)
      (let ((content-type (or (car (verb--headers-content-type headers))
