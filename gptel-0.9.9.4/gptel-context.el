@@ -27,12 +27,14 @@
 
 ;;; Code:
 
-(require 'gptel)
+(require 'gptel-request)
 (require 'cl-lib)
 (require 'project)
 
 (declare-function gptel-menu "gptel-transient")
 (declare-function dired-get-marked-files "dired")
+(declare-function ibuffer-get-marked-buffers "ibuffer")
+(declare-function ibuffer-current-buffer "ibuffer")
 (declare-function image-file-name-regexp "image-file")
 (declare-function create-image "image")
 
@@ -136,6 +138,9 @@ context."
   CONFIRM is non-nil.  With negative prefix ARG, remove all files from
   the context instead.
 
+- If in IBuffer, add marked buffers or buffer at point to the context.
+  With negative prefix ARG, remove buffers from the context instead.
+
 - Otherwise add the current buffer to the context.  With positive
   prefix ARG, prompt for a buffer name and add it to the context.
 
@@ -164,6 +169,15 @@ context."
 				  (length dirs)
 				  (if (= (length dirs) 1) "y" "ies"))))
 	(mapc action-fn files))))
+   ;; If in ibuffer
+   ((derived-mode-p 'ibuffer-mode)
+    (let* ((buffers (or (ibuffer-get-marked-buffers)
+                        (list (ibuffer-current-buffer))))
+           (remove-p (< (prefix-numeric-value arg) 0))
+	   (action-fn (if remove-p
+			  #'gptel-context-remove
+			#'gptel-context--add-buffer)))
+      (mapc action-fn buffers)))
    ;; If in an image buffer
    ((and (derived-mode-p 'image-mode)
 	 (gptel--model-capable-p 'media)
@@ -198,15 +212,21 @@ context."
    (t ; Default behavior
     (if (gptel-context--at-point)
         (progn
-          (gptel-context-remove (car (gptel-context--in-region (current-buffer)
-                                                               (max (point-min) (1- (point)))
-                                                               (point))))
+          (gptel-context-remove
+           (car (gptel-context--in-region (current-buffer)
+                                          (max (point-min) (1- (point)))
+                                          (point))))
           (message "Context under point has been removed."))
-      (gptel-context--add-region (current-buffer) (point-min) (point-max) t)
-      (message "Current buffer added as context.")))))
+      (gptel-context--add-buffer (current-buffer))))))
 
 ;;;###autoload (autoload 'gptel-add "gptel-context" "Add/remove regions or buffers from gptel's context." t)
 (defalias 'gptel-add #'gptel-context-add)
+
+(defun gptel-context--add-buffer (buffer)
+  "Add BUFFER to context."
+  (with-current-buffer buffer
+    (gptel-context--add-region (current-buffer) (point-min) (point-max) t))
+  (message "Buffer \"%s\" added to context." (buffer-name buffer)))
 
 (defun gptel-context--add-text-file (path)
   "Add text file at PATH to context."
@@ -300,16 +320,21 @@ If selection is active, removes all contexts within selection.
 If CONTEXT is a directory, recursively removes all files in it."
   (cond
    ((overlayp context)                  ;Overlay in buffer
-    (delete-overlay context)
-    ;; FIXME: Quadratic cost when clearing a bunch of contexts at once
-    (unless
-        (cl-loop
-         for ov in
-         (plist-get (alist-get (current-buffer) gptel-context) :overlays)
-         thereis (overlay-start ov))
-      (setf (alist-get (current-buffer) gptel-context nil 'remove) nil)))
+    (when-let* ((buf (overlay-buffer context)))
+      (delete-overlay context)
+      ;; FIXME: Quadratic cost when clearing a bunch of contexts at once
+      (unless
+          (cl-loop
+           for ov in
+           (plist-get (alist-get buf gptel-context) :overlays)
+           thereis (overlay-start ov))
+        (setf (alist-get buf gptel-context nil 'remove) nil))))
    ((bufferp context)                   ;Full buffer
-    (setf (alist-get context gptel-context nil 'remove) nil))
+    (setf (alist-get context gptel-context nil 'remove) nil)
+    (when (buffer-live-p context)
+      (with-current-buffer context
+        (without-restriction
+          (remove-overlays nil nil 'gptel-context t)))))
    ((stringp context)                   ;file or directory
     (if (file-directory-p context)
         (gptel-context--add-directory context 'remove)
@@ -335,12 +360,12 @@ afterwards."
     (when (or (not verbose) (y-or-n-p "Remove all context? "))
       (cl-loop
        for context in gptel-context
-       for (source . ovs) = (ensure-list context)
-       if (cl-every #'overlayp ovs) do           ;Buffers and buffer regions
-       (mapc #'gptel-context-remove ovs)
+       for (source . spec) = (ensure-list context)
+       if (bufferp source) do           ;Buffers and buffer regions
+       (mapc #'gptel-context-remove (plist-get spec :overlays))
        else do (gptel-context-remove source) ;files or other types
-       finally do (setq gptel-context nil)))
-    (when verbose (message "Removed all gptel context sources."))))
+       finally do (setq gptel-context nil))
+      (when verbose (message "Removed all gptel context sources.")))))
 
 ;;; Context wrap
 (defun gptel-context--make-overlay (start end &optional advance)
@@ -486,18 +511,12 @@ Ignore overlays, buffers and files that are not live or readable."
         ((pred buffer-live-p) (push (list entry) res)))) ;Just a buffer
     res))
 
-(defun gptel-context--insert-buffer-string (buffer context-data &optional header)
-  "Insert at point a context string from CONTEXT-DATA in BUFFER.
+(defun gptel-context--collect-regions (buffer context-data)
+  "Collect BUFFER regions from CONTEXT-DATA specification.
 
-CONTEXT-DATA is a plist with keys :overlays, :lines and :bounds to
-include specific overlays, line ranges or position bounds instead of the
-entire buffer.  See `gptel-context'.
-
-HEADER is an optional header to insert before the contents."
-  (let ((is-top-snippet t)
-        (previous-line 1)
-        regions)
-    ;; Collect all regions into a unified list of (start . end) pairs
+CONTEXT-DATA is a plist with keys :overlays, :lines and :bounds.
+Returns a sorted list of (START . END) position pairs."
+  (let (regions)
     (with-current-buffer buffer
       (without-restriction
         ;; Collect overlays
@@ -522,10 +541,21 @@ HEADER is an optional header to insert before the contents."
                                (forward-line (cdr pair))
                                (point)))
                   regions)))))
-
     ;; TODO: Update sort for Emacs 28+ calling convention
-    ;; Sort by start position.  In-place, but assign to be sure.
-    (setq regions (sort regions (lambda (a b) (< (car a) (car b)))))
+    ;; Sort by start position.
+    (sort regions (lambda (a b) (< (car a) (car b))))))
+
+(defun gptel-context--insert-buffer-string (buffer context-data &optional header)
+  "Insert at point a context string from CONTEXT-DATA in BUFFER.
+
+CONTEXT-DATA is a plist with keys :overlays, :lines and :bounds to
+include specific overlays, line ranges or position bounds instead of the
+entire buffer.  See `gptel-context'.
+
+HEADER is an optional header to insert before the contents."
+  (let ((is-top-snippet t)
+        (previous-line 1)
+        (regions (gptel-context--collect-regions buffer context-data)))
 
     ;; Insert header
     (insert (or header (format "In buffer `%s`:\n\n```"(buffer-name buffer)))
@@ -810,7 +840,7 @@ If non-nil, indicates backward movement.")
   ;; FIXME(context): This should run in the buffer from which the context
   ;; inspection buffer was visited.
   ;; Update contexts and revert buffer (#482)
-  (setq gptel-context (gptel-context--collect))
+  (setq gptel-context (nreverse (gptel-context--collect)))
   (gptel-context-quit))
 
 (provide 'gptel-context)

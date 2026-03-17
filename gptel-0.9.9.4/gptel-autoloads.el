@@ -282,7 +282,7 @@ for.
 
 ;;; Generated autoloads from gptel-integrations.el
 
-(register-definition-prefixes "gptel-integrations" '("gptel-mcp-"))
+(register-definition-prefixes "gptel-integrations" '("gptel-"))
 
 
 ;;; Generated autoloads from gptel-kagi.el
