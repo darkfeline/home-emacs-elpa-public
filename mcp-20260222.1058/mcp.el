@@ -3,8 +3,8 @@
 ;; Copyright (C) 2025  lizqwer scott
 
 ;; Author: lizqwer scott <lizqwerscott@gmail.com>
-;; Package-Version: 20260121.452
-;; Package-Revision: 2e947d2ddc8c
+;; Package-Version: 20260222.1058
+;; Package-Revision: 5c105a8db470
 ;; Package-Requires: ((emacs "30.1") (jsonrpc "1.0.25"))
 ;; Keywords: tools
 ;; URL: https://github.com/lizqwerscott/mcp.el
@@ -1375,13 +1375,13 @@ succeeds, or ERROR-CALLBACK if it fails."
   "Get list of resource templates from the MCP server using the CONNECTION.
 CALLBACK is a function to call with the result.
 ERROR-CALLBACK is a function to call on error."
-  (mcp--list-items connection :resources/templates/list :templateResources '-template-resources callback error-callback nil))
+  (mcp--list-items connection :resources/templates/list :resourceTemplates '-template-resources callback error-callback nil))
 
 (defun mcp-sync-list-resource-templates (connection &optional callback error-callback)
   "Get list of resource templates from the MCP server using the CONNECTION.
 CALLBACK is a function to call with the result.
 ERROR-CALLBACK is a function to call on error."
-  (mcp--list-items connection :resources/templates/list :templateResources '-template-resources callback error-callback 'sync))
+  (mcp--list-items connection :resources/templates/list :resourceTemplates '-template-resources callback error-callback 'sync))
 
 (defun mcp-set-roots (name roots)
   "Set the roots for MCP server NAME to ROOTS.
