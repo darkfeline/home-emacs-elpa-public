@@ -2,8 +2,8 @@
 ;; Copyright (C) 2015-2026 jack angers
 ;; Author: jack angers and contributors
 ;; Url: https://github.com/jacktasia/dumb-jump
-;; Package-Version: 20260308.619
-;; Package-Revision: a2285fc46c41
+;; Package-Version: 20260406.1824
+;; Package-Revision: 9ce4598e9c48
 ;; Package-Requires: ((emacs "26.1"))
 ;; Keywords: programming
 
@@ -2538,7 +2538,7 @@ If nil add also the language type of current src block."
                    "defmodule Foo.Bar.test do"))
 
     (:language "elixir" :type "module"
-           :supports ("ag" "grep" "rg" "git-grep") :
+           :supports ("ag" "grep" "rg" "git-grep")
            :regex "defprotocol\\s+(\\w+\\.)*JJJ\\s+"
            :tests ("defprotocol test do"
                    "defprotocol Foo.Bar.test do"))
