@@ -26,11 +26,17 @@ Major mode for editing Bazel module files.
 
 (fn)" t)
 (add-to-list 'auto-mode-alist (cons (rx "/MODULE.bazel" eos) #'bazel-module-mode))
+(autoload 'bazel-repo-mode "bazel" "\
+Major mode for editing REPO.bazel files.
+
+(fn)" t)
+(add-to-list 'auto-mode-alist (cons (rx "/REPO.bazel" eos) #'bazel-repo-mode))
 (autoload 'bazel-starlark-mode "bazel" "\
 Major mode for editing Bazel Starlark files.
 
 (fn)" t)
 (add-to-list 'auto-mode-alist (cons (rx 47 (+ nonl) ".bzl" eos) #'bazel-starlark-mode))
+(add-to-list 'auto-mode-alist (cons (rx "/MODULE.bazel.lock" eos) #'js-json-mode))
 (autoload 'bazelrc-mode "bazel" "\
 Major mode for editing .bazelrc files.
 
