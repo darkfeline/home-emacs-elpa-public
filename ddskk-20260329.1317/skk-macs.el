@@ -28,59 +28,10 @@
 
 ;;; Code:
 
-(require 'advice)
+(require 'nadvice)
 (require 'skk)
 
 ;;;; macros
-
-(defmacro skk-defadvice (function &rest everything-else)
-  "Defines a piece of advice for FUNCTION (a symbol).
-This is like `defadvice', but warns if FUNCTION is a subr command and advice
-doesn't give arguments of `interactive'. See `interactive' for details."
-  (let ((origfunc (and (fboundp function)
-                       (if (ad-is-advised function)
-                           (ad-get-orig-definition function)
-                         (symbol-function function))))
-        interactive)
-    (unless
-        (or (not origfunc)
-            (not (subrp origfunc))
-            (memq function ; XXX possibilly Emacs version dependent
-                  ;; built-in commands which do not have interactive specs.
-                  '(abort-recursive-edit
-                    bury-buffer
-                    delete-frame
-                    delete-window
-                    exit-minibuffer)))
-      ;; check if advice definition has a interactive call or not.
-      (setq interactive
-            (cond
-             ((and (stringp (nth 1 everything-else)) ; have document
-                   (eq 'interactive (car-safe (nth 2 everything-else))))
-              (nth 2 everything-else))
-             ((eq 'interactive (car-safe (nth 1 everything-else)))
-              (nth 1 everything-else))))
-      (cond
-       ((and (commandp origfunc)
-             (not interactive))
-        (message
-         "\
-*** WARNING: Adding advice to subr %s\
- without mirroring its interactive spec ***"
-         function))
-       ((and (not (commandp origfunc))
-             interactive)
-        (setq everything-else (delq interactive everything-else))
-        (message
-         "\
-*** WARNING: Deleted interactive call from %s advice\
- as %s is not a subr command ***"
-         function function))))
-    `(defadvice ,function ,@everything-else)))
-
-;;;###autoload
-(put 'skk-defadvice 'lisp-indent-function 'defun)
-(def-edebug-spec skk-defadvice defadvice)
 
 (defmacro skk-save-point (&rest body)
   `(let ((skk-save-point (point-marker)))
@@ -186,19 +137,7 @@ MARKER が nil だったら、新規マーカーを作って代入する。"
        (delete-overlay o))
      (setq ,list nil)))
 
-(defmacro skk-help-make-usage (symbol arglist)
-  (cond ((fboundp 'help--make-usage)
-         ;; GNU Emacs 25.1 から
-         `(help--make-usage ,symbol ,arglist))
-
-        (t
-         ;; GNU Emacs 24.1 まで
-         `(help-make-usage ,symbol ,arglist))))
-
 ;;; functions.
-
-(defmacro string-to-int-list (string)
-  `(mapcar #'identity ,string))
 
 (defun event-to-character (event)
   "Return the character approximation to the given event object.
@@ -810,17 +749,6 @@ Return the modified ALIST."
 (defun skk-detach-extent (object)
   (when (overlayp object)
     (delete-overlay object)))
-
-(defun skk-time-difference (a b)
-  ;; from type-break.el.  Welcome!
-  ;; Compute the difference, in seconds, between a and b, two structures
-  ;; similar to those returned by `current-time'.
-  ;; Use addition rather than logand since that is more robust; the low 16
-  ;; bits of the seconds might have been incremented, making it more than 16
-  ;; bits wide.
-  (+ (ash (- (car b) (car a)) 16)
-     (- (nth 1 b) (nth 1 a))))
-
 
 (provide 'skk-macs)
 
