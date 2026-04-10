@@ -16,7 +16,7 @@
 
 
 (fn &optional BUFFER)")
-(register-definition-prefixes "ccc" '("ccc-"))
+(register-definition-prefixes "ccc" '("ccc-" "custom-theme-checkbox-toggle" "disable-theme" "enable-theme" "modify-frame-parameters"))
 
 ;;; End of scraped data
 

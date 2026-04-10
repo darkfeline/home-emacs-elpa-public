@@ -7,8 +7,8 @@
 
 ;; Author: Masatake YAMATO <masata-y@is.aist-nara.ac.jp>
 ;; Maintainer: SKK Development Team
-;; Package-Version: 20210501.820
-;; Package-Revision: 36fb9f7e527f
+;; Package-Version: 20260322.1316
+;; Package-Revision: 29a290bb62fa
 ;; URL: https://github.com/skk-dev/ddskk
 ;; URL: https://github.com/skk-dev/ddskk/blob/master/READMEs/README.ccc.org
 ;; Keywords: cursor
@@ -40,7 +40,7 @@
 (require 'faces)                        ; read-color, color-values
 
 (eval-when-compile
-  (require 'advice))
+  (require 'nadvice))
 
 ;; Internal variables.
 (defvar ccc-buffer-local-cursor-color nil)
@@ -189,7 +189,7 @@ This function is the same as `facemenu-color-equal'"
                    ccc-buffer-local-cursor-color
                  (ccc-frame-cursor-color))))
     (when (and (stringp color)
-               (x-color-defined-p color)
+               (color-defined-p color)
                (not (ccc-color-equal color (ccc-current-cursor-color))))
       (set-cursor-color color))))
 
@@ -221,7 +221,7 @@ This function is the same as `facemenu-color-equal'"
                  (ccc-frame-foreground-color))))
     (when (and window-system
                (stringp color)
-               (x-color-defined-p color)
+               (color-defined-p color)
                (not (ccc-color-equal color (ccc-current-foreground-color))))
       (set-foreground-color color))))
 
@@ -253,7 +253,7 @@ This function is the same as `facemenu-color-equal'"
                  (ccc-frame-background-color))))
     (when (and window-system
                (stringp color)
-               (x-color-defined-p color)
+               (color-defined-p color)
                (not (ccc-color-equal color (ccc-current-background-color))))
       (set-background-color color))))
 
@@ -272,22 +272,23 @@ This function is the same as `facemenu-color-equal'"
   (ccc-set-frame-background-color (selected-frame) (ccc-current-background-color)))
 
 ;; Advices.
-(defadvice modify-frame-parameters (after ccc-ad activate)
-  (when (and (assq 'cursor-color (ad-get-arg 1))
+(define-advice modify-frame-parameters (:after (frame alist) ccc-ad)
+  (when (and (assq 'cursor-color alist)
              (null ccc-buffer-local-cursor-color))
-    (ccc-set-frame-cursor-color (ad-get-arg 0)
-                                (cdr (assq 'cursor-color (ad-get-arg 1)))))
-  (when (and (assq 'foreground-color (ad-get-arg 1))
+    (ccc-set-frame-cursor-color frame
+                                (cdr (assq 'cursor-color alist))))
+  (when (and (assq 'foreground-color alist)
              (null ccc-buffer-local-foreground-color))
-    (ccc-set-frame-foreground-color (ad-get-arg 0)
-                                    (cdr (assq 'foreground-color (ad-get-arg 1)))))
-  (when (and (assq 'background-color (ad-get-arg 1))
+    (ccc-set-frame-foreground-color frame
+                                    (cdr (assq 'foreground-color alist))))
+  (when (and (assq 'background-color alist)
              (null ccc-buffer-local-background-color))
-    (ccc-set-frame-background-color (ad-get-arg 0)
+    (ccc-set-frame-background-color frame
                                     (cdr (assq 'background-color
-                                               (ad-get-arg 1))))))
+                                               alist)))))
 
-(defadvice custom-theme-checkbox-toggle (after ccc-ad activate)
+(define-advice custom-theme-checkbox-toggle
+    (:after (widget &optional event) ccc-ad)
   (setq ccc-default-cursor-color (ccc-current-cursor-color)
         ccc-default-foreground-color (ccc-current-foreground-color)
         ccc-default-background-color (ccc-current-background-color))
@@ -295,10 +296,10 @@ This function is the same as `facemenu-color-equal'"
   (ccc-set-frame-foreground-color (selected-frame) (ccc-current-foreground-color))
   (ccc-set-frame-background-color (selected-frame) (ccc-current-background-color)))
 
-(defadvice enable-theme (after ccc-ad activate)
+(define-advice enable-theme (:after (theme) ccc-ad)
   (ccc-setup-current-colors))
 
-(defadvice disable-theme (after ccc-ad activate)
+(define-advice disable-theme (:after (theme) ccc-ad)
   (ccc-setup-current-colors))
 
 (provide 'ccc)
