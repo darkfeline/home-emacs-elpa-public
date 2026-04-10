@@ -3,8 +3,8 @@
 ;; Copyright (C) 2017-2020 by Lukas Fürmetz & Contributors
 ;;
 ;; Author: Lukas Fürmetz <fuermetz@mailbox.org>
-;; Package-Version: 20251119.1653
-;; Package-Revision: a01a2894a1c1
+;; Package-Version: 20260406.134
+;; Package-Revision: 54c29d14bca0
 ;; URL: https://github.com/akermu/emacs-libvterm
 ;; Keywords: terminals
 ;; Package-Requires: ((emacs "25.1"))
@@ -1244,12 +1244,9 @@ Argument ARG is passed to `yank'"
 But when clicking to the unused area below the last prompt,
 move the cursor to the prompt area."
   (interactive "e\np")
-  (let ((pt (mouse-set-point event promote-to-region)))
-    (if (= (count-words pt (point-max)) 0)
-        (vterm-reset-cursor-point)
-      pt))
-  ;; Otherwise it selects text for every other click
-  (keyboard-quit))
+  (if (> (count-words (posn-point (event-end event)) (point-max)) 0)
+      (mouse-set-point event promote-to-region)
+    (vterm-reset-cursor-point)))
 
 (defun vterm-send-string (string &optional paste-p)
   "Send the string STRING to vterm.
