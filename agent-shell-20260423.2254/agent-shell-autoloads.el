@@ -165,6 +165,11 @@ If currently visiting an `agent-shell', transfer latest input." t)
 (register-definition-prefixes "agent-shell-goose" '("agent-shell-goose-"))
 
 
+;;; Generated autoloads from agent-shell-kimi.el
+
+(register-definition-prefixes "agent-shell-kimi" '("agent-shell-kimi-"))
+
+
 ;;; Generated autoloads from agent-shell-kiro.el
 
 (register-definition-prefixes "agent-shell-kiro" '("agent-shell-kiro-"))
