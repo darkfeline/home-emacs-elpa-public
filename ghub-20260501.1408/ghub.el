@@ -6,12 +6,12 @@
 ;; Homepage: https://github.com/magit/ghub
 ;; Keywords: tools
 
-;; Package-Version: 20260423.1634
-;; Package-Revision: 2b6df7c3f958
+;; Package-Version: 20260501.1408
+;; Package-Revision: c438abc86596
 ;; Package-Requires: (
 ;;     (emacs   "29.1")
 ;;     (compat  "30.1")
-;;     (cond-let "0.2")
+;;     (cond-let "1.0")
 ;;     (llama    "1.0")
 ;;     (treepy "0.1.3"))
 
@@ -775,18 +775,20 @@ or (info \"(ghub)Getting Started\") for instructions."
     (or (ghub--git-get (format "%s.host" forge))
         (alist-get forge ghub-default-host-alist))))
 
-(cl-defmethod ghub--username (host &optional forge compat)
+(cl-defmethod ghub--username (host &optional forge)
   (let* ((forge (or forge 'github))
          (host (or host (ghub--host forge)))
+         (host (if (string-match "/" host)
+                   (substring host 0 (match-beginning 0))
+                 host))
          (var (format "%s.%s.user" forge host))
          (default-var (format "%s.user" forge)))
     (cond ((ghub--git-get var))
-          ((and compat (ghub--git-get (format "%s.%s.user" forge compat))))
           ((not (equal host (alist-get forge ghub-default-host-alist)))
-           (user-error "Cannot determine username; `%s' is unset" var))
+           (error "Cannot determine username; `%s' is unset" var))
           ((ghub--git-get default-var))
-          ((user-error "%s; `%s' and `%s' are both unset"
-                       "Cannot determine username" var default-var)))))
+          ((error "Cannot determine username; `%s' and `%s' are both unset"
+                  var default-var)))))
 
 (defun ghub--ident (username package)
   (format "%s^%s" username package))
