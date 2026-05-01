@@ -113,7 +113,7 @@ parameters (as plist keys) and values supported by the API.  Use
 these to set parameters that gptel does not provide user options
 for.
 
-(fn NAME &key CURL-ARGS STREAM KEY REQUEST-PARAMS (HEADER (lambda nil (when-let* ((key (gptel--get-api-key))) \\=`((\"x-api-key\" \\=\\, key) (\"anthropic-version\" . \"2023-06-01\") (\"anthropic-beta\" . \"extended-cache-ttl-2025-04-11\"))))) (MODELS gptel--anthropic-models) (HOST \"api.anthropic.com\") (PROTOCOL \"https\") (ENDPOINT \"/v1/messages\"))")
+(fn NAME &key CURL-ARGS STREAM KEY REQUEST-PARAMS (HEADER (lambda (_info) (when-let* ((key (gptel--get-api-key))) \\=`((\"x-api-key\" \\=\\, key) (\"anthropic-version\" . \"2023-06-01\") (\"anthropic-beta\" . \"extended-cache-ttl-2025-04-11\"))))) (MODELS gptel--anthropic-models) (HOST \"api.anthropic.com\") (PROTOCOL \"https\") (ENDPOINT \"/v1/messages\"))")
 (function-put 'gptel-make-anthropic 'lisp-indent-function 1)
 (register-definition-prefixes "gptel-anthropic" '("gptel--anthropic-"))
 
@@ -216,7 +216,7 @@ parameters (as plist keys) and values supported by the API.  Use
 these to set parameters that gptel does not provide user options
 for.
 
-(fn NAME &key CURL-ARGS HEADER KEY REQUEST-PARAMS (STREAM nil) (HOST \"generativelanguage.googleapis.com\") (PROTOCOL \"https\") (MODELS gptel--gemini-models) (ENDPOINT \"/v1beta/models\"))")
+(fn NAME &key CURL-ARGS KEY REQUEST-PARAMS (STREAM nil) (HEADER (lambda (_info) (when-let* ((key (gptel--get-api-key))) \\=`((\"X-goog-api-key\" \\=\\, key))))) (HOST \"generativelanguage.googleapis.com\") (PROTOCOL \"https\") (MODELS gptel--gemini-models) (ENDPOINT \"/v1beta/models\"))")
 (function-put 'gptel-make-gemini 'lisp-indent-function 1)
 (register-definition-prefixes "gptel-gemini" '("gptel--gemini-"))
 
@@ -275,7 +275,7 @@ parameters (as plist keys) and values supported by the API.  Use
 these to set parameters that gptel does not provide user options
 for.
 
-(fn NAME &key CURL-ARGS REQUEST-PARAMS (HEADER (lambda nil (gptel--gh-auth) \\=`((\"openai-intent\" . \"conversation-panel\") (\"authorization\" \\=\\, (concat \"Bearer \" (plist-get (gptel--gh-token gptel-backend) :token))) (\"x-request-id\" \\=\\, (gptel--gh-uuid)) (\"vscode-sessionid\" \\=\\, (or (gptel--gh-sessionid gptel-backend) \"\")) (\"vscode-machineid\" \\=\\, (or (gptel--gh-machineid gptel-backend) \"\")) ,@(when (and gptel-track-media (gptel--model-capable-p \\='media)) \\=`((\"copilot-vision-request\" . \"true\"))) (\"copilot-integration-id\" . \"vscode-chat\")))) (HOST \"api.githubcopilot.com\") (PROTOCOL \"https\") (ENDPOINT \"/chat/completions\") (STREAM t) (MODELS gptel--gh-models))")
+(fn NAME &key CURL-ARGS REQUEST-PARAMS (HEADER (lambda (info) (gptel--gh-auth) \\=`((\"openai-intent\" . \"conversation-panel\") (\"authorization\" \\=\\, (concat \"Bearer \" (plist-get (gptel--gh-token gptel-backend) :token))) (\"x-initiator\" \\=\\, (or (plist-get info :gh-initiator) (prog1 \"user\" (plist-put info :gh-initiator \"agent\")))) (\"x-request-id\" \\=\\, (gptel--gh-uuid)) (\"vscode-sessionid\" \\=\\, (or (gptel--gh-sessionid gptel-backend) \"\")) (\"vscode-machineid\" \\=\\, (or (gptel--gh-machineid gptel-backend) \"\")) ,@(when (and gptel-track-media (gptel--model-capable-p \\='media)) \\=`((\"copilot-vision-request\" . \"true\"))) (\"copilot-integration-id\" . \"vscode-chat\")))) (HOST \"api.githubcopilot.com\") (PROTOCOL \"https\") (ENDPOINT \"/chat/completions\") (STREAM t) (MODELS gptel--gh-models))")
 (function-put 'gptel-make-gh-copilot 'lisp-indent-function 1)
 (register-definition-prefixes "gptel-gh" '("gptel-"))
 
@@ -319,7 +319,7 @@ Example:
 
  (gptel-make-kagi \"Kagi\" :key my-kagi-key)
 
-(fn NAME &key CURL-ARGS STREAM KEY (HOST \"kagi.com\") (HEADER (lambda nil \\=`((\"Authorization\" \\=\\, (concat \"Bot \" (gptel--get-api-key)))))) (MODELS \\='((fastgpt :capabilities (nosystem)) (summarize:cecil :capabilities (nosystem)) (summarize:agnes :capabilities (nosystem)) (summarize:daphne :capabilities (nosystem)) (summarize:muriel :capabilities (nosystem)))) (PROTOCOL \"https\") (ENDPOINT \"/api/v0/\"))")
+(fn NAME &key CURL-ARGS STREAM KEY (HOST \"kagi.com\") (HEADER (lambda (_info) \\=`((\"Authorization\" \\=\\, (concat \"Bot \" (gptel--get-api-key)))))) (MODELS \\='((fastgpt :capabilities (nosystem)) (summarize:cecil :capabilities (nosystem)) (summarize:agnes :capabilities (nosystem)) (summarize:daphne :capabilities (nosystem)) (summarize:muriel :capabilities (nosystem)))) (PROTOCOL \"https\") (ENDPOINT \"/api/v0/\"))")
 (function-put 'gptel-make-kagi 'lisp-indent-function 1)
 
 
@@ -444,7 +444,7 @@ parameters (as plist keys) and values supported by the API.  Use
 these to set parameters that gptel does not provide user options
 for.
 
-(fn NAME &key CURL-ARGS MODELS STREAM KEY REQUEST-PARAMS (HEADER (lambda nil (when-let* ((key (gptel--get-api-key))) \\=`((\"Authorization\" \\=\\, (concat \"Bearer \" key)))))) (HOST \"api.openai.com\") (PROTOCOL \"https\") (ENDPOINT \"/v1/chat/completions\"))")
+(fn NAME &key CURL-ARGS (MODELS gptel--openai-models) STREAM KEY REQUEST-PARAMS (HEADER (lambda (_info) (when-let* ((key (gptel--get-api-key))) \\=`((\"Authorization\" \\=\\, (concat \"Bearer \" key)))))) (HOST \"api.openai.com\") (PROTOCOL \"https\") ENDPOINT)")
 (function-put 'gptel-make-openai 'lisp-indent-function 1)
 (autoload 'gptel-make-azure "gptel-openai" "\
 Register an Azure backend for gptel with NAME.
@@ -489,7 +489,7 @@ Example:
   :stream t
   :models \\='(gpt-3.5-turbo gpt-4))
 
-(fn NAME &key CURL-ARGS HOST (PROTOCOL \"https\") (HEADER (lambda nil \\=`((\"api-key\" \\=\\, (gptel--get-api-key))))) (KEY \\='gptel-api-key) MODELS STREAM ENDPOINT REQUEST-PARAMS)")
+(fn NAME &key CURL-ARGS HOST (PROTOCOL \"https\") (HEADER (lambda (_info) \\=`((\"api-key\" \\=\\, (gptel--get-api-key))))) (KEY \\='gptel-api-key) MODELS STREAM ENDPOINT REQUEST-PARAMS)")
 (function-put 'gptel-make-azure 'lisp-indent-function 1)
 (defalias 'gptel-make-gpt4all 'gptel-make-openai "\
 Register a GPT4All backend for gptel with NAME.
@@ -532,7 +532,7 @@ Example:
  :protocol \"http\"
  :host \"localhost:4891\"
  :models \\='(mistral-7b-openorca.Q4_0.gguf))")
-(register-definition-prefixes "gptel-openai" '("gptel-"))
+(register-definition-prefixes "gptel-openai" '("gptel--openai-"))
 
 
 ;;; Generated autoloads from gptel-openai-extras.el
@@ -572,7 +572,7 @@ parameters (as plist keys) and values supported by the API.  Use
 these to set parameters that gptel does not provide user options
 for.
 
-(fn NAME &key CURL-ARGS STREAM KEY REQUEST-PARAMS (HEADER (lambda nil (when-let* ((key (gptel--get-api-key))) \\=`((\"Authorization\" \\=\\, (concat \"Bearer \" key)))))) (HOST \"localhost:8001\") (PROTOCOL \"http\") (MODELS \\='(private-gpt)) (ENDPOINT \"/v1/chat/completions\") (CONTEXT t) (SOURCES t))")
+(fn NAME &key CURL-ARGS STREAM KEY REQUEST-PARAMS (HEADER (lambda (_info) (when-let* ((key (gptel--get-api-key))) \\=`((\"Authorization\" \\=\\, (concat \"Bearer \" key)))))) (HOST \"localhost:8001\") (PROTOCOL \"http\") (MODELS \\='(private-gpt)) (ENDPOINT \"/v1/chat/completions\") (CONTEXT t) (SOURCES t))")
 (function-put 'gptel-make-privategpt 'lisp-indent-function 1)
 (autoload 'gptel-make-perplexity "gptel-openai-extras" "\
 Register a Perplexity backend for gptel with NAME.
@@ -601,14 +601,14 @@ returns the key.
 REQUEST-PARAMS (optional) is a plist of additional HTTP request
 parameters.
 
-(fn NAME &key CURL-ARGS STREAM KEY (HEADER (lambda nil (when-let* ((key (gptel--get-api-key))) \\=`((\"Authorization\" \\=\\, (concat \"Bearer \" key)))))) (HOST \"api.perplexity.ai\") (PROTOCOL \"https\") (MODELS \\='(sonar sonar-pro sonar-reasoning sonar-reasoning-pro sonar-deep-research)) (ENDPOINT \"/chat/completions\") REQUEST-PARAMS)")
+(fn NAME &key CURL-ARGS STREAM KEY (HEADER (lambda (_info) (when-let* ((key (gptel--get-api-key))) \\=`((\"Authorization\" \\=\\, (concat \"Bearer \" key)))))) (HOST \"api.perplexity.ai\") (PROTOCOL \"https\") (MODELS \\='(sonar sonar-pro sonar-reasoning sonar-reasoning-pro sonar-deep-research)) (ENDPOINT \"/chat/completions\") REQUEST-PARAMS)")
 (function-put 'gptel-make-perplexity 'lisp-indent-function 1)
 (autoload 'gptel-make-deepseek "gptel-openai-extras" "\
 Register a DeepSeek backend for gptel with NAME.
 
 For the meanings of the keyword arguments, see `gptel-make-openai'.
 
-(fn NAME &key CURL-ARGS STREAM KEY REQUEST-PARAMS (HEADER (lambda nil (when-let* ((key (gptel--get-api-key))) \\=`((\"Authorization\" \\=\\, (concat \"Bearer \" key)))))) (HOST \"api.deepseek.com\") (PROTOCOL \"https\") (ENDPOINT \"/v1/chat/completions\") (MODELS \\='((deepseek-reasoner :capabilities (tool reasoning) :context-window 128 :input-cost 0.56 :output-cost 1.68) (deepseek-chat :capabilities (tool) :context-window 128 :input-cost 0.56 :output-cost 1.68))))")
+(fn NAME &key CURL-ARGS STREAM KEY REQUEST-PARAMS (HEADER (lambda (_info) (when-let* ((key (gptel--get-api-key))) \\=`((\"Authorization\" \\=\\, (concat \"Bearer \" key)))))) (HOST \"api.deepseek.com\") (PROTOCOL \"https\") (ENDPOINT \"/v1/chat/completions\") (MODELS \\='((deepseek-reasoner :capabilities (tool reasoning) :context-window 128 :input-cost 0.28 :output-cost 0.42) (deepseek-chat :capabilities (tool) :context-window 128 :input-cost 0.28 :output-cost 0.42) (deepseek-v4-flash :capabilities (tool reasoning) :context-window 1000 :input-cost 0.14 :output-cost 0.28) (deepseek-v4-pro :capabilities (tool reasoning) :context-window 1000 :input-cost 1.74 :output-cost 3.48))))")
 (function-put 'gptel-make-deepseek 'lisp-indent-function 1)
 (autoload 'gptel-make-xai "gptel-openai-extras" "\
 Register an xAI backend for gptel with NAME.
@@ -624,9 +624,73 @@ false.
 The other keyword arguments are all optional.  For their meanings
 see `gptel-make-openai'.
 
-(fn NAME &key CURL-ARGS STREAM KEY REQUEST-PARAMS (HEADER (lambda nil (when-let* ((key (gptel--get-api-key))) \\=`((\"Authorization\" \\=\\, (concat \"Bearer \" key)))))) (HOST \"api.x.ai\") (PROTOCOL \"https\") (ENDPOINT \"/v1/chat/completions\") (MODELS \\='((grok-4 :description \"Grok Flagship model\" :capabilities (tool-use json reasoning) :context-window 256 :input-cost 3 :output-cost 15) (grok-code-fast-1 :description \"Fast reasoning model for agentic coding\" :capabilities (tool-use json reasoning) :context-window 256 :input-cost 0.2 :output-cost 1.5) (grok-3 :description \"Grok 3\" :capabilities (tool-use json reasoning) :context-window 131 :input-cost 3 :output-cost 15) (grok-3-fast :description \"Faster Grok 3\" :capabilities (tool-use json reasoning) :context-window 131 :input-cost 5 :output-cost 25) (grok-3-mini :description \"Mini Grok 3\" :capabilities (tool-use json reasoning) :context-window 131 :input-cost 0.3 :output-cost 0.5) (grok-3-mini-fast :description \"Faster mini Grok 3\" :capabilities (tool-use json reasoning) :context-window 131072 :input-cost 0.6 :output-cost 4) (grok-2-vision-1212 :description \"Grok 2 Vision\" :capabilities (tool-use json media) :mime-types (\"image/jpeg\" \"image/png\" \"image/gif\" \"image/webp\") :context-window 32768 :input-cost 2 :output-cost 10))))")
+(fn NAME &key CURL-ARGS STREAM KEY REQUEST-PARAMS (HEADER (lambda (_info) (when-let* ((key (gptel--get-api-key))) \\=`((\"Authorization\" \\=\\, (concat \"Bearer \" key)))))) (HOST \"api.x.ai\") (PROTOCOL \"https\") (ENDPOINT \"/v1/chat/completions\") (MODELS \\='((grok-4-1-fast-reasoning :description \"Fast tool-calling model\" :capabilities (tool-use json reasoning) :context-window 2000 :input-cost 0.2 :output-cost 0.5) (grok-4-1-fast-non-reasoning :description \"Fast tool-calling model (non-reasoning)\" :capabilities (tool-use json) :context-window 2000 :input-cost 0.2 :output-cost 0.5) (grok-code-fast-1 :description \"Fast reasoning model for agentic coding\" :capabilities (tool-use json reasoning) :context-window 256 :input-cost 0.2 :output-cost 1.5) (grok-4-fast-reasoning :description \"Fast tool-calling model\" :capabilities (tool-use json reasoning) :context-window 2000 :input-cost 0.2 :output-cost 0.5) (grok-4-fast-non-reasoning :description \"Fast tool-calling model (non-reasoning)\" :capabilities (tool-use json) :context-window 2000 :input-cost 0.2 :output-cost 0.5) (grok-4 :description \"Grok Flagship model\" :capabilities (tool-use json reasoning) :context-window 256 :input-cost 3 :output-cost 15) (grok-3-mini :description \"Mini Grok 3\" :capabilities (tool-use json reasoning) :context-window 131 :input-cost 0.3 :output-cost 0.5) (grok-3 :description \"Grok 3\" :capabilities (tool-use json reasoning) :context-window 131 :input-cost 3 :output-cost 15) (grok-2-vision-1212 :description \"Grok 2 Vision\" :capabilities (tool-use json media) :mime-types (\"image/jpeg\" \"image/png\" \"image/gif\" \"image/webp\") :context-window 32 :input-cost 2 :output-cost 10))))")
 (function-put 'gptel-make-xai 'lisp-indent-function 1)
 (register-definition-prefixes "gptel-openai-extras" '("gptel--p"))
+
+
+;;; Generated autoloads from gptel-openai-responses.el
+
+(autoload 'gptel-make-openai-responses "gptel-openai-responses" "\
+Register an OpenAI Responses API backend for gptel with NAME.
+
+The Responses API is OpenAI's new API for agentic applications that
+provides built-in tools like web search, code interpreter, and file
+search.
+
+Keyword arguments:
+
+CURL-ARGS (optional) is a list of additional Curl arguments.
+
+HOST (optional) is the API host, typically \"api.openai.com\".
+
+MODELS is a list of available model names, as symbols.
+Additionally, you can specify supported LLM capabilities like
+vision or tool-use by appending a plist to the model with more
+information, in the form
+
+ (model-name . plist)
+
+For a list of currently recognized plist keys, see
+`gptel--openai-models'.
+
+STREAM is a boolean to toggle streaming responses, defaults to
+false.
+
+PROTOCOL (optional) specifies the protocol, https by default.
+
+ENDPOINT (optional) is the API endpoint for completions, defaults to
+\"/v1/responses\".
+
+HEADER (optional) is for additional headers to send with each
+request.  It should be an alist or a function that returns an
+alist, like:
+ ((\"Content-Type\" . \"application/json\"))
+
+KEY (optional) is a variable whose value is the API key, or
+function that returns the key.
+
+REQUEST-PARAMS (optional) is a plist of additional HTTP request
+parameters (as plist keys) and values supported by the API.  Use
+these to set parameters that gptel does not provide user options
+for.
+
+Example:
+-------
+
+ (gptel-make-openai-responses
+  \"OpenAI-Responses\"
+  :stream t
+  :models '((gpt-4o
+             :capabilities (media tool-use json url responses-api)
+             :mime-types (\"image/jpeg\" \"image/png\" \"image/gif\" \"image/webp\"))
+            (gpt-4o-mini
+             :capabilities (media tool-use json url responses-api)
+             :mime-types (\"image/jpeg\" \"image/png\" \"image/gif\" \"image/webp\"))))
+
+(fn NAME &key CURL-ARGS (MODELS gptel--openai-models) STREAM KEY REQUEST-PARAMS (HEADER (lambda (_info) (when-let* ((key (gptel--get-api-key))) \\=`((\"Authorization\" \\=\\, (concat \"Bearer \" key)))))) (HOST \"api.openai.com\") (PROTOCOL \"https\") (ENDPOINT \"/v1/responses\"))")
+(function-put 'gptel-make-openai-responses 'lisp-indent-function 1)
+(register-definition-prefixes "gptel-openai-responses" '("gptel--openai-responses-"))
 
 
 ;;; Generated autoloads from gptel-org.el
@@ -684,6 +748,14 @@ the response is inserted into the current buffer after point.
 
  (autoload 'gptel-menu "gptel-transient" nil t)
  (autoload 'gptel-system-prompt "gptel-transient" nil t)
+(autoload 'gptel-preset "gptel-transient" "\
+Load gptel PRESET with SETTER.
+
+Interactively, query for PRESET, allow the preset scope to be set
+dynamically, and offer to save the current gptel settings as a new or
+existing preset, as well.
+
+(fn PRESET &optional SETTER)" t)
  (autoload 'gptel-tools "gptel-transient" nil t)
 (register-definition-prefixes "gptel-transient" '("gptel-"))
 
