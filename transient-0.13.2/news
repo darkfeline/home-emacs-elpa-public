@@ -1,4 +1,12 @@
 # -*- mode: org -*-
+* v0.13.2    2026-05-01
+
+- Fixed an incompatibility with development version of Compat.
+
+* v0.13.1    2026-05-01
+
+- Improved making a kludge subject only to affected Emacsen.
+
 * v0.13.0    2026-04-22
 
 This release adds features useful for visually impaired users.
@@ -104,9 +112,5 @@ not (primarily) concern accessibility.
   package, we have to keep support for that release.  d361d272
 
 - Use my new Cond-Let package.  87fb8396..1d2710c7
-
-- When Isearch was exited using a key that has no binding in
-  ~isearch-mode-map~, then the Transient state was not resumed.
-  82baa889
 ...
 ...

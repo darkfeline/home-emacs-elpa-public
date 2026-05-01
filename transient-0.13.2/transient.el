@@ -6,11 +6,11 @@
 ;; Homepage: https://github.com/magit/transient
 ;; Keywords: extensions
 
-;; Package-Version: 0.13.0
+;; Package-Version: 0.13.2
 ;; Package-Requires: (
 ;;     (emacs   "28.1")
 ;;     (compat  "30.1")
-;;     (cond-let "0.2")
+;;     (cond-let "1.0")
 ;;     (seq      "2.24"))
 
 ;; SPDX-License-Identifier: GPL-3.0-or-later
@@ -44,7 +44,7 @@
 
 ;;; Code:
 
-(defconst transient-version "0.13.0")
+(defconst transient-version "0.13.2")
 
 (require 'cl-lib)
 (require 'compat)
@@ -122,9 +122,12 @@ similar defect.") :emergency))
          ,(macroexp-progn body))
      ((debug error)
       (transient--emergency-exit ,id)
-      (static-if (fboundp 'error-type-p) ; since Emacs 31.1
-          (signal err)
-        (signal (car err) (cdr err))))))
+      (static-if (version< emacs-version "31.0.50")
+          (signal (car err) (cdr err))
+        (condition-case nil
+            (signal err)
+          (wrong-number-of-arguments
+           (signal (car err) (cdr err))))))))
 
 (defun transient--exit-and-debug (&rest args)
   (transient--emergency-exit :debugger)
@@ -5629,14 +5632,16 @@ search instead."
             lisp-imenu-generic-expression :test #'equal)
 
 (defun transient--suspend-text-conversion-style ()
-  (static-if (boundp 'overriding-text-conversion-style) ; since Emacs 30.1
-      (when text-conversion-style
-        (letrec ((suspended overriding-text-conversion-style)
-                 (fn (lambda ()
-                       (setq overriding-text-conversion-style nil)
-                       (remove-hook 'transient-exit-hook fn))))
-          (setq overriding-text-conversion-style suspended)
-          (add-hook 'transient-exit-hook fn)))))
+  (when (and (bound-and-true-p text-conversion-style)
+             (bound-and-true-p overriding-text-conversion-style)
+             ;; Somehow the above does not silence the compiler.
+             (boundp 'overriding-text-conversion-style))
+    (letrec ((suspended overriding-text-conversion-style)
+             (fn (lambda ()
+                   (setq overriding-text-conversion-style nil)
+                   (remove-hook 'transient-exit-hook fn))))
+      (setq overriding-text-conversion-style suspended)
+      (add-hook 'transient-exit-hook fn))))
 
 (declare-function which-key-mode "ext:which-key" (&optional arg))
 
