@@ -102,6 +102,19 @@ the session identified by SESSION-ID.
 Compose an `agent-shell' prompt in a dedicated buffer.
 
 If currently visiting an `agent-shell', transfer latest input." t)
+(autoload 'agent-shell-shell-buffer "agent-shell" "\
+Return an agent-shell buffer for the current context.
+
+A stable public API wrapping the internal resolver, intended for
+packages that integrate with agent-shell programmatically.
+
+Resolution order: viewport → current buffer → project buffers → prompt user.
+
+Example:
+  (agent-shell-shell-buffer)
+  (agent-shell-shell-buffer :no-error t)
+
+(fn &key VIEWPORT-BUFFER NO-ERROR NO-CREATE)")
 (register-definition-prefixes "agent-shell" '("agent-shell-"))
 
 

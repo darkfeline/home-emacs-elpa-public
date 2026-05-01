@@ -4,8 +4,8 @@
 
 ;; Author: Alvaro Ramirez https://xenodium.com
 ;; URL: https://github.com/xenodium/agent-shell
-;; Package-Version: 20260423.2254
-;; Package-Revision: 21a8c8b4e735
+;; Package-Version: 20260501.1854
+;; Package-Revision: 6f9400da2a36
 ;; Package-Requires: ((emacs "29.1") (shell-maker "0.90.1") (acp "0.11.1"))
 
 (defconst agent-shell--version "0.50.1")
@@ -375,7 +375,8 @@ Only appears when a session is active."
 Can be a symbol selecting a predefined style, or a list of frame strings.
 When providing custom frames, do not include leading spaces as padding
 is added automatically."
-  :type '(choice (const :tag "Wave (pulses up and down)" wave)
+  :type '(choice (const :tag "Circle (blinks)" circle)
+                 (const :tag "Wave (pulses up and down)" wave)
                  (const :tag "Dots Block (circular spin)" dots-block)
                  (const :tag "Dots Round (circular spin)" dots-round)
                  (const :tag "Wide (horizontal blocks)" wide)
@@ -580,7 +581,23 @@ or `turn-complete'), an `idle' event is emitted after this many
 seconds of inactivity.  Activity events (`permission-response',
 `tool-call-update', `input-submitted', `clean-up') cancel the timer.
 
-When nil, defaults to 30 seconds.")
+Can be a number (same timeout for all events) or an alist mapping
+event symbols to timeouts:
+
+  (setq agent-shell-idle-timeout
+        \\='((permission-request . 10)
+          (turn-complete . 60)))
+
+Defaults to 30 seconds when nil or when an event has no entry.")
+
+(cl-defun agent-shell-idle-timeout (&key event)
+  "Resolve idle timeout in seconds.
+When EVENT is non-nil, look it up in `agent-shell-idle-timeout'
+if it is an alist.  Falls back to 30 seconds."
+  (or (if (listp agent-shell-idle-timeout)
+          (map-elt agent-shell-idle-timeout event)
+        agent-shell-idle-timeout)
+      30))
 
 (defcustom agent-shell-outgoing-request-decorator nil
   "Function to decorate outgoing ACP requests before they are sent.
@@ -707,7 +724,8 @@ OUTGOING-REQUEST-DECORATOR (passed through to `acp-make-client')."
         (cons :set-session-mode nil)
         (cons :session (list (cons :id nil)
                              (cons :mode-id nil)
-                             (cons :modes nil)))
+                             (cons :modes nil)
+                             (cons :title nil)))
         (cons :last-entry-type nil)
         (cons :chunked-group-count 0)
         (cons :request-count 0)
@@ -952,6 +970,7 @@ Works from both shell and viewport buffers."
                             (derived-mode-p 'agent-shell-viewport-edit-mode)))
          (shell-buffer (or (agent-shell--current-shell)
                            (user-error "Not in a shell or viewport buffer")))
+         (shell-buffer-name (buffer-name shell-buffer))
          (strategy (if (eq (buffer-local-value 'agent-shell-session-strategy shell-buffer)
                            'new-deferred)
                        'new-deferred
@@ -970,6 +989,7 @@ Works from both shell and viewport buffers."
                              :session-id session-id
                              :new-session t
                              :no-focus t)))
+      (shell-maker-set-buffer-name new-shell-buffer shell-buffer-name)
       (if (or from-viewport agent-shell-prefer-viewport-interaction)
           (agent-shell-viewport--show-buffer
            :shell-buffer new-shell-buffer)
@@ -2787,6 +2807,20 @@ variable (see makunbound)"))
       ;; `agent-shell--handle'.  Fire mode hook so initial
       ;; state is available to agent-shell-mode-hook(s).
       (run-hooks 'agent-shell-mode-hook)
+      ;; Refresh the session title from the agent. `init-finished' fires
+      ;; once the session is established (covers resumed sessions whose
+      ;; title is already known) and `turn-complete' covers ongoing
+      ;; refinement for agents that summarize as the conversation grows.
+      ;; `session-selected' is too early -- it fires synchronously inside
+      ;; `agent-shell--handle' before this subscription can register.
+      (agent-shell-subscribe-to
+       :shell-buffer shell-buffer
+       :event 'init-finished
+       :on-event #'agent-shell--refresh-session-title)
+      (agent-shell-subscribe-to
+       :shell-buffer shell-buffer
+       :event 'turn-complete
+       :on-event #'agent-shell--refresh-session-title)
       ;; Subscribe to session selection events (needed regardless of focus).
       (when (eq agent-shell-session-strategy 'prompt)
         (agent-shell-subscribe-to
@@ -3652,18 +3686,20 @@ Initialization events (emitted in order):
   `prompt-ready'        - Shell prompt displayed and ready for input
 
 Session events:
-  `tool-call-update'    - Tool call started or updated
+  `tool-call-update'      - Tool call started or updated
     :data contains :tool-call-id and :tool-call
-  `file-write'          - File written via fs/write_text_file
+  `file-write'            - File written via fs/write_text_file
     :data contains :path and :content
-  `permission-request'  - Permission prompt displayed to user
+  `permission-request'    - Permission prompt displayed to user
     :data contains :request-id, :tool-call-id, :tool-call
-  `permission-response' - Permission response sent
+  `permission-response'   - Permission response sent
     :data contains :request-id, :tool-call-id, :option-id, :cancelled
-  `turn-complete'       - Agent turn finished and prompt ready for input
+  `turn-complete'         - Agent turn finished and prompt ready for input
     :data contains :stop-reason and :usage
-  `input-submitted'     - User submitted input to the agent
-  `idle'                - Agent idle for `agent-shell-idle-timeout' seconds
+  `session-title-changed' - Session title updated
+    :data contains :title
+  `input-submitted'       - User submitted input to the agent
+  `idle'                  - Agent idle for `agent-shell-idle-timeout' seconds
     :data contains :idle-event and :buffer
 
 General events:
@@ -3735,13 +3771,15 @@ SUBSCRIPTION is a token returned by `agent-shell-subscribe-to'."
   "Emit an EVENT to matching subscribers.
 EVENT is a symbol identifying the event.
 DATA is an optional alist of event-specific data."
-  (let ((event-alist (list (cons :event event))))
+  (let ((state (agent-shell--state))
+        (event-alist (list (cons :event event))))
     (when data
       (push (cons :data data) event-alist))
-    (dolist (sub (map-elt (agent-shell--state) :event-subscriptions))
-      (when (or (not (map-elt sub :event))
-                (eq (map-elt sub :event) event))
-        (with-current-buffer (map-elt (agent-shell--state) :buffer)
+    (dolist (sub (map-elt state :event-subscriptions))
+      (when (and (buffer-live-p (map-elt state :buffer))
+                 (or (not (map-elt sub :event))
+                     (eq (map-elt sub :event) event)))
+        (with-current-buffer (map-elt state :buffer)
           (funcall (map-elt sub :on-event) event-alist))))))
 
 (cl-defun agent-shell--start-idle-timer (&key event data)
@@ -3752,7 +3790,7 @@ the original EVENT as :idle-event."
   (agent-shell--cancel-idle-timer)
   (when-let ((buffer (map-elt (agent-shell--state) :buffer)))
     (map-put! (agent-shell--state) :idle-timer
-              (run-at-time (or agent-shell-idle-timeout 30) nil
+              (run-at-time (agent-shell-idle-timeout :event event) nil
                            (lambda ()
                              (when (buffer-live-p buffer)
                                (with-current-buffer buffer
@@ -4075,6 +4113,25 @@ Must provide ON-SESSION-INIT (lambda ())."
          :shell-buffer shell-buffer
          :on-session-init on-session-init))))))
 
+(defun agent-shell--sort-sessions-by-recency (acp-sessions)
+  "Return ACP-SESSIONS sorted by recency, newest first.
+
+Sorts by `updatedAt' when present, falling back to `createdAt'.
+ISO-8601 timestamps sort lexically the same as chronologically,
+so `string>' yields descending time order.
+
+  (agent-shell--sort-sessions-by-recency
+   \\='(((sessionId . \"a\") (updatedAt . \"2024-01-01T00:00:00Z\"))
+     ((sessionId . \"b\") (updatedAt . \"2024-02-01T00:00:00Z\"))))
+  ;; => (((sessionId . \"b\") (updatedAt . \"2024-02-01T00:00:00Z\"))
+  ;;     ((sessionId . \"a\") (updatedAt . \"2024-01-01T00:00:00Z\")))"
+  (seq-sort (lambda (a b)
+              (string> (or (map-elt a 'updatedAt)
+                           (map-elt a 'createdAt) "")
+                       (or (map-elt b 'updatedAt)
+                           (map-elt b 'createdAt) "")))
+            acp-sessions))
+
 (defun agent-shell--format-session-date (iso-timestamp)
   "Format ISO-TIMESTAMP as a human-friendly date string.
 
@@ -4248,7 +4305,8 @@ Falls back to latest session in batch mode (e.g. tests)."
                                                    `((:model-id . ,(map-elt model 'modelId))
                                                      (:name . ,(map-elt model 'name))
                                                      (:description . ,(map-elt model 'description))))
-                                                 (map-nested-elt acp-response '(models availableModels)))))))
+                                                 (map-nested-elt acp-response '(models availableModels))))
+                          (cons :title (map-nested-elt agent-shell--state '(:session :title))))))
 
 (cl-defun agent-shell--finalize-session-init (&key on-session-init)
   "Finalize session initialization and invoke ON-SESSION-INIT."
@@ -4305,7 +4363,8 @@ Falls back to latest session in batch mode (e.g. tests)."
                                                                   `((:model-id . ,(map-elt model 'modelId))
                                                                     (:name . ,(map-elt model 'name))
                                                                     (:description . ,(map-elt model 'description))))
-                                                                (map-nested-elt acp-response '(models availableModels))))))
+                                                                (map-nested-elt acp-response '(models availableModels))))
+                                          (cons :title (map-nested-elt agent-shell--state '(:session :title)))))
                  (agent-shell--update-fragment
                   :state agent-shell--state
                   :block-id "starting"
@@ -4448,7 +4507,8 @@ SESSION-TITLE is an optional display title for the resumed session."
              :cwd (agent-shell--resolve-path (agent-shell-cwd)))
    :buffer (current-buffer)
    :on-success (lambda (acp-response)
-                 (let ((acp-sessions (append (or (map-elt acp-response 'sessions) '()) nil)))
+                 (let ((acp-sessions (agent-shell--sort-sessions-by-recency
+                                      (append (or (map-elt acp-response 'sessions) '()) nil))))
                    (condition-case nil
                        (let* ((acp-session
                                (pcase agent-shell-session-strategy
@@ -4753,6 +4813,38 @@ If FILE-PATH is not an image, returns nil."
                     "\n")
    :create-new t))
 
+(defun agent-shell--set-session-title (title)
+  "Set the current session's title to TITLE and emit `session-title-changed'.
+Does nothing if TITLE is empty or matches the current value."
+  (when (and (stringp title)
+             (not (string-empty-p title))
+             (not (equal (map-nested-elt agent-shell--state '(:session :title)) title)))
+    (map-put! (map-elt agent-shell--state :session) :title title)
+    (agent-shell--emit-event :event 'session-title-changed
+                             :data (list (cons :title title)))))
+
+(defun agent-shell--refresh-session-title (&optional _event)
+  "Refresh `(:session :title)' by fetching from agent.
+
+Sends a `session/list' ACP request and writes any non-empty `title'
+field on the matching session via `agent-shell--set-session-title'.  Agents
+that don't supply a title (e.g. Claude Code) are no-ops; the seeded
+first-prompt title is left in place."
+  (when-let* ((client (map-elt agent-shell--state :client))
+              (session-id (map-nested-elt agent-shell--state '(:session :id))))
+    (acp-send-request
+     :client client
+     :request (acp-make-session-list-request
+               :cwd (agent-shell--resolve-path default-directory))
+     :buffer (current-buffer)
+     :on-success
+     (lambda (acp-response)
+       (when-let ((acp-session (seq-find
+                               (lambda (acp-session)
+                                 (equal (map-elt acp-session 'sessionId) session-id))
+                               (append (or (map-elt acp-response 'sessions) '()) nil))))
+         (agent-shell--set-session-title (map-elt acp-session 'title)))))))
+
 (cl-defun agent-shell--send-command (&key prompt shell-buffer)
   "Send PROMPT to agent using SHELL-BUFFER."
   (let* ((content-blocks (condition-case nil
@@ -4770,6 +4862,12 @@ If FILE-PATH is not an image, returns nil."
     (agent-shell--emit-event :event 'input-submitted)
 
     (map-put! agent-shell--state :last-entry-type nil)
+
+    ;; Seed the session title with the first user prompt so consumers
+    ;; (e.g. agent-shell-manager) have something to display before any
+    ;; agent-supplied title arrives.
+    (unless (map-nested-elt agent-shell--state '(:session :title))
+      (agent-shell--set-session-title (substring-no-properties prompt)))
 
     (agent-shell--append-transcript
      :text (format "## User (%s)\n\n%s\n\n"
@@ -4918,6 +5016,22 @@ Returns a buffer object or nil."
                               :new-session t
                               :session-strategy agent-shell-session-strategy))))))
 
+(defun agent-shell-goto-last-interaction ()
+  "Move point to the last interaction in the shell buffer."
+  (when-let ((shell-buffer (agent-shell--shell-buffer)))
+    (with-current-buffer shell-buffer
+      (goto-char comint-last-input-start))))
+
+(defun agent-shell-interaction-at-point ()
+  "Return the interaction at point in the shell buffer.
+Result is of the form ((:prompt . PROMPT) (:response . RESPONSE))."
+  (when-let ((shell-buffer (agent-shell--shell-buffer))
+             (result (with-current-buffer shell-buffer
+                       (or (shell-maker--command-and-response-at-point)
+                           (shell-maker-next-command-and-response t)))))
+    `((:prompt . ,(car result))
+      (:response . ,(cdr result)))))
+
 (defun agent-shell--current-shell ()
   "Current shell for viewport or shell buffer."
   (cond ((derived-mode-p 'agent-shell-mode)
@@ -4930,6 +5044,22 @@ Returns a buffer object or nil."
                                           :existing-only t)
                                          (current-buffer)))
                                 (agent-shell-buffers))))))
+
+;;;###autoload
+(cl-defun agent-shell-shell-buffer (&key viewport-buffer no-error no-create)
+  "Return an agent-shell buffer for the current context.
+
+A stable public API wrapping the internal resolver, intended for
+packages that integrate with agent-shell programmatically.
+
+Resolution order: viewport → current buffer → project buffers → prompt user.
+
+Example:
+  (agent-shell-shell-buffer)
+  (agent-shell-shell-buffer :no-error t)"
+  (agent-shell--shell-buffer :viewport-buffer viewport-buffer
+                             :no-error no-error
+                             :no-create no-create))
 
 (defun agent-shell--input ()
   "Return shell input (not yet submitted)."
@@ -6220,6 +6350,7 @@ See https://agentclientprotocol.com/protocol/session-modes for details."
   (when-let* ((agent-shell-show-busy-indicator)
               ((eq 'busy (map-nested-elt (agent-shell--state) '(:heartbeat :status))))
               (frames (pcase agent-shell-busy-indicator-frames
+                        ('circle '("●" "●" "●" "●" "●" " " " " " " " "  " "))
                         ('wave '("▁" "▂" "▃" "▄" "▅" "▆" "▇" "█" "▇" "▆" "▅" "▄" "▃" "▂"))
                         ('dots-block '("⣷" "⣯" "⣟" "⡿" "⢿" "⣻" "⣽" "⣾"))
                         ('dots-round '("⢎⡰" "⢎⡡" "⢎⡑" "⢎⠱" "⠎⡱" "⢊⡱" "⢌⡱" "⢆⡱"))
