@@ -1,6 +1,16 @@
 # -*- mode: org; -*-
 
-* 0.9.9.5-pre
+* 0.9.9.6-pre
+
+** Breaking changes
+** New models and backends
+
+- Bedrock backend: Add support for =claude-opus-4-7=.
+
+** New features and UI changes
+** Notable bug fixes
+
+* 0.9.9.5 2026-05-03
 
 ** Breaking changes
 
@@ -67,9 +77,9 @@
   =grok-4-fast-non-reasoning=.
 
 - GitHub Copilot backend: Add support for =claude-opus-4.7=,
-  =gpt-5.1-codex-, =gpt-5.1-codex-mini, =claude-sonnet-4.6= and
-  =gemini-3.1-pro-preview=, =gpt-5.3-codex=, =gpt-5.4=, and
-  =gpt-5.4-mini=.
+  =gpt-5.1-codex-, =gpt-5.1-codex-mini, =claude-sonnet-4.6=,
+  =gemini-3.1-pro-preview=, =gpt-5.3-codex=, =gpt-5.4=,
+  =gpt-5.4-mini=, and =gpt-5.5=.
 
 - Gemini backend: Add support for =gemini-3.1-flash-lite-preview=;
   add deprecation notice for =gemini-3-pro-preview=.
@@ -200,7 +210,7 @@
   Note that this is a bug fix. It's how the API has been documented and
   was supposed to work in the first place.
 
-* 0.9.9.4
+* 0.9.9.4 2026-02-21
 
 ** Breaking changes
 
@@ -279,7 +289,7 @@
   call tools within their "reasoning" phase are now correctly handled
   by gptel.
 
-* 0.9.9.3
+* 0.9.9.3 2025-11-09
 
 ** Breaking changes
 

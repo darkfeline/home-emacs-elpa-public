@@ -608,7 +608,7 @@ Register a DeepSeek backend for gptel with NAME.
 
 For the meanings of the keyword arguments, see `gptel-make-openai'.
 
-(fn NAME &key CURL-ARGS STREAM KEY REQUEST-PARAMS (HEADER (lambda (_info) (when-let* ((key (gptel--get-api-key))) \\=`((\"Authorization\" \\=\\, (concat \"Bearer \" key)))))) (HOST \"api.deepseek.com\") (PROTOCOL \"https\") (ENDPOINT \"/v1/chat/completions\") (MODELS \\='((deepseek-reasoner :capabilities (tool reasoning) :context-window 128 :input-cost 0.28 :output-cost 0.42) (deepseek-chat :capabilities (tool) :context-window 128 :input-cost 0.28 :output-cost 0.42) (deepseek-v4-flash :capabilities (tool reasoning) :context-window 1000 :input-cost 0.14 :output-cost 0.28) (deepseek-v4-pro :capabilities (tool reasoning) :context-window 1000 :input-cost 1.74 :output-cost 3.48))))")
+(fn NAME &key CURL-ARGS STREAM KEY REQUEST-PARAMS (HEADER (lambda (_info) (when-let* ((key (gptel--get-api-key))) \\=`((\"Authorization\" \\=\\, (concat \"Bearer \" key)))))) (HOST \"api.deepseek.com\") (PROTOCOL \"https\") (ENDPOINT \"/v1/chat/completions\") (MODELS \\='((deepseek-reasoner :capabilities (tool reasoning) :context-window 128 :input-cost 0.14 :output-cost 0.28) (deepseek-chat :capabilities (tool) :context-window 128 :input-cost 0.14 :output-cost 0.28) (deepseek-v4-flash :capabilities (tool reasoning) :context-window 1000 :input-cost 0.14 :output-cost 0.28) (deepseek-v4-pro :capabilities (tool reasoning) :context-window 1000 :input-cost 1.74 :output-cost 3.48))))")
 (function-put 'gptel-make-deepseek 'lisp-indent-function 1)
 (autoload 'gptel-make-xai "gptel-openai-extras" "\
 Register an xAI backend for gptel with NAME.
