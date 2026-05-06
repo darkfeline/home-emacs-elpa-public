@@ -1,7 +1,7 @@
 ;; -*- no-byte-compile: t; lexical-binding: nil -*-
-(define-package "shell-maker" "20260330.851"
+(define-package "shell-maker" "20260504.1620"
   "Interaction mode for making comint shells."
   '((emacs "27.1"))
   :url "https://github.com/xenodium/shell-maker"
-  :commit "6377cbdb49248d670170f1c8dbe045648063583e"
-  :revdesc "6377cbdb4924")
+  :commit "3c97df6602d1fef3c952df8be7c1a698c329e19c"
+  :revdesc "3c97df6602d1")

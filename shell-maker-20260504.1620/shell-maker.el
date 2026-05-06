@@ -4,8 +4,8 @@
 
 ;; Author: Alvaro Ramirez https://xenodium.com
 ;; URL: https://github.com/xenodium/shell-maker
-;; Package-Version: 20260330.851
-;; Package-Revision: 6377cbdb4924
+;; Package-Version: 20260504.1620
+;; Package-Revision: 3c97df6602d1
 ;; Package-Requires: ((emacs "27.1"))
 
 ;; This package is free software; you can redistribute it and/or modify
@@ -336,7 +336,7 @@ Use ON-OUTPUT function to monitor output text."
                           "")
                         (shell-maker-prompt shell-maker--config))))
     (with-current-buffer shell-buffer
-      (if (eobp) ;; auto-scroll
+      (if (shell-maker--should-auto-scroll-p) ;; auto-scroll
           (progn
             (goto-char (point-max))
             (shell-maker--output-filter (shell-maker--process) output))
@@ -1383,11 +1383,25 @@ For example, with prompt at positions 100-113:
     (list (cons :start start)
           (cons :end end))))
 
+(defun shell-maker--should-auto-scroll-p ()
+  "Return t when streaming should auto-scroll the buffer to point-max.
+True when point is at end-of-buffer AND every window displaying the
+buffer has its visible end at point-max. Wheel-scrolling moves
+window-end without moving point, so checking only `eobp' would keep
+the window snapping back to the bottom while the user is reading."
+  (and (eobp)
+       (let ((windows (cl-remove-if-not
+                       (lambda (w) (eq (window-buffer w) (current-buffer)))
+                       (window-list nil 'no-mini))))
+         (or (null windows)
+             (cl-every (lambda (w) (>= (window-end w t) (point-max)))
+                       windows)))))
+
 (defmacro shell-maker-with-auto-scroll-edit (&rest body)
   "Execute BODY, preserving point unless already at end of buffer."
   (save-restriction)
   `(let ((new-location))
-     (if (eobp)
+     (if (shell-maker--should-auto-scroll-p)
          (progn
            (goto-char (point-max))
            (set-marker comint-last-output-start (point))
@@ -1517,6 +1531,7 @@ For example, with prompt at positions 100-113:
                       (with-temp-buffer
                         (insert-file-contents path)
                         (shell-maker--extract-history
+                         (shell-maker-prompt-regexp config)
                          ;; prompts from plain text.
                          :propertized nil))))
          (execute-command (shell-maker-config-execute-command
