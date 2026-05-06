@@ -4,8 +4,8 @@
 
 ;; Author: Alvaro Ramirez https://xenodium.com
 ;; URL: https://github.com/xenodium/acp.el
-;; Package-Version: 20260325.1158
-;; Package-Revision: c32fbf8df34e
+;; Package-Version: 20260503.1851
+;; Package-Revision: 03099fa0d0b6
 ;; Package-Requires: ((emacs "28.1"))
 
 (defconst acp-package-version "0.11.3")
@@ -560,6 +560,25 @@ See https://docs.claude.com/en/api/agent-sdk/typescript"
   `((:method . "session/set_model")
     (:params . ((sessionId . ,session-id)
                 (modelId . ,model-id)))))
+
+(cl-defun acp-make-session-set-config-option-request (&key session-id config-id value)
+  "Instantiate a \"session/set_config_option\" request.
+
+SESSION-ID is the ID of the session to change the config option for.
+CONFIG-ID is the id of the configuration option to change.
+VALUE is the new value, must correspond to one of the option's values.
+
+See https://agentclientprotocol.com/protocol/session-config-options"
+  (unless session-id
+    (error ":session-id is required"))
+  (unless config-id
+    (error ":config-id is required"))
+  (unless value
+    (error ":value is required"))
+  `((:method . "session/set_config_option")
+    (:params . ((sessionId . ,session-id)
+                (configId . ,config-id)
+                (value . ,value)))))
 
 (cl-defun acp-make-session-resume-request (&key session-id cwd mcp-servers)
   "Instantiate a \"session/resume\" request.
