@@ -6,11 +6,11 @@
 ;; Homepage: https://github.com/magit/ghub
 ;; Keywords: tools
 
-;; Package-Version: 20260501.1408
-;; Package-Revision: c438abc86596
+;; Package-Version: 20260506.1445
+;; Package-Revision: 27d16464a65c
 ;; Package-Requires: (
 ;;     (emacs   "29.1")
-;;     (compat  "30.1")
+;;     (compat  "31.0")
 ;;     (cond-let "1.0")
 ;;     (llama    "1.0")
 ;;     (treepy "0.1.3"))
@@ -77,18 +77,11 @@
 ;;; Settings
 
 (defvar ghub-default-host-alist
-  '((github    . "api.github.com")
+  '((github    . "github.com")
     (gitlab    . "gitlab.com")
     (forgejo   . "codeberg.org")
-    (bitbucket . "api.bitbucket.org"))
+    (bitbucket . "bitbucket.org"))
   "Alist of default hosts used when the respective `FORGE.host' is not set.")
-
-(defvar ghub-github-token-scopes '(repo)
-  "The Github API scopes that your private tools need.
-
-You have to manually create or update the token at
-https://github.com/settings/tokens.  This variable
-only serves as documentation.")
 
 (defvar ghub-insecure-hosts nil
   "List of hosts that use http instead of https.")
@@ -404,7 +397,7 @@ See `ghub-request' for information about the other arguments."
           (if (> total 0)
               (let ((wait (min total (- duration total))))
                 (sit-for wait)
-                (cl-incf total wait))
+                (incf total wait))
             (sit-for (setq total 2))))))))
 
 (defun ghub-response-link-relations (req &optional headers payload)
@@ -511,7 +504,7 @@ Signal an error if the id cannot be determined."
                  (next    (cdr (assq 'next (ghub-response-link-relations
                                             req headers payload)))))
             (when (numberp unpaginate)
-              (cl-decf unpaginate))
+              (decf unpaginate))
             (setf (ghub--req-url req)
                   (url-generic-parse-url next))
             (setf (ghub--req-unpaginate req) unpaginate)
@@ -775,6 +768,15 @@ or (info \"(ghub)Getting Started\") for instructions."
     (or (ghub--git-get (format "%s.host" forge))
         (alist-get forge ghub-default-host-alist))))
 
+(defun ghub--host-domain (uri)
+  (let* ((uri (if (string-match "/" uri)
+                  (substring uri 0 (match-beginning 0))
+                uri))
+         (uri (split-string uri "\\."))
+         ;; This is an incomplete heuristic handling, e.g., ".co.uk".
+         (2tld (member (car (last uri 2)) '("co" "com" "gov" "net" "org"))))
+    (string-join (drop (- (length uri) (if 2tld 3 2)) uri) ".")))
+
 (cl-defmethod ghub--username (host &optional forge)
   (let* ((forge (or forge 'github))
          (host (or host (ghub--host forge)))
@@ -784,7 +786,8 @@ or (info \"(ghub)Getting Started\") for instructions."
          (var (format "%s.%s.user" forge host))
          (default-var (format "%s.user" forge)))
     (cond ((ghub--git-get var))
-          ((not (equal host (alist-get forge ghub-default-host-alist)))
+          ((not (equal (ghub--host-domain host)
+                       (alist-get forge ghub-default-host-alist)))
            (error "Cannot determine username; `%s' is unset" var))
           ((ghub--git-get default-var))
           ((error "Cannot determine username; `%s' and `%s' are both unset"

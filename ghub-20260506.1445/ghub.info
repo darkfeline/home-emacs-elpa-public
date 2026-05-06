@@ -514,11 +514,6 @@ File: ghub.info,  Node: Making REST Requests,  Next: Making GraphQL Requests,  P
           explicit token string are only intended for internal and
           debugging uses.
 
-          If ‘AUTH’ is a package symbol, then the scopes are specified
-          using the variable ‘AUTH-github-token-scopes’.  It is an error
-          if that is not specified.  See ‘ghub-github-token-scopes’ for
-          an example.
-
         • If ‘HOST’ is non-‘nil’, then connect to that Github instance.
           This defaults to "api.github.com".  When a repository is
           connected to a Github Enterprise instance, then it is better
@@ -906,7 +901,7 @@ Appendix A Function Index
 * ghub--graphql-vacuum:                  Making GraphQL Requests.
                                                               (line  56)
 * ghub-continue:                         Making REST Requests.
-                                                              (line 122)
+                                                              (line 117)
 * ghub-delete:                           Github Convenience Wrappers.
                                                               (line  31)
 * ghub-fetch-issue:                      Making GraphQL Requests.
@@ -930,7 +925,7 @@ Appendix A Function Index
 * ghub-request:                          Making REST Requests.
                                                               (line   6)
 * ghub-response-link-relations:          Making REST Requests.
-                                                              (line 172)
+                                                              (line 167)
 * ghub-wait:                             Github Convenience Wrappers.
                                                               (line  44)
 
@@ -944,7 +939,7 @@ Appendix B Variable Index
 * Menu:
 
 * ghub-response-headers:                 Making REST Requests.
-                                                              (line 163)
+                                                              (line 158)
 * github.host:                           Github Configuration Variables.
                                                               (line  26)
 * github.HOST.user:                      Github Configuration Variables.
@@ -971,14 +966,14 @@ Node: Github Configuration Variables13409
 Node: API15120
 Node: Their APIs15322
 Node: Making REST Requests16004
-Node: Making GraphQL Requests25314
-Node: Github Convenience Wrappers32003
-Node: Notes35667
-Node: Using Ghub in Personal Scripts35874
-Node: Using Ghub in Your Own Package36765
-Node: Forge Limitations and Notes37700
-Node: Function Index38712
-Node: Variable Index40980
+Node: Making GraphQL Requests25063
+Node: Github Convenience Wrappers31752
+Node: Notes35416
+Node: Using Ghub in Personal Scripts35623
+Node: Using Ghub in Your Own Package36514
+Node: Forge Limitations and Notes37449
+Node: Function Index38461
+Node: Variable Index40729
 
 End Tag Table
 
