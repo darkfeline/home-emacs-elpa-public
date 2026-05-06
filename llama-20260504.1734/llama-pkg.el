@@ -1,9 +1,9 @@
 ;; -*- no-byte-compile: t; lexical-binding: nil -*-
-(define-package "llama" "20260301.1253"
+(define-package "llama" "20260504.1734"
   "Compact syntax for short lambda."
   '((emacs  "26.1")
-    (compat "30.1"))
+    (compat "31.0"))
   :url "https://github.com/tarsius/llama"
-  :commit "d430d48e0b5afd2a34b5531f103dcb110c3539c4"
-  :revdesc "d430d48e0b5a"
+  :commit "57a8988eb4a624dd1efc583412fe8660741eaa50"
+  :revdesc "57a8988eb4a6"
   :keywords '("extensions"))
