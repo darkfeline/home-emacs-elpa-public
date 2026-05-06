@@ -2,8 +2,8 @@
 
 ;; Copyright (C) 2025 Karthik Chikmagalur
 
-;; Package-Version: 20260415.611
-;; Package-Revision: e2ef97d6b566
+;; Package-Version: 20260502.1809
+;; Package-Revision: aecaa940faf2
 ;; Package-Requires: ((emacs "29.1") (compat "30.1.0.0") (gptel "0.9.9") (yaml "1.2.0") (orderless "1.1"))
 ;; Keywords: comm
 ;; URL: https://github.com/karthink/gptel-agent
@@ -216,7 +216,7 @@ Returns an alist of (agent-name . file-path)."
   (mapc (lambda (dir)
           (when (file-directory-p dir)
             (dolist (skill-file (directory-files-recursively
-                                 dir "SKILL\\.md" nil nil t))
+                                 dir "SKILL\\.md$" nil nil t))
               (pcase-let ((`(,name . ,skill-plist) ;loading only metadata
                            (gptel-agent-read-file skill-file nil t)))
                 ;; validating skill definition
