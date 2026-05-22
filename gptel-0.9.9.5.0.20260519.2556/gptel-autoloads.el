@@ -323,6 +323,11 @@ Example:
 (function-put 'gptel-make-kagi 'lisp-indent-function 1)
 
 
+;;; Generated autoloads from gptel-oauth.el
+
+(register-definition-prefixes "gptel-oauth" '("gptel-oauth--"))
+
+
 ;;; Generated autoloads from gptel-ollama.el
 
 (autoload 'gptel-make-ollama "gptel-ollama" "\
@@ -627,6 +632,22 @@ see `gptel-make-openai'.
 (fn NAME &key CURL-ARGS STREAM KEY REQUEST-PARAMS (HEADER (lambda (_info) (when-let* ((key (gptel--get-api-key))) \\=`((\"Authorization\" \\=\\, (concat \"Bearer \" key)))))) (HOST \"api.x.ai\") (PROTOCOL \"https\") (ENDPOINT \"/v1/chat/completions\") (MODELS \\='((grok-4-1-fast-reasoning :description \"Fast tool-calling model\" :capabilities (tool-use json reasoning) :context-window 2000 :input-cost 0.2 :output-cost 0.5) (grok-4-1-fast-non-reasoning :description \"Fast tool-calling model (non-reasoning)\" :capabilities (tool-use json) :context-window 2000 :input-cost 0.2 :output-cost 0.5) (grok-code-fast-1 :description \"Fast reasoning model for agentic coding\" :capabilities (tool-use json reasoning) :context-window 256 :input-cost 0.2 :output-cost 1.5) (grok-4-fast-reasoning :description \"Fast tool-calling model\" :capabilities (tool-use json reasoning) :context-window 2000 :input-cost 0.2 :output-cost 0.5) (grok-4-fast-non-reasoning :description \"Fast tool-calling model (non-reasoning)\" :capabilities (tool-use json) :context-window 2000 :input-cost 0.2 :output-cost 0.5) (grok-4 :description \"Grok Flagship model\" :capabilities (tool-use json reasoning) :context-window 256 :input-cost 3 :output-cost 15) (grok-3-mini :description \"Mini Grok 3\" :capabilities (tool-use json reasoning) :context-window 131 :input-cost 0.3 :output-cost 0.5) (grok-3 :description \"Grok 3\" :capabilities (tool-use json reasoning) :context-window 131 :input-cost 3 :output-cost 15) (grok-2-vision-1212 :description \"Grok 2 Vision\" :capabilities (tool-use json media) :mime-types (\"image/jpeg\" \"image/png\" \"image/gif\" \"image/webp\") :context-window 32 :input-cost 2 :output-cost 10))))")
 (function-put 'gptel-make-xai 'lisp-indent-function 1)
 (register-definition-prefixes "gptel-openai-extras" '("gptel--p"))
+
+
+;;; Generated autoloads from gptel-openai-oauth.el
+
+(autoload 'gptel-make-openai-oauth "gptel-openai-oauth" "\
+Register a ChatGPT Plus/Pro OAuth backend for gptel with NAME.
+
+This backend uses ChatGPT OAuth tokens (not OpenAI API keys) and
+targets the Codex endpoint on chatgpt.com.  Run
+`gptel-openai-oauth-login' once to authenticate.
+
+For keyword argument meanings, see `gptel-make-openai'.
+
+(fn NAME &key CURL-ARGS (STREAM t) REQUEST-PARAMS (HEADER #\\='gptel--openai-oauth-header) (HOST \"chatgpt.com\") (PROTOCOL \"https\") (ENDPOINT \"/backend-api/codex/responses\") (MODELS \\='(gpt-5.2 gpt-5.3-codex gpt-5.3-codex-spark gpt-5.4-mini gpt-5.4)))")
+(function-put 'gptel-make-openai-oauth 'lisp-indent-function 1)
+(register-definition-prefixes "gptel-openai-oauth" '("gptel-"))
 
 
 ;;; Generated autoloads from gptel-openai-responses.el
