@@ -156,6 +156,19 @@ Remove a root directory from the currently selected MCP server.
 Prompts for selection from the server's current roots." t)
 (autoload 'mcp-hub-view-roots "mcp-hub" "\
 View the roots for the currently selected MCP server." t)
+(autoload 'mcp-hub-show-server-detail "mcp-hub" "\
+View the detail info for the currently selected MCP server." t)
+(autoload 'mcp-hub-detail-refresh "mcp-hub" "\
+Refresh current server info." t)
+(autoload 'mcp-hub-detail-next-heading "mcp-hub" "\
+Next title." t)
+(autoload 'mcp-hub-detail-previous-heading "mcp-hub" "\
+Previous title." t)
+(autoload 'mcp-hub-detail-reading-resource "mcp-hub" "\
+Read resource file from the detail buffer.
+
+Get the resource URI at point, look up the connection from the buffer's
+server name, then fetch and display the resource content." t)
 (register-definition-prefixes "mcp-hub" '("mcp-hub-"))
 
 ;;; End of scraped data
