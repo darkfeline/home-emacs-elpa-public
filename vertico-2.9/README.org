@@ -42,7 +42,7 @@ without white space and comments.
 
 * Installation
 
-Vertico is available from [[https://elpa.gnu.org/packages/vertico.html][GNU ELPA]]. You can install it directly via =M-x package-install RET vertico RET=.
+Vertico is available from [[https://elpa.gnu.org/packages/vertico.html][ELPA]] or [[https://melpa.org/#/vertico][MELPA]]. You can install it directly via =M-x package-install RET vertico RET=.
 After installation, activate the global minor mode with =M-x vertico-mode RET=.
 
 * Key bindings
@@ -236,11 +236,11 @@ older Emacs versions you can use the following advice:
 :end:
 
 We maintain small extension packages to Vertico in this repository in the
-subdirectory [[https://github.com/minad/vertico/tree/main/extensions][extensions/]]. The extensions are installed together with Vertico if
-you pull the package from ELPA. The extensions are inactive by default and can
-be enabled manually if desired. Furthermore it is possible to install all of the
-files separately, both ~vertico.el~ and the ~vertico-*.el~ extensions. Currently the
-following extensions come with the Vertico ELPA package:
+subdirectory [[https://github.com/minad/vertico/tree/main/extensions][extensions/]]. The extensions are installed together with Vertico.
+The extensions are inactive by default and can be enabled manually if desired.
+Furthermore it is possible to install all of the files separately, both
+~vertico.el~ and the ~vertico-*.el~ extensions. Currently the following extensions
+come with the Vertico package:
 
 - [[https://github.com/minad/vertico/blob/main/extensions/vertico-buffer.el][vertico-buffer]]: =vertico-buffer-mode= to display Vertico like a regular buffer.
 - [[https://github.com/minad/vertico/blob/main/extensions/vertico-directory.el][vertico-directory]]: Commands for Ido-like directory navigation.
@@ -504,11 +504,6 @@ following resources:
   + [[https://www.youtube.com/watch?v=UtqE-lR2HCA][System Crafters Live! - Replacing Ivy and Counsel with Vertico and Consult]] (2021-05-21) by David Wilson.
   + [[https://www.youtube.com/watch?v=J0OaRy85MOo][Streamline Your Emacs Completions with Vertico]] (2021-05-17) by David Wilson.
   + [[https://www.youtube.com/watch?v=SOxlQ7ogplA&t=1952s][Modern Emacs: all those new tools that make Emacs better and faster]] (2024-03-06) by Marie-Hélène Burle.
-
-* Contributions
-
-Since this package is part of [[https://elpa.gnu.org/packages/vertico.html][GNU ELPA]] contributions require a copyright
-assignment to the FSF.
 
 * Debugging Vertico
 
