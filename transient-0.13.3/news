@@ -1,4 +1,13 @@
 # -*- mode: org -*-
+* v0.13.3    2026-05-07
+
+- Stopped needlessly using ~this-single-command-raw-keys~.  #442
+
+- Fixed a bug that prevented setting suffix levels for certain
+  sub-prefixes.  #443.
+
+- Started using new functions added in Emacs 31.
+
 * v0.13.2    2026-05-01
 
 - Fixed an incompatibility with development version of Compat.
@@ -107,10 +116,5 @@ not (primarily) concern accessibility.
 * v0.11.0    2025-11-18
 
 - At least Emacs 28.1 is required now.  Emacs 30.1 was released
-  earlier this year, so we still support Emacs "oldoldstable".
-  Because Emacs 28.1 was the first release that bundled this
-  package, we have to keep support for that release.  d361d272
-
-- Use my new Cond-Let package.  87fb8396..1d2710c7
 ...
 ...
