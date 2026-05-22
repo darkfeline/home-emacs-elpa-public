@@ -327,8 +327,8 @@ or file paths, respectively.
 escape those spaces or to enclose space in double quotes (as in shell
 argument parsing).  For backslash-escaped spaces set
 ‘orderless-component-separator’ to the function
-‘orderless-escapable-split-on-space’; for shell-like double-quotable
-space, set it to the standard Emacs function ‘split-string-and-unquote’.
+‘orderless-escapable-split’; for shell-like double-quotable space, set
+it to the standard Emacs function ‘split-string-and-unquote’.
 
    If you are implementing a command for which you know you want a
 different separator for the components, bind
@@ -620,18 +620,18 @@ Node: Component matching styles5358
 Node: Style modifiers7649
 Node: Style dispatchers8338
 Node: Component separator regexp11995
-Node: Defining custom orderless styles13232
-Node: Faces for component matches15122
-Node: Pattern compiler15926
-Node: Interactively changing the configuration16517
-Node: Integration with other completion UIs17978
-Node: Ivy18764
-Node: Helm19116
-Node: Company19460
-Node: Related packages21431
-Node: Ivy and Helm21675
-Node: Prescient23005
-Node: Restricting to current matches in Icicles, Ido and Ivy23835
+Node: Defining custom orderless styles13223
+Node: Faces for component matches15113
+Node: Pattern compiler15917
+Node: Interactively changing the configuration16508
+Node: Integration with other completion UIs17969
+Node: Ivy18755
+Node: Helm19107
+Node: Company19451
+Node: Related packages21422
+Node: Ivy and Helm21666
+Node: Prescient22996
+Node: Restricting to current matches in Icicles, Ido and Ivy23826
 
 End Tag Table
 
