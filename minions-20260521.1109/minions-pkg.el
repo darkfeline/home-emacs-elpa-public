@@ -1,11 +1,12 @@
 ;; -*- no-byte-compile: t; lexical-binding: nil -*-
-(define-package "minions" "20260504.1736"
+(define-package "minions" "20260521.1109"
   "A minor-mode menu for the mode line."
-  '((emacs  "26.1")
-    (compat "31.0"))
+  '((emacs  "28.1")
+    (compat "31.0")
+    (seq    "2.24"))
   :url "https://github.com/tarsius/minions"
-  :commit "c83cad7b408fa1b35b19f302da266532aba0ca98"
-  :revdesc "c83cad7b408f"
+  :commit "97392223bbdad004cd8d2e8039833ecb961d7728"
+  :revdesc "97392223bbda"
   :keywords '("convenience")
   :authors '(("Jonas Bernoulli" . "emacs.minions@jonas.bernoulli.dev"))
   :maintainers '(("Jonas Bernoulli" . "emacs.minions@jonas.bernoulli.dev")))
