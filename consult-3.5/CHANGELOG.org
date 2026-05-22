@@ -2,6 +2,12 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Version 3.5 (2026-05-19)
+
+- =consult-bookmark=: Add support for shell bookmarks.
+- Fix bug in command line splitter for asynchronous commands.
+- Require Compat 31.
+
 * Version 3.4 (2026-03-09)
 
 - Bugfixes.

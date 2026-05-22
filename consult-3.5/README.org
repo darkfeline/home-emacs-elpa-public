@@ -1308,12 +1308,9 @@ argument. Once defined, we can use this preview function in =consult--read=:
 
 Consult is a community effort, please participate in the discussions.
 Contributions are welcome, but you may want to discuss potential contributions
-first. Since this package is part of [[https://elpa.gnu.org/packages/consult.html][GNU ELPA]] contributions require a copyright
-assignment to the FSF.
-
-If you have a proposal, take a look at the [[https://github.com/minad/consult/issues][Consult issue tracker]] and the [[https://github.com/minad/consult/issues/6][Consult
-wishlist]]. There have been many prior feature discussions. Please search through
-the issue tracker, maybe your issue or feature request has already been
+first. If you have a proposal, take a look at the [[https://github.com/minad/consult/issues][Consult issue tracker]] and the
+[[https://github.com/minad/consult/issues/6][Consult wishlist]]. There have been many prior feature discussions. Please search
+through the issue tracker, maybe your issue or feature request has already been
 discussed. You can contribute to the [[https://github.com/minad/consult/wiki][Consult wiki]], in case you want to share
 small configuration or command snippets.
 
