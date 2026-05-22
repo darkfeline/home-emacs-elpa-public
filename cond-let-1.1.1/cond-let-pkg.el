@@ -1,0 +1,2 @@
+;; Generated package description from cond-let.el  -*- mode: lisp-data; no-byte-compile: t; lexical-binding:t -*-
+(define-package "cond-let" "1.1.1" "Additional and improved binding conditionals" '((emacs "28.1")) :commit "7ec5ace3e6acc240179bf3cdeb6f9e6751530c38" :authors '(("Jonas Bernoulli" . "emacs.cond-let@jonas.bernoulli.dev")) :maintainer '("Jonas Bernoulli" . "emacs.cond-let@jonas.bernoulli.dev") :keywords '("extensions") :url "https://github.com/tarsius/cond-let")
