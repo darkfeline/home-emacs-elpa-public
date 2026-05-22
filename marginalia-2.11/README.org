@@ -33,9 +33,11 @@ with command =marginalia-cycle=.
 
 * Configuration
 
-It is recommended to use Marginalia together with either the [[https://github.com/minad/vertico][Vertico]], [[https://github.com/protesilaos/mct][Mct]],
-[[https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html][Icomplete]] or the default completion UI. Furthermore Marginalia can be combined
-with [[https://github.com/oantolin/embark][Embark]] for action support and [[https://github.com/minad/consult][Consult]], which provides many useful commands.
+The package is available from [[https://elpa.gnu.org/packages/marginalia.html][ELPA]] or [[https://melpa.org/#/marginalia][MELPA]]. You can install the package with
+=package-install=. It is recommended to use Marginalia together with either the
+[[https://github.com/minad/vertico][Vertico]], [[https://github.com/protesilaos/mct][Mct]], [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html][Icomplete]] or the default completion UI. Furthermore Marginalia can
+be combined with [[https://github.com/oantolin/embark][Embark]] for action support and [[https://github.com/minad/consult][Consult]], which provides many
+useful commands.
 
 #+begin_src emacs-lisp
 ;; Enable rich annotations using the Marginalia package
@@ -202,8 +204,3 @@ Marginalia focuses on text annotations. The [[https://github.com/rainstormstudio
 compatible with Marginalia and uses the special NerdFonts to add icons in front
 of minibuffer completion candidates. There exist related packages to enhance
 Dired, Ibuffer, Corfu and other modes with icons consistently.
-
-* Contributions
-
-Since this package is part of [[https://elpa.gnu.org/packages/marginalia.html][GNU ELPA]] contributions require a copyright
-assignment to the FSF.
