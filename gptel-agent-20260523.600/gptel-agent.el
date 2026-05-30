@@ -2,8 +2,8 @@
 
 ;; Copyright (C) 2025 Karthik Chikmagalur
 
-;; Package-Version: 20260518.557
-;; Package-Revision: 753e722778fc
+;; Package-Version: 20260523.600
+;; Package-Revision: f8cab0368918
 ;; Package-Requires: ((emacs "29.1") (compat "30.1.0.0") (gptel "0.9.9") (yaml "1.2.0") (orderless "1.1"))
 ;; Keywords: comm
 ;; URL: https://github.com/karthink/gptel-agent
