@@ -28,8 +28,6 @@ evaluate the variable `gptel-mode'.
 The mode's hook is called both when the mode is enabled and when it is
 disabled.
 
-\\{gptel-mode-map}
-
 (fn &optional ARG)" t)
 (autoload 'gptel-send "gptel" "\
 Submit this prompt to the current LLM backend.
@@ -645,7 +643,7 @@ targets the Codex endpoint on chatgpt.com.  Run
 
 For keyword argument meanings, see `gptel-make-openai'.
 
-(fn NAME &key CURL-ARGS (STREAM t) REQUEST-PARAMS (HEADER #\\='gptel--openai-oauth-header) (HOST \"chatgpt.com\") (PROTOCOL \"https\") (ENDPOINT \"/backend-api/codex/responses\") (MODELS \\='(gpt-5.2 gpt-5.3-codex gpt-5.3-codex-spark gpt-5.4-mini gpt-5.4)))")
+(fn NAME &key CURL-ARGS (STREAM t) REQUEST-PARAMS (HEADER #\\='gptel--openai-oauth-header) (HOST \"chatgpt.com\") (PROTOCOL \"https\") (ENDPOINT \"/backend-api/codex/responses\") (MODELS \\='(gpt-5.2 gpt-5.3-codex gpt-5.3-codex-spark gpt-5.4-mini gpt-5.4 gpt-5.5)))")
 (function-put 'gptel-make-openai-oauth 'lisp-indent-function 1)
 (register-definition-prefixes "gptel-openai-oauth" '("gptel-"))
 
