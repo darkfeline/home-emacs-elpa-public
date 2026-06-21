@@ -1,4 +1,4 @@
-This is with-editor.info, produced by makeinfo version 7.2 from
+This is with-editor.info, produced by makeinfo version 7.1.1 from
 with-editor.texi.
 
      Copyright (C) 2015-2026 Jonas Bernoulli
@@ -40,7 +40,7 @@ library is made available as a separate package.  It also defines some
 additional functionality which makes it useful even for end-users, who
 don't use Magit or another package which uses it internally.
 
-This manual is for With-Editor version 3.5.0.
+This manual is for With-Editor version 3.5.1.
 
      Copyright (C) 2015-2026 Jonas Bernoulli
      <emacs.with-editor@jonas.bernoulli.dev>
@@ -69,6 +69,7 @@ Using the With-Editor package
 
 * Configuring With-Editor::
 * Using With-Editor commands::
+
 
 
 File: with-editor.info,  Node: Using the With-Editor package,  Next: Using With-Editor as a library,  Prev: Top,  Up: Top
@@ -363,21 +364,21 @@ Appendix B Variable Index
 * with-editor-sleeping-editor:           Configuring With-Editor.
                                                                (line 56)
 
+
 
 Tag Table:
-Node: Top799
-Node: Using the With-Editor package2608
-Node: Configuring With-Editor3193
-Node: Using With-Editor commands7739
-Node: Using With-Editor as a library11039
-Node: Debugging13067
-Node: Function and Command Index13959
-Node: Variable Index15457
+Node: Top801
+Node: Using the With-Editor package2611
+Node: Configuring With-Editor3196
+Node: Using With-Editor commands7742
+Node: Using With-Editor as a library11042
+Node: Debugging13070
+Node: Function and Command Index13962
+Node: Variable Index15460
 
 End Tag Table
 
 
 Local Variables:
 coding: utf-8
-Info-documentlanguage: en
 End:
