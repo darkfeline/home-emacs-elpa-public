@@ -28,6 +28,8 @@ evaluate the variable `gptel-mode'.
 The mode's hook is called both when the mode is enabled and when it is
 disabled.
 
+\\{gptel-mode-map}
+
 (fn &optional ARG)" t)
 (autoload 'gptel-send "gptel" "\
 Submit this prompt to the current LLM backend.
@@ -627,7 +629,7 @@ false.
 The other keyword arguments are all optional.  For their meanings
 see `gptel-make-openai'.
 
-(fn NAME &key CURL-ARGS STREAM KEY REQUEST-PARAMS (HEADER (lambda (_info) (when-let* ((key (gptel--get-api-key))) \\=`((\"Authorization\" \\=\\, (concat \"Bearer \" key)))))) (HOST \"api.x.ai\") (PROTOCOL \"https\") (ENDPOINT \"/v1/chat/completions\") (MODELS \\='((grok-4-1-fast-reasoning :description \"Fast tool-calling model\" :capabilities (tool-use json reasoning) :context-window 2000 :input-cost 0.2 :output-cost 0.5) (grok-4-1-fast-non-reasoning :description \"Fast tool-calling model (non-reasoning)\" :capabilities (tool-use json) :context-window 2000 :input-cost 0.2 :output-cost 0.5) (grok-code-fast-1 :description \"Fast reasoning model for agentic coding\" :capabilities (tool-use json reasoning) :context-window 256 :input-cost 0.2 :output-cost 1.5) (grok-4-fast-reasoning :description \"Fast tool-calling model\" :capabilities (tool-use json reasoning) :context-window 2000 :input-cost 0.2 :output-cost 0.5) (grok-4-fast-non-reasoning :description \"Fast tool-calling model (non-reasoning)\" :capabilities (tool-use json) :context-window 2000 :input-cost 0.2 :output-cost 0.5) (grok-4 :description \"Grok Flagship model\" :capabilities (tool-use json reasoning) :context-window 256 :input-cost 3 :output-cost 15) (grok-3-mini :description \"Mini Grok 3\" :capabilities (tool-use json reasoning) :context-window 131 :input-cost 0.3 :output-cost 0.5) (grok-3 :description \"Grok 3\" :capabilities (tool-use json reasoning) :context-window 131 :input-cost 3 :output-cost 15) (grok-2-vision-1212 :description \"Grok 2 Vision\" :capabilities (tool-use json media) :mime-types (\"image/jpeg\" \"image/png\" \"image/gif\" \"image/webp\") :context-window 32 :input-cost 2 :output-cost 10))))")
+(fn NAME &key CURL-ARGS STREAM KEY REQUEST-PARAMS (HEADER (lambda (_info) (when-let* ((key (gptel--get-api-key))) \\=`((\"Authorization\" \\=\\, (concat \"Bearer \" key)))))) (HOST \"api.x.ai\") (PROTOCOL \"https\") (ENDPOINT \"/v1/chat/completions\") (MODELS \\='((grok-4.3 :description \"Our most advanced flagship model, leading the industry in non-hallucination rate, agentic tool calling, and instruction following capabilities.\" :capabilities (tool-use json media reasoning) :mime-types (\"image/jpeg\" \"image/png\" \"image/gif\" \"image/webp\") :context-window 1000 :input-cost 1.25 :output-cost 2.5) (grok-build-0.1 :description \"xAI\\='s fast coding model trained specifically for agentic coding. Currently in early access.\" :capabilities (tool-use json media reasoning) :mime-types (\"image/jpeg\" \"image/png\" \"image/gif\" \"image/webp\") :context-window 256 :input-cost 1 :output-cost 2))))")
 (function-put 'gptel-make-xai 'lisp-indent-function 1)
 (register-definition-prefixes "gptel-openai-extras" '("gptel--p"))
 
