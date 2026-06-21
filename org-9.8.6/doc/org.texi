@@ -653,7 +653,7 @@ To avoid interference with the built-in Org mode@comma{} you can use the
 command line (you need Emacs 30 or later):
 
 @example
-emacs -Q -batch -eval "(progn (require 'package) (package-initialize) (package-refresh-contents) (package-upgrade 'org))"
+emacs -Q -batch -eval "(progn (package-refresh-contents) (package-upgrade 'org))"
 @end example
 
 This approach has the advantage of isolating the upgrade process from
@@ -2775,7 +2775,7 @@ instead of letting Calc handle the formatting.  A few examples:
 @item @samp{($3-32)*5/9}
 @tab Fahrenheit to Celsius conversion
 @item @samp{$c/$1/$cm}
-@tab Herz to centimeter conversion@comma{} using @samp{constants.el}
+@tab Hertz to centimeter conversion using @samp{constants.el}
 @item @samp{tan($1);Dp3s1}
 @tab Compute in degrees@comma{} precision 3@comma{} display SCI 1
 @item @samp{sin($1);Dp3%.1e}
