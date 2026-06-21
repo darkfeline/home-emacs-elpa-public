@@ -5,7 +5,7 @@
 ;; Author: Daniel Mendler and Consult contributors
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2020
-;; Version: 3.5
+;; Version: 3.6
 ;; Package-Requires: ((emacs "29.1") (compat "31"))
 ;; URL: https://github.com/minad/consult
 ;; Keywords: matching, files, completion
@@ -672,7 +672,9 @@ Turn ARG into a list, and for each element either:
       ;; Find first option
       (when (string-match "\\(?:\\`\\| \\)-" str)
         (setq opts (substring str (1- (match-end 0)))
-              str (substring str 0 (match-beginning 0))))
+              str (substring str 0 (match-beginning 0)))
+        (when (equal opts "-")
+          (setq opts "")))
       ;; Replace backslash-escaped dashes
       (setq str (replace-regexp-in-string "\\(\\`\\| \\)\\\\-" "\\1-" str))
       ;; Options end with double dash
@@ -1160,11 +1162,11 @@ Return cons of point position and a list of match begin/end pairs."
     (cons pos matches)))
 
 (defun consult--highlight-regexps (regexps ignore-case str)
-  "Highlight REGEXPS in STR.
+  "Highlight REGEXPS (or single regexp string) in STR.
 If a regular expression contains capturing groups, only these are highlighted.
 If no capturing groups are used highlight the whole match.  Case is ignored
 if IGNORE-CASE is non-nil."
-  (dolist (re regexps)
+  (dolist (re (ensure-list regexps))
     (let ((i 0))
       (while (and (let ((case-fold-search ignore-case))
                     (string-match re str i))
@@ -1180,6 +1182,12 @@ if IGNORE-CASE is non-nil."
                                       'consult-highlight-match nil str))
             (setq m (cddr m)))))))
   str)
+
+(defun consult--highlight-literals (literals ignore-case str)
+  "Highlight list of LITERALS or single literal string in STR.
+Case insensitive if IGNORE-CASE is non-nil."
+  (consult--highlight-regexps (mapcar #'regexp-quote (ensure-list literals))
+                              ignore-case str))
 
 (defconst consult--convert-regexp-table
   (append
@@ -5251,8 +5259,7 @@ input."
                    (ignore-case (or (member "-i" flags) (member "--ignore-case" flags))))
         (if (or (member "-F" flags) (member "--fixed-strings" flags))
             (cons (append cmd (list "-e" arg) opts paths)
-                  (apply-partially #'consult--highlight-regexps
-                                   (list (regexp-quote arg)) ignore-case))
+                  (apply-partially #'consult--highlight-literals arg ignore-case))
           (pcase-let ((`(,re . ,hl) (consult--compile-regexp arg type ignore-case)))
             (when re
               (cons (append cmd
@@ -5332,8 +5339,7 @@ The symbol at point is added to the future history."
                    (ignore-case (or (member "-i" flags) (member "--ignore-case" flags))))
         (if (or (member "-F" flags) (member "--fixed-strings" flags))
             (cons (append cmd (list "-e" arg) opts paths)
-                  (apply-partially #'consult--highlight-regexps
-                                   (list (regexp-quote arg)) ignore-case))
+                  (apply-partially #'consult--highlight-literals arg ignore-case))
           (pcase-let ((`(,re . ,hl) (consult--compile-regexp arg 'extended ignore-case)))
             (when re
               (cons (append cmd
@@ -5366,8 +5372,7 @@ See `consult-grep' for details."
                                     (not (string-match-p "[[:upper:]]" arg))))))))
         (if (or (member "-F" flags) (member "--fixed-strings" flags))
             (cons (append cmd (list "-e" arg) opts paths)
-                  (apply-partially #'consult--highlight-regexps
-                                   (list (regexp-quote arg)) ignore-case))
+                  (apply-partially #'consult--highlight-literals arg ignore-case))
           (pcase-let ((`(,re . ,hl) (consult--compile-regexp arg type ignore-case)))
             (when re
               (cons (append cmd (and (eq type 'pcre) '("-P"))
@@ -5415,21 +5420,36 @@ INITIAL is initial input."
                    'emacs 'basic)))
     (lambda (input)
       (pcase-let* ((`(,arg . ,opts) (consult--command-split input))
-                   ;; ignore-case=t since -iregex is used below
-                   (`(,re . ,hl) (consult--compile-regexp arg type t)))
-        (when (or re opts) ;; Either option or regexp must be provided
-          (cons (append cmd
-                        (cdr (mapcan
-                              (lambda (x)
-                                `("-and" "-iregex"
-                                  ,(format ".*%s.*"
-                                           ;; Replace non-capturing groups with capturing groups.
-                                           ;; GNU find does not support non-capturing groups.
-                                           (replace-regexp-in-string
-                                            "\\\\(\\?:" "\\(" x 'fixedcase 'literal))))
-                              re))
-                        opts)
-                hl))))))
+                   (method (or (seq-find (lambda (o)
+                                           (member o '("-name" "-path" "-regex"
+                                                       "-iname" "-ipath" "-iregex")))
+                                         opts)
+                               "-iregex"))
+                   (opts (remove method opts))
+                   (ignore-case (string-prefix-p "-i" method)))
+        (if (not (string-suffix-p "regex" method))
+            (when-let* ((args (consult--split-escaped arg)))
+              (cons (append cmd
+                            (cdr (mapcan
+                                  (lambda (x) `("-and" ,method ,(format "*%s*" x)))
+                                  args))
+                            opts)
+                    (apply-partially #'consult--highlight-literals args ignore-case)))
+          (pcase-let ((`(,re . ,hl) (consult--compile-regexp arg type ignore-case)))
+            (when (or re opts) ;; Either option or regexp must be provided
+              (cons (append cmd
+                            (cdr (mapcan
+                                  (lambda (x)
+                                    `("-and" ,method
+                                      ,(format
+                                        ".*%s.*"
+                                        ;; Replace non-capturing groups with capturing groups.
+                                        ;; GNU find does not support non-capturing groups.
+                                        (replace-regexp-in-string
+                                         "\\\\(\\?:" "\\(" x 'fixedcase 'literal))))
+                                  re))
+                            opts)
+                    hl))))))))
 
 ;;;###autoload
 (defun consult-find (&optional dir initial)
@@ -5466,8 +5486,7 @@ regarding the asynchronous search and the arguments."
                                         (mapcar (lambda (x) (concat "**/" x)) args)
                                       args))
                             (mapcan (lambda (x) `("--search-path" ,x)) paths))
-                    (apply-partially #'consult--highlight-regexps
-                                     (mapcar #'regexp-quote args) ignore-case)))
+                    (apply-partially #'consult--highlight-literals args ignore-case)))
           (pcase-let ((`(,re . ,hl) (consult--compile-regexp arg 'pcre ignore-case)))
              (when (or re opts) ;; Either option or regexp must be provided
               (cons (append cmd opts

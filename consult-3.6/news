@@ -3,7 +3,16 @@
                         ━━━━━━━━━━━━━━━━━━━━━━━━
 
 
-1 Version 3.5 (2026-05-19)
+1 Version 3.6 (2026-06-05)
+══════════════════════════
+
+  • `consult--command-splitter': Require at least a single character
+    behind the dash to recognize an option.
+  • `consult-find': Support `-name', `-iname', `-regex' and `-iregex'
+    options.
+
+
+2 Version 3.5 (2026-05-19)
 ══════════════════════════
 
   • `consult-bookmark': Add support for shell bookmarks.
@@ -11,7 +20,7 @@
   • Require Compat 31.
 
 
-2 Version 3.4 (2026-03-09)
+3 Version 3.4 (2026-03-09)
 ══════════════════════════
 
   • Bugfixes.
@@ -21,7 +30,7 @@
     `consult-preview-at-point'.
 
 
-3 Version 3.3 (2026-01-18)
+4 Version 3.3 (2026-01-18)
 ══════════════════════════
 
   • *BREAKING CHANGE*: The syntax to pass options to `consult-ripgrep',
@@ -43,7 +52,7 @@
     variables `consult-source-*' instead.
 
 
-4 Version 3.2 (2026-01-12)
+5 Version 3.2 (2026-01-12)
 ══════════════════════════
 
   • Improve default completion UI support on Emacs 31.
@@ -52,7 +61,7 @@
     automatically.
 
 
-5 Version 3.1 (2025-11-29)
+6 Version 3.1 (2025-11-29)
 ══════════════════════════
 
   • `consult-line', `consult-line-multi', `consult-outline': Use lazy
@@ -68,7 +77,7 @@
     the `affixation-function' only.
 
 
-6 Version 3.0 (2025-11-15)
+7 Version 3.0 (2025-11-15)
 ══════════════════════════
 
   • Make `consult-source-*' variables public. These variables are
@@ -77,7 +86,7 @@
     `consult--source-*' variable aliases.
 
 
-7 Version 2.9 (2025-10-13)
+8 Version 2.9 (2025-10-13)
 ══════════════════════════
 
   • Minor fixes.
@@ -86,7 +95,7 @@
     result.
 
 
-8 Version 2.8 (2025-09-08)
+9 Version 2.8 (2025-09-08)
 ══════════════════════════
 
   • New command `consult-grep-match' based on `consult-compile-error',
@@ -96,8 +105,8 @@
   • `consult-compile-error': Remove `g' narrow key.
 
 
-9 Version 2.7 (2025-08-05)
-══════════════════════════
+10 Version 2.7 (2025-08-05)
+═══════════════════════════
 
   • `consult-buffer-list-function': New customizable variable to support
     frame or tab isolation (see `tab-bar-mode'). Set to
@@ -113,20 +122,11 @@
 [beframe] <https://github.com/protesilaos/beframe>
 
 
-10 Version 2.6 (2025-06-28)
+11 Version 2.6 (2025-06-28)
 ═══════════════════════════
 
   • `consult--read', `consult--prompt': Accept a `:command' keyword
     argument which specifies the current command symbol to lookup the
     customization (see `consult-customize'). This change fixes an issue
     in `embark-consult'.
-
-
-11 Version 2.5 (2025-06-05)
-═══════════════════════════
-
-  • `consult--source-buffer-register': New source for buffer registers.
-  • `consult--jump-ensure-buffer': Reuse window if possible.
-  • `consult-compile-error': Add prefix argument to jump to error
-    message in the
   …  …
