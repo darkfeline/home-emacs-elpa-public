@@ -3,8 +3,8 @@
 ;; Copyright (C) 2025  lizqwer scott
 
 ;; Author: lizqwer scott <lizqwerscott@gmail.com>
-;; Package-Version: 20260508.1208
-;; Package-Revision: f10768e16f94
+;; Package-Version: 20260615.940
+;; Package-Revision: 2d172809cbdb
 ;; Package-Requires: ((emacs "30.1") (jsonrpc "1.0.25"))
 ;; Keywords: tools
 ;; URL: https://github.com/lizqwerscott/mcp.el
@@ -1215,7 +1215,7 @@ SYNCP specifies if the operation should be synchronous or asynchronous."
                        (message "Sadly, %s mpc server reports %s: %s"
                                 (jsonrpc-name connection) code message))))
          (args `(,connection
-                 ,method nil
+                 ,method ,(make-hash-table)
                  :timeout ,(mcp--timeout connection)
                  ,@(unless syncp `(:success-fn
                                    ,success-fn))
