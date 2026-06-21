@@ -1,4 +1,4 @@
-This is transient.info, produced by makeinfo version 7.2 from
+This is transient.info, produced by makeinfo version 7.1.1 from
 transient.texi.
 
      Copyright (C) 2018-2026 Free Software Foundation, Inc.
@@ -32,7 +32,7 @@ used to implement similar menus in other packages.
 resource to get over that hurdle is Psionic K's interactive tutorial,
 available at <https://github.com/positron-solutions/transient-showcase>.
 
-This manual is for Transient version 0.13.3.
+This manual is for Transient version 0.13.4.
 
      Copyright (C) 2018-2026 Free Software Foundation, Inc.
 
@@ -108,6 +108,7 @@ Suffix Methods
 
 * Suffix Value Methods::
 * Suffix Format Methods::
+
 
 
 
@@ -4073,85 +4074,85 @@ applications with the library.  If this is what you want to do, use the
 GNU Lesser General Public License instead of this License.  But first,
 please read <https://www.gnu.org/licenses/why-not-lgpl.html>.
 
+
 
 Tag Table:
-Node: Top761
-Node: Introduction3064
-Ref: Some things that Transient can do3590
-Ref: Complexity in CLI programs3943
-Ref: Using Transient for composing interactive commands4544
-Node: Usage6774
-Node: Invoking Transients7142
-Node: Aborting and Resuming Transients8332
-Node: Common Suffix Commands10948
-Node: Saving Values13889
-Ref: Saving Values-Footnote-115457
-Node: Using History15650
-Node: Getting Help for Suffix Commands17522
-Node: Enabling and Disabling Suffixes18898
-Node: Other Commands24256
-Node: Configuration25934
-Ref: Essential Options26214
-Ref: Accessibility Options33340
-Ref: Auxiliary Options40581
-Ref: Developer Options45232
-Ref: Hook Variables46757
-Node: Modifying Existing Transients47285
-Node: Defining New Commands53164
-Node: Technical Introduction53604
-Node: Defining Transients59307
-Node: Binding Suffix and Infix Commands62654
-Node: Group Specifications63510
-Node: Suffix Specifications70440
-Node: Defining Suffix and Infix Commands75473
-Node: Using Infix Arguments78521
-Node: Using Prefix Scope81549
-Node: Current Suffix Command83585
-Node: Current Prefix Command85942
-Node: Transient State88494
-Ref: Pre-commands for Infixes92829
-Ref: Pre-commands for Suffixes93345
-Ref: Pre-commands for Non-Suffixes95798
-Ref: Special Pre-Commands96934
-Node: Classes and Methods97442
-Node: Group Classes99529
-Node: Group Methods101454
-Node: Prefix Classes102713
-Node: Suffix Classes103554
-Node: Prefix Methods108348
-Node: Suffix Methods111569
-Node: Suffix Value Methods111890
-Node: Suffix Format Methods115237
-Node: Prefix Slots118222
-Ref: Value and Scope118372
-Ref: Behavior121364
-Ref: Appearance122705
-Ref: Documentation123389
-Ref: Internal124284
-Node: Suffix Slots125635
-Ref: Slots of transient-child126003
-Ref: Slots of transient-suffix127718
-Ref: Slots of transient-infix130159
-Ref: Slots of transient-variable133447
-Ref: Slots of transient-switches133549
-Node: Predicate Slots133912
-Node: FAQ136249
-Ref: Can I control how the menu buffer is displayed?136378
-Ref: How can I copy text from the menu buffer?136702
-Ref: How can I autoload prefix and suffix commands?137409
-Ref: How does Transient compare to prefix keys and universal arguments?137877
-Ref: How does Transient compare to Magit-Popup and Hydra?138120
-Ref: Why does q not quit popups anymore?138314
-Node: Keystroke Index139415
-Node: Command and Function Index141280
-Node: Variable Index149636
-Node: Concept Index152926
-Node: GNU General Public License155662
+Node: Top763
+Node: Introduction3067
+Ref: Some things that Transient can do3593
+Ref: Complexity in CLI programs3946
+Ref: Using Transient for composing interactive commands4547
+Node: Usage6777
+Node: Invoking Transients7145
+Node: Aborting and Resuming Transients8335
+Node: Common Suffix Commands10951
+Node: Saving Values13892
+Ref: Saving Values-Footnote-115460
+Node: Using History15653
+Node: Getting Help for Suffix Commands17525
+Node: Enabling and Disabling Suffixes18901
+Node: Other Commands24259
+Node: Configuration25937
+Ref: Essential Options26217
+Ref: Accessibility Options33343
+Ref: Auxiliary Options40584
+Ref: Developer Options45235
+Ref: Hook Variables46760
+Node: Modifying Existing Transients47288
+Node: Defining New Commands53167
+Node: Technical Introduction53607
+Node: Defining Transients59310
+Node: Binding Suffix and Infix Commands62657
+Node: Group Specifications63513
+Node: Suffix Specifications70443
+Node: Defining Suffix and Infix Commands75476
+Node: Using Infix Arguments78524
+Node: Using Prefix Scope81552
+Node: Current Suffix Command83588
+Node: Current Prefix Command85945
+Node: Transient State88497
+Ref: Pre-commands for Infixes92832
+Ref: Pre-commands for Suffixes93348
+Ref: Pre-commands for Non-Suffixes95801
+Ref: Special Pre-Commands96937
+Node: Classes and Methods97445
+Node: Group Classes99532
+Node: Group Methods101457
+Node: Prefix Classes102716
+Node: Suffix Classes103557
+Node: Prefix Methods108351
+Node: Suffix Methods111572
+Node: Suffix Value Methods111893
+Node: Suffix Format Methods115240
+Node: Prefix Slots118225
+Ref: Value and Scope118375
+Ref: Behavior121367
+Ref: Appearance122708
+Ref: Documentation123392
+Ref: Internal124287
+Node: Suffix Slots125638
+Ref: Slots of transient-child126006
+Ref: Slots of transient-suffix127721
+Ref: Slots of transient-infix130162
+Ref: Slots of transient-variable133450
+Ref: Slots of transient-switches133552
+Node: Predicate Slots133915
+Node: FAQ136252
+Ref: Can I control how the menu buffer is displayed?136381
+Ref: How can I copy text from the menu buffer?136705
+Ref: How can I autoload prefix and suffix commands?137412
+Ref: How does Transient compare to prefix keys and universal arguments?137880
+Ref: How does Transient compare to Magit-Popup and Hydra?138123
+Ref: Why does q not quit popups anymore?138317
+Node: Keystroke Index139418
+Node: Command and Function Index141283
+Node: Variable Index149639
+Node: Concept Index152929
+Node: GNU General Public License155665
 
 End Tag Table
 
 
 Local Variables:
 coding: utf-8
-Info-documentlanguage: en
 End:

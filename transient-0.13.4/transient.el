@@ -6,11 +6,11 @@
 ;; Homepage: https://github.com/magit/transient
 ;; Keywords: extensions
 
-;; Package-Version: 0.13.3
+;; Package-Version: 0.13.4
 ;; Package-Requires: (
 ;;     (emacs   "28.1")
 ;;     (compat  "31.0")
-;;     (cond-let "1.0")
+;;     (cond-let "1.1")
 ;;     (seq      "2.24"))
 
 ;; SPDX-License-Identifier: GPL-3.0-or-later
@@ -44,7 +44,7 @@
 
 ;;; Code:
 
-(defconst transient-version "0.13.3")
+(defconst transient-version "0.13.4")
 
 (require 'cl-lib)
 (require 'compat)
@@ -1531,7 +1531,7 @@ commands are aliases for."
                (sym (intern
                      (format
                       "transient:%s:%s:%d" prefix
-                      (replace-regexp-in-string (plist-get args :key) " " "")
+                      (string-replace (plist-get args :key) " " "")
                       (prog1 gensym-counter (incf gensym-counter))))))
            (use :command
                 `(prog1 ',sym
@@ -3903,7 +3903,7 @@ Call `transient-default-value' but because that is a noop for
                                 (string-match regexp v)
                                 (match-string 1 v)))))
               (if multi-value
-                  (delq nil (mapcar match value))
+                  (seq-filter match value)
                 (seq-some match value)))))))
 
 (cl-defmethod transient-init-value ((obj transient-switch))
@@ -5792,11 +5792,16 @@ as stand-in for elements of exhausted lists."
 ;;   (cond . 0)
 ;;   (interactive . 0))
 ;; read-symbol-shorthands: (
-;;   ("and$"         . "cond-let--and$")
-;;   ("and-let"      . "cond-let--and-let")
-;;   ("if-let"       . "cond-let--if-let")
-;;   ("when$"        . "cond-let--when$")
-;;   ("when-let"     . "cond-let--when-let")
-;;   ("while-let"    . "cond-let--while-let"))
+;;   ("and$"       . "cond-let--and$")
+;;   ("thread$"    . "cond-let--thread$")
+;;   ("when$"      . "cond-let--when$")
+;;   ("and-let*"   . "cond-let--and-let*")
+;;   ("and-let"    . "cond-let--and-let")
+;;   ("if-let*"    . "cond-let--if-let*")
+;;   ("if-let"     . "cond-let--if-let")
+;;   ("when-let*"  . "cond-let--when-let*")
+;;   ("when-let"   . "cond-let--when-let")
+;;   ("while-let*" . "cond-let--while-let*")
+;;   ("while-let"  . "cond-let--while-let"))
 ;; End:
 ;;; transient.el ends here
