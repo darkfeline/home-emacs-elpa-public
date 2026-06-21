@@ -1,5 +1,5 @@
 ;; -*- no-byte-compile: t; lexical-binding: nil -*-
-(define-package "gptel-agent" "20260523.600"
+(define-package "gptel-agent" "20260605.732"
   "Agentic LLM use for gptel."
   '((emacs     "29.1")
     (compat    "30.1.0.0")
@@ -7,6 +7,6 @@
     (yaml      "1.2.0")
     (orderless "1.1"))
   :url "https://github.com/karthink/gptel-agent"
-  :commit "f8cab0368918672a329ea3caf5cd64b6db1722eb"
-  :revdesc "f8cab0368918"
+  :commit "2853a579154cb4528082a372db79ecdec1eb17ad"
+  :revdesc "2853a579154c"
   :keywords '("comm"))
