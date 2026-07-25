@@ -5,8 +5,8 @@
 ;; Author: Daniel Mendler <mail@daniel-mendler.de>
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2021
-;; Version: 2.10
-;; Package-Requires: ((emacs "29.1") (compat "31") (vertico "2.10"))
+;; Version: 2.11
+;; Package-Requires: ((emacs "29.1") (compat "31") (vertico "2.11"))
 ;; URL: https://github.com/minad/vertico
 
 ;; This file is part of GNU Emacs.
@@ -107,6 +107,7 @@ The keys in LIST can be symbols or regexps."
 
 (defun vertico-multiform--setup ()
   "Enable modes at minibuffer setup."
+  (remove-hook 'minibuffer-setup-hook #'vertico-multiform--setup)
   (let ((cat (compat-call completion-metadata-get
               (completion-metadata (buffer-substring-no-properties
                                     (minibuffer-prompt-end)
@@ -175,11 +176,12 @@ The keys in LIST can be symbols or regexps."
   menu)
 
 (cl-defmethod vertico--advice (&context (vertico-multiform-mode (eql t)) &rest app)
-  (unwind-protect
+  (unwind-protect ;; Do not use `minibuffer-setup-hook' for idempotency.
       (dlet ((completion-eager-display nil)) ;; Available on Emacs 31
         (vertico-multiform--toggle -1)
-        (minibuffer-with-setup-hook #'vertico-multiform--setup
-          (apply app)))
+        (add-hook 'minibuffer-setup-hook #'vertico-multiform--setup)
+        (apply app))
+    (remove-hook 'minibuffer-setup-hook #'vertico-multiform--setup)
     (vertico-multiform--toggle 1)))
 
 (defun vertico-multiform--toggle-mode-1 (mode arg)

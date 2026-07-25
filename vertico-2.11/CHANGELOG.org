@@ -2,6 +2,10 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Version 2.11 (2026-07-22)
+
+- Bugfix: Fix double Vertico setup for =completing-read-multiple= on Emacs 31.
+
 * Version 2.10 (2026-06-05)
 
 - =vertico--display-string=: Better treatment of computed space in candidate
