@@ -1,4 +1,8 @@
 # -*- mode: org -*-
+* v0.13.5   2026-07-01
+
+- Started using LLama.
+
 * v0.13.4   2026-06-01
 
 - Thoughts and whitespace.
@@ -114,9 +118,5 @@ not (primarily) concern accessibility.
 - Various makefile improvements. 4e6d3fc8..151622e1
 
 - Gave up on determining function arity upfront.  6d1d8656
-
-- Various build improvements.
-
-* v0.11.0    2025-11-18
 ...
 ...
