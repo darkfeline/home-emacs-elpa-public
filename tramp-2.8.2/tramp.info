@@ -21,10 +21,10 @@ END-INFO-DIR-ENTRY
 
 File: tramp.info,  Node: Top,  Next: Overview,  Prev: (dir),  Up: (dir)
 
-TRAMP 2.8.1.5 User Manual
-*************************
+TRAMP 2.8.2 User Manual
+***********************
 
-This file documents TRAMP 2.8.1.5, a remote file editing package for
+This file documents TRAMP 2.8.2, a remote file editing package for
 Emacs.
 
    TRAMP stands for "Transparent Remote (file) Access, Multiple
@@ -5219,7 +5219,7 @@ purpose with one round-trip per-call.
      ‘tramp-add-external-operation’ must be called for every backend,
      respectively.
 
-     The optional argument ARG-TYPE specisfies, which argument of
+     The optional argument ARG-TYPE specifies, which argument of
      OPERATION shall be used in order to determine, whether the handler
      FUNCTION should be called.  It can be
 
@@ -5234,6 +5234,10 @@ purpose with one round-trip per-call.
           ‘default-directory’ of the process buffer of the first
           argument of OPERATION, a process, is the remote file name to
           be checked.
+
+        − ‘tramp-file-name’
+          The ‘tramp-file-name’ structure of the first argument of
+          OPERATION is the remote file name to be checked.
 
      If the first argument of OPERATION is nil, ‘default-directory’ is
      the remote file name to be checked in case of ARG-TYPE being ‘file’
@@ -5251,6 +5255,19 @@ purpose with one round-trip per-call.
           (tramp-add-external-operation
            #'my-test-operation #'my-handle-test-operation 'tramp-sh
            #'my-file-name-for-test-operation)
+
+ -- Function: tramp-external-operation-p operation backend
+     This checks, whether TRAMP's backend BACKEND supports external
+     OPERATION.  It returns the function registered as handler, or
+     ‘nil’.  Example:
+
+          (tramp-external-operation-p
+           #'my-test-operation 'tramp-sh)
+          ⇒ my-handle-test-operation
+
+          (tramp-external-operation-p
+           #'my-test-operation 'tramp-gvfs)
+          ⇒ nil
 
  -- Function: tramp-remove-external-operation operation backend
      The handler for OPERATION, added by ‘tramp-add-external-operation’,
@@ -5873,8 +5890,9 @@ Function Index
                                                               (line  93)
 * tramp-dired-find-file-with-sudo:       Ad-hoc multi-hops.   (line  83)
 * tramp-enable-method:                   Optional methods.    (line  11)
-* tramp-expand-script:                   New operations.      (line 119)
-* tramp-file-name-for-operation:         New operations.      (line  98)
+* tramp-expand-script:                   New operations.      (line 136)
+* tramp-external-operation-p:            New operations.      (line 115)
+* tramp-file-name-for-operation:         New operations.      (line 102)
 * tramp-get-completion-function:         Customizing Completion.
                                                               (line  16)
 * tramp-get-completion-function <1>:     Ssh setup.           (line  13)
@@ -5896,7 +5914,7 @@ Function Index
                                                               (line  45)
 * tramp-parse-sknownhosts:               Customizing Completion.
                                                               (line  62)
-* tramp-remove-external-operation:       New operations.      (line 111)
+* tramp-remove-external-operation:       New operations.      (line 128)
 * tramp-rename-files:                    Renaming remote files.
                                                               (line  11)
 * tramp-rename-these-files:              Renaming remote files.
@@ -6578,86 +6596,86 @@ Concept Index
 
 Tag Table:
 Node: Top919
-Node: Overview5987
-Ref: Overview-Footnote-111376
-Node: Obtaining TRAMP11412
-Node: Quick Start Guide13943
-Ref: Quick Start Guide File name syntax14724
-Ref: Quick Start Guide ssh and plink methods15818
-Ref: Quick Start Guide su, sudo, doas, run0, androidsu and sg methods16365
-Ref: Quick Start Guide Combining ssh, plink, su, sudo, doas and run0 methods17255
-Ref: Quick Start Guide sudoedit method17850
-Ref: Quick Start Guide smb method18260
-Ref: Quick Start Guide GVFS-based methods18591
-Ref: Quick Start Guide GNOME Online Accounts based methods19035
-Ref: Quick Start Guide FUSE-based methods19577
-Ref: Quick Start Guide Android20448
-Node: Configuration20682
-Node: Optional methods23720
-Node: Connection types24616
-Node: Inline methods26056
-Node: External methods36145
-Node: GVFS-based methods45846
-Node: FUSE-based methods50092
-Node: Default Method52724
-Ref: Default Method-Footnote-155943
-Node: Default User56051
-Node: Default Host57580
-Node: Multi-hops58851
-Node: Firewalls63046
-Node: Customizing Methods64516
-Node: Customizing Completion66526
-Node: Password handling70016
-Ref: Using an authentication file70486
-Ref: Caching passwords72883
-Ref: Password handling-Footnote-173818
-Ref: Password handling-Footnote-273889
-Node: Connection caching73939
-Node: Predefined connection information74869
-Ref: Predefined connection information-Footnote-179672
-Node: Remote programs79768
-Node: Remote shell setup82679
-Node: Ssh setup93404
-Ref: Using ssh connection sharing95359
-Node: FUSE setup101729
-Ref: Setup of rclone method102713
-Ref: Setup of sshfs method103623
-Ref: FUSE setup-Footnote-1104115
-Node: Android shell setup104151
-Node: Kubernetes setup107449
-Node: Auto-save File Lock and Backup108521
-Node: Keeping files encrypted112971
-Node: Usage117800
-Node: File name syntax119222
-Node: Change file name syntax121319
-Node: File name completion122749
-Node: Ad-hoc multi-hops125810
-Ref: tramp-show-ad-hoc-proxies126941
-Ref: tramp-save-ad-hoc-proxies127632
-Node: Home directories131603
-Node: Remote processes133330
-Ref: Managing remote shell history139643
-Ref: Running a debugger on a remote host145254
-Ref: Running remote processes on MS Windows hosts146386
-Ref: Improving performance of asynchronous remote processes153819
-Node: Cleanup remote connections157620
-Node: Renaming remote files160486
-Node: Archive file names164803
-Node: Bug Reports169523
-Node: Frequently Asked Questions173464
-Ref: Frequently Asked Questions-Footnote-1206664
-Node: Files directories and localnames206729
-Node: Temporary directory207360
-Node: Localname deconstruction208460
-Node: External packages209141
-Node: Extension packages212497
-Node: New operations217914
-Node: Traces and Profiles223352
-Node: GNU Free Documentation License226701
-Node: Function Index251874
-Node: Variable Index256977
-Node: Key Index274221
-Node: Concept Index274503
+Node: Overview5981
+Ref: Overview-Footnote-111370
+Node: Obtaining TRAMP11406
+Node: Quick Start Guide13937
+Ref: Quick Start Guide File name syntax14718
+Ref: Quick Start Guide ssh and plink methods15812
+Ref: Quick Start Guide su, sudo, doas, run0, androidsu and sg methods16359
+Ref: Quick Start Guide Combining ssh, plink, su, sudo, doas and run0 methods17249
+Ref: Quick Start Guide sudoedit method17844
+Ref: Quick Start Guide smb method18254
+Ref: Quick Start Guide GVFS-based methods18585
+Ref: Quick Start Guide GNOME Online Accounts based methods19029
+Ref: Quick Start Guide FUSE-based methods19571
+Ref: Quick Start Guide Android20442
+Node: Configuration20676
+Node: Optional methods23714
+Node: Connection types24610
+Node: Inline methods26050
+Node: External methods36139
+Node: GVFS-based methods45840
+Node: FUSE-based methods50086
+Node: Default Method52718
+Ref: Default Method-Footnote-155937
+Node: Default User56045
+Node: Default Host57574
+Node: Multi-hops58845
+Node: Firewalls63040
+Node: Customizing Methods64510
+Node: Customizing Completion66520
+Node: Password handling70010
+Ref: Using an authentication file70480
+Ref: Caching passwords72877
+Ref: Password handling-Footnote-173812
+Ref: Password handling-Footnote-273883
+Node: Connection caching73933
+Node: Predefined connection information74863
+Ref: Predefined connection information-Footnote-179666
+Node: Remote programs79762
+Node: Remote shell setup82673
+Node: Ssh setup93398
+Ref: Using ssh connection sharing95353
+Node: FUSE setup101723
+Ref: Setup of rclone method102707
+Ref: Setup of sshfs method103617
+Ref: FUSE setup-Footnote-1104109
+Node: Android shell setup104145
+Node: Kubernetes setup107443
+Node: Auto-save File Lock and Backup108515
+Node: Keeping files encrypted112965
+Node: Usage117794
+Node: File name syntax119216
+Node: Change file name syntax121313
+Node: File name completion122743
+Node: Ad-hoc multi-hops125804
+Ref: tramp-show-ad-hoc-proxies126935
+Ref: tramp-save-ad-hoc-proxies127626
+Node: Home directories131597
+Node: Remote processes133324
+Ref: Managing remote shell history139637
+Ref: Running a debugger on a remote host145248
+Ref: Running remote processes on MS Windows hosts146380
+Ref: Improving performance of asynchronous remote processes153813
+Node: Cleanup remote connections157614
+Node: Renaming remote files160480
+Node: Archive file names164797
+Node: Bug Reports169517
+Node: Frequently Asked Questions173458
+Ref: Frequently Asked Questions-Footnote-1206658
+Node: Files directories and localnames206723
+Node: Temporary directory207354
+Node: Localname deconstruction208454
+Node: External packages209135
+Node: Extension packages212491
+Node: New operations217908
+Node: Traces and Profiles223952
+Node: GNU Free Documentation License227301
+Node: Function Index252474
+Node: Variable Index257650
+Node: Key Index274894
+Node: Concept Index275176
 
 End Tag Table
 
