@@ -18,6 +18,29 @@ to look up issue github#1234, go to
 https://github.com/joaotavora/eglot/issues/1234.
 
 
+* Changes in Eglot 1.24 (23/6/2026)
+
+** New command 'M-x eglot-describe-connection'
+
+Pops up a detailed description buffer for the current connection,
+outlining aspects such as the LSP server name and version, the project
+name and root path, among others.
+
+** Improvements to 'M-x eglot-list-connections'
+
+New key bindings: 'k' shuts down, 'r' reconnects, 'e' visits the events
+buffer, 'w' shows workspace configuration, and 'RET' invokes
+'eglot-describe-connection'.
+
+** New variable 'eglot-documentation-renderer' (bug#80127)
+
+The variable 'eglot-documentation-renderer' replaces the now-obsolete
+'eglot-prefer-plaintext' and offers more control over what major mode is
+used to render markdown snippets.  By default, the variable is nil and
+'gfm-view-mode' from NonGNU ELPA's markdown-mode package is used if
+found.  See docstring for more details.
+
+
 * Changes in Eglot 1.23 (2/4/2026)
 
 ** Unbreak ELPA Eglot (github#1584)
@@ -79,26 +102,5 @@ prepareRename requests.
 
 
 * Changes in Eglot 1.21 (11/1/2026)
-
-This is a bugfix release with small fixes for semantic tokens and Emacs
-26.3 compatibility.
-
-
-* Changes in Eglot 1.20 (11/1/2026)
-
-** Dramatically faster handling of files with many diagnostics
-
-Diagnostic conversion between LSP and Flymake versions is now much
-faster.  Previously, editing, e.g. a Python file with thousands of
-diagnostics was next to impossible to to periodic interruptions of
-diagnostic reports.  Now it's practically unnoticeable.
-
-** Support for LSP server multiplexers via Rassumfrassum
-
-Eglot can now leverage LSP server multiplexer programs like Rassumfrassum
-(invoked via the 'rass' command) to use multiple language servers in a
-single buffer.  This enables combining spell-checkers with language
-servers, using multiple servers for the same language (e.g., 'ty' for
-type checking and 'ruff' for linting in Python), or handling
 ...
 ...
