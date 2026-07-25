@@ -3,8 +3,8 @@
 ;; Copyright (C) 2017-2020 by Lukas Fürmetz & Contributors
 ;;
 ;; Author: Lukas Fürmetz <fuermetz@mailbox.org>
-;; Package-Version: 20260528.1919
-;; Package-Revision: d8157e74339e
+;; Package-Version: 20260706.1652
+;; Package-Revision: 9a32a4afce25
 ;; URL: https://github.com/akermu/emacs-libvterm
 ;; Keywords: terminals
 ;; Package-Requires: ((emacs "25.1"))
@@ -680,6 +680,8 @@ Exceptions are defined by `vterm-keymap-exceptions'."
     (define-key map [backspace]                 #'vterm-send-backspace)
     (define-key map (kbd "DEL")                 #'vterm-send-backspace)
     (define-key map [delete]                    #'vterm-send-delete)
+    (define-key map (kbd "<deletechar>")        #'vterm-send-delete) ; OKAY!
+    (define-key map [C-delete]                  #'vterm-send-ctrl-delete)
     (define-key map [M-backspace]               #'vterm-send-meta-backspace)
     (define-key map (kbd "M-DEL")               #'vterm-send-meta-backspace)
     (define-key map [C-backspace]               #'vterm-send-meta-backspace)
@@ -1121,6 +1123,11 @@ running in the terminal (like Emacs or Nano)."
   "Send `<delete>' to the libvterm."
   (interactive)
   (vterm-send-key "<delete>"))
+
+(defun vterm-send-ctrl-delete ()
+  "Send `C-<delete>' to the libvterm."
+  (interactive)
+  (vterm-send-key "<delete>" nil nil t))
 
 (defun vterm-send-meta-backspace ()
   "Send `M-<backspace>' to the libvterm."
@@ -1721,7 +1728,10 @@ If N is negative backward-line from end of buffer."
                   (progn
                     (when (file-directory-p dir)
                       (setq directory (file-name-as-directory dir))))
-                (setq directory (file-name-as-directory (concat "/-:" path))))))
+                (let ((method (if (tramp-tramp-file-p default-directory)
+                                  (tramp-file-name-method (tramp-dissect-file-name default-directory))
+                                tramp-default-method-marker)))
+                  (setq directory (file-name-as-directory (concat tramp-prefix-format method tramp-postfix-method-format path)))))))
         (when (file-directory-p path)
           (setq directory (file-name-as-directory path))))
       directory)))
