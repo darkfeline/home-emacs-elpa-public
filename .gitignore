@@ -3,6 +3,9 @@
 
 *.elc
 
+/ghostel-*/ghostel-module.so
+/ghostel-*/ghostel-module.version
+
 /vterm-*/build/
 /vterm-*/vterm-module.so
 
