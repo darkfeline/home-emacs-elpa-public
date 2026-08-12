@@ -157,11 +157,12 @@ Interactively, prompts for the command if option
 `compilation-read-command' is non-nil, otherwise uses
 `compile-command'.  With prefix arg, always prompts.
 
-Output always scrolls as it arrives (equivalent to
-`compilation-scroll-output' being non-nil).  `compilation-ask-about-save'
-and `compilation-auto-jump-to-first-error' are honoured.  The command
-default and history are shared with \\[compile] via `compile-command'
-and `compile-history'.
+`compilation-scroll-output', `compilation-ask-about-save' and
+`compilation-auto-jump-to-first-error' are honoured.  The value
+`first-error' of `compilation-scroll-output' follows the output during
+the run and leaves point on the first error message in the compile
+buffer when the command finishes.  The command default and history are
+shared with \\[compile] via `compile-command' and `compile-history'.
 
 (fn COMMAND &optional INTERACTIVE)" t)
 (defvar ghostel-compile-global-mode nil "\

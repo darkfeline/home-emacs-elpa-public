@@ -4,8 +4,8 @@
 
 ;; Author: Daniel Kraus <daniel@kraus.my>
 ;; URL: https://github.com/dakra/ghostel
-;; Package-Version: 20260803.1326
-;; Package-Revision: 37a82caa25c4
+;; Package-Version: 20260807.2147
+;; Package-Revision: 037378b44cee
 ;; Keywords: terminals
 ;; Package-Requires: ((emacs "28.1") (compat "30.1.0.1"))
 ;; SPDX-License-Identifier: GPL-3.0-or-later
@@ -1672,7 +1672,8 @@ Detect that case via `this-command-keys-vector' and re-inject meta."
 ;;; Programmatic insert forwarding
 
 (defvar-local ghostel--inhibit-insert-forwarding nil
-  "Non-nil disables insert forwarding (e.g. compilation-style runs).")
+  "Non-nil disables insert forwarding (e.g. compilation-style runs).
+Also suppresses automatic input-mode switching (point-leave, mark-activation).")
 
 (defsubst ghostel--insert-forwarding-live-p ()
   "Non-nil in a terminal-input mode with a live process and forwarding on."
@@ -2489,6 +2490,12 @@ Tracks the mode the user was in immediately before the most
 recent read-only entry, so Emacs → copy → exit returns to Emacs
 mode and copy → Emacs → exit returns to copy.")
 
+(defvar-local ghostel--readonly-exit-function nil
+  "When non-nil, `ghostel-readonly-exit' calls this instead of the default restore.
+The function is responsible for the full post-exit state (input mode, keymap,
+read-only flag, mode line, redraw).  Set in compilation-style compile buffers,
+whose exit must restore the view keymap rather than a terminal input mode.")
+
 (defun ghostel--readonly-keymap ()
   "Return the keymap to use for the current read-only mode."
   (if ghostel-readonly-fast-exit
@@ -2600,7 +2607,8 @@ command set the region, so the selection survives the switch."
   (when (and (not (memq this-command '(ghostel-mouse-press-or-copy-mode
                                        ghostel-mouse-release-or-set-point
                                        ghostel-mouse-drag-or-set-region)))
-             (eq ghostel--input-mode 'semi-char))
+             (eq ghostel--input-mode 'semi-char)
+             (not ghostel--inhibit-insert-forwarding))
     (ghostel--enter-readonly-input-mode ghostel-mark-activation-input-mode)))
 
 (defun ghostel-maybe-leave-input (&rest _)
@@ -2611,6 +2619,7 @@ Add it to other jump commands as a hook or `:after' advice (see the README)."
   (interactive)
   (when (and ghostel-point-leave-input-mode
              (eq ghostel--input-mode 'semi-char)
+             (not ghostel--inhibit-insert-forwarding)
              ghostel--term
              ghostel--cursor-char-pos
              (not executing-kbd-macro)
@@ -2624,16 +2633,18 @@ Add it to other jump commands as a hook or `:after' advice (see the README)."
   (when (memq ghostel--input-mode '(copy emacs))
     (let ((target (or ghostel--pre-readonly-mode 'semi-char)))
       (setq ghostel--pre-readonly-mode nil)
-      ;; Return to the live viewport before reenabling terminal input.
-      (goto-char (point-max))
-      (setq ghostel--force-next-redraw t)
-      (pcase target
-        ('char  (ghostel-char-mode))
-        ('emacs (ghostel-emacs-mode))
-        (_      (ghostel-semi-char-mode)))
-      (ghostel--adjust-size (selected-window) t)
-      (ghostel--anchor-window nil t)
-      (ghostel-force-redraw))
+      (if ghostel--readonly-exit-function
+          (funcall ghostel--readonly-exit-function)
+        ;; Return to the live viewport before reenabling terminal input.
+        (goto-char (point-max))
+        (setq ghostel--force-next-redraw t)
+        (pcase target
+          ('char  (ghostel-char-mode))
+          ('emacs (ghostel-emacs-mode))
+          (_      (ghostel-semi-char-mode)))
+        (ghostel--adjust-size (selected-window) t)
+        (ghostel--anchor-window nil t)
+        (ghostel-force-redraw)))
     (message "Read-only mode exited")))
 
 (defun ghostel-readonly-exit-and-clear ()
@@ -2647,9 +2658,11 @@ Add it to other jump commands as a hook or `:after' advice (see the README)."
 Only forwards the key when the mode we are returning to actually
 accepts terminal input (semi-char or char)."
   (interactive)
-  (let ((target (or ghostel--pre-readonly-mode 'semi-char)))
+  (let ((target (or ghostel--pre-readonly-mode 'semi-char))
+        (custom-exit ghostel--readonly-exit-function))
     (ghostel-readonly-exit)
-    (when (and ghostel--term (memq target '(semi-char char)))
+    (when (and ghostel--term (not custom-exit)
+               (memq target '(semi-char char)))
       (ghostel--self-insert))))
 
 (defun ghostel-readonly-RET-or-exit-and-send ()
@@ -2666,9 +2679,11 @@ press anywhere else exits and forwards a CR to the terminal."
       (progn
         (ghostel-readonly-exit)
         (ghostel--open-link url))
-    (let ((target (or ghostel--pre-readonly-mode 'semi-char)))
+    (let ((target (or ghostel--pre-readonly-mode 'semi-char))
+          (custom-exit ghostel--readonly-exit-function))
       (ghostel-readonly-exit)
-      (when (and ghostel--term (memq target '(semi-char char)))
+      (when (and ghostel--term (not custom-exit)
+                 (memq target '(semi-char char)))
         (ghostel--send-encoded "return" "")))))
 
 (defun ghostel--filter-soft-wraps (text)
@@ -3656,14 +3671,20 @@ EVENT is the state-change description passed by Emacs."
      ((member base '("nu" "nushell")) 'nu))))
 
 (defun ghostel--local-host-p (host)
-  "Return non-nil if HOST refers to the local machine."
+  "Return non-nil if HOST refers to the local machine.
+A trailing \".local\" (mDNS) suffix on HOST is ignored: the macOS
+kernel hostname drifts between NAME and NAME.local with network state,
+while the function `system-name' keeps the value from Emacs startup."
   (or (null host)
       (string= host "")
-      (eq t (compare-strings host nil nil "localhost" nil nil t))
-      (eq t (compare-strings host nil nil (system-name) nil nil t))
-      (eq t (compare-strings
-             host nil nil
-             (car (split-string (system-name) "\\.")) nil nil t))))
+      (let ((host (if (string-suffix-p ".local" host t)
+                      (substring host 0 (- (length host) (length ".local")))
+                    host)))
+        (or (eq t (compare-strings host nil nil "localhost" nil nil t))
+            (eq t (compare-strings host nil nil (system-name) nil nil t))
+            (eq t (compare-strings
+                   host nil nil
+                   (car (split-string (system-name) "\\.")) nil nil t))))))
 
 (defun ghostel--tramp-shell-spec (method)
   "Return (PROGRAM . EXTRA-ARGS) for TRAMP METHOD from `ghostel-tramp-shells'.
@@ -3833,11 +3854,15 @@ available or the push fails."
 (defun ghostel--cleanup-temp-paths (files dirs)
   "Delete temporary FILES and DIRS created for remote shell integration.
 Directories are removed recursively so any contents written into them,
-such as a per-session `.zshenv', are cleaned up as well."
-  (dolist (f files)
-    (ignore-errors (delete-file f)))
-  (dolist (d dirs)
-    (ignore-errors (delete-directory d t))))
+such as a per-session `.zshenv', are cleaned up as well.
+Binding `non-essential' keeps TRAMP from opening a new connection (and
+possibly prompting for a password) just to delete temp files; when the
+remote connection is already gone the paths are simply left behind."
+  (let ((non-essential t))
+    (dolist (f files)
+      (ignore-errors (delete-file f)))
+    (dolist (d dirs)
+      (ignore-errors (delete-directory d t)))))
 
 (defun ghostel--merge-integration-plists (base extra)
   "Merge EXTRA into BASE plist, appending list values for shared keys.
@@ -4247,7 +4272,11 @@ Run from `kill-buffer-hook' in native PTY buffers."
   ;; exited, matching Emacs process lifetime semantics.
   (when ghostel--process
     (set-process-buffer ghostel--process nil))
-  (ghostel--kill-native-process ghostel--term))
+  ;; A major-mode change after process exit wipes `ghostel--term'
+  ;; while the permanent-local `kill-buffer-hook' keeps this entry;
+  ;; nil means there is no native child to reap.
+  (when ghostel--term
+    (ghostel--kill-native-process ghostel--term)))
 
 (defun ghostel--start-process ()
   "Start the configured shell with a PTY.
