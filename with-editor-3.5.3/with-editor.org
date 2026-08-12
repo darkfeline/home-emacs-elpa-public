@@ -7,7 +7,7 @@
 #+texinfo_dir_category: Emacs
 #+texinfo_dir_title: With-Editor: (with-editor).
 #+texinfo_dir_desc: Using the Emacsclient as $EDITOR
-#+subtitle: for version 3.5.2
+#+subtitle: for version 3.5.3
 
 #+setupfile: .orgconfig
 
@@ -27,7 +27,7 @@ additional functionality which makes it useful even for end-users, who
 don't use Magit or another package which uses it internally.
 
 #+texinfo: @noindent
-This manual is for With-Editor version 3.5.2.
+This manual is for With-Editor version 3.5.3.
 
 #+texinfo: @insertcopying
 :END:
@@ -176,26 +176,27 @@ Alternatively use the global ~shell-command-with-editor-mode~.
   command.  This affects most variants of that command, whether they
   are defined in Emacs or in some third-party package.
 
-The command ~with-editor-export-editor~ exports ~$EDITOR~ or another
-such environment variable in ~shell-mode~, ~eshell-mode~, ~term-mode~ and
-~vterm-mode~ buffers.  Use this Emacs command before executing a shell
+The command ~with-editor-export-editor~ exports ~$EDITOR~ or another such
+environment variable in ~shell-mode~, ~eshell-mode~, ~term-mode~, ~vterm-mode~
+and ~eat-mode~ buffers.  Use this Emacs command before executing a shell
 command which needs the editor set, or always arrange for the current
 Emacs instance to be used as editor by adding it to the appropriate
 mode hooks:
 
 #+begin_src emacs-lisp
-  (add-hook 'shell-mode-hook  'with-editor-export-editor)
-  (add-hook 'eshell-mode-hook 'with-editor-export-editor)
-  (add-hook 'term-exec-hook   'with-editor-export-editor)
-  (add-hook 'vterm-mode-hook  'with-editor-export-editor)
+  (add-hook 'shell-mode-hook  #'with-editor-export-editor)
+  (add-hook 'eshell-mode-hook #'with-editor-export-editor)
+  (add-hook 'term-exec-hook   #'with-editor-export-editor)
+  (add-hook 'vterm-mode-hook  #'with-editor-export-editor)
+  (add-hook 'eat-exec-hook    #'with-editor-export-editor)
 #+end_src
 
 Some variants of this function exist; these two forms are equivalent:
 
 #+begin_src emacs-lisp
   (add-hook 'shell-mode-hook
-            (apply-partially 'with-editor-export-editor "GIT_EDITOR"))
-  (add-hook 'shell-mode-hook 'with-editor-export-git-editor)
+            (apply-partially #'with-editor-export-editor "GIT_EDITOR"))
+  (add-hook 'shell-mode-hook #'with-editor-export-git-editor)
 #+end_src
 
 - Command: with-editor-export-editor ::
@@ -269,6 +270,15 @@ in Magit, then please open a new issue at
 https://github.com/magit/with-editor/issues and provide information
 about your Emacs installation.  Most importantly how did you install
 Emacs and what is the output of ~M-x with-editor-debug RET~.
+
+* FAQ
+:PROPERTIES:
+:APPENDIX:   t
+:END:
+
+** I am unable to commit with Magit
+
+See [[*Debugging]].
 
 * Function and Command Index
 :PROPERTIES:
