@@ -32,7 +32,7 @@ used to implement similar menus in other packages.
 resource to get over that hurdle is Psionic K's interactive tutorial,
 available at <https://github.com/positron-solutions/transient-showcase>.
 
-This manual is for Transient version 0.13.5.
+This manual is for Transient version 0.13.7.
 
      Copyright (C) 2018-2026 Free Software Foundation, Inc.
 
@@ -2900,6 +2900,16 @@ They are defined here anyway to allow sharing certain methods.
 
    • ‘shortarg’ The short argument, e.g., ‘-v’.
 
+   • ‘claim-argument’ Whether to claim matched arguments exclusively,
+     i.e., whether to prevent other "overlapping" infixes from also
+     matching.
+
+     For example, consider the suffix arguments
+     ‘--push-option=known=<val>’ and ‘--push-option=<arbitrary>’.
+     Unless the former claims any matched value exclusively (and appears
+     before the latter in the menu), the latter also matches, which
+     would lead to undesirable behavior.
+
    • ‘value’ The value.  Should not be accessed directly.
 
    • ‘init-value’ Function that is responsible for setting the object's
@@ -4134,21 +4144,21 @@ Node: Suffix Slots125638
 Ref: Slots of transient-child126006
 Ref: Slots of transient-suffix127721
 Ref: Slots of transient-infix130162
-Ref: Slots of transient-variable133450
-Ref: Slots of transient-switches133552
-Node: Predicate Slots133915
-Node: FAQ136252
-Ref: Can I control how the menu buffer is displayed?136381
-Ref: How can I copy text from the menu buffer?136705
-Ref: How can I autoload prefix and suffix commands?137412
-Ref: How does Transient compare to prefix keys and universal arguments?137880
-Ref: How does Transient compare to Magit-Popup and Hydra?138123
-Ref: Why does q not quit popups anymore?138317
-Node: Keystroke Index139418
-Node: Command and Function Index141283
-Node: Variable Index149639
-Node: Concept Index152929
-Node: GNU General Public License155665
+Ref: Slots of transient-variable133915
+Ref: Slots of transient-switches134017
+Node: Predicate Slots134380
+Node: FAQ136717
+Ref: Can I control how the menu buffer is displayed?136846
+Ref: How can I copy text from the menu buffer?137170
+Ref: How can I autoload prefix and suffix commands?137877
+Ref: How does Transient compare to prefix keys and universal arguments?138345
+Ref: How does Transient compare to Magit-Popup and Hydra?138588
+Ref: Why does q not quit popups anymore?138782
+Node: Keystroke Index139883
+Node: Command and Function Index141748
+Node: Variable Index150104
+Node: Concept Index153394
+Node: GNU General Public License156130
 
 End Tag Table
 

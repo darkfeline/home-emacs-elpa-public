@@ -1,4 +1,23 @@
 # -*- mode: org -*-
+* v0.13.7   2026-08-06
+
+- Fixed a minor regression introduced in v0.13.6 affecting infixes
+  whose values aren't represented using a string.
+
+* v0.13.6   2026-08-01
+
+- When a group would be empty because all its suffixes are inactive
+  (due to ~:if*~ predicates or their ~:level~), then it is no longer
+  inserted at all.  d5514493
+
+- Added new ~claim-argument~ suffix slot, which helps avoid conflicts
+  between overlapping suffixes, such as ~--push-option=known=<val>~
+  and ~--push-option=<arbitrary>~.  f772690e
+
+- Fixed a regression introduced in v0.13.4, which caused set and
+  saved values to be corrupted for some multi-value arguments.
+  7600a430
+
 * v0.13.5   2026-07-01
 
 - Started using LLama.
@@ -100,23 +119,5 @@ not (primarily) concern accessibility.
   such commands, to protect against that possibility.  63f90723 ff
 
 - If an error occurred because of a window misconfiguration by some
-  third-party code, that could cause the transient menu to enter an
-  inconsistent state, because we did not protect all the places where
-  that could result in an error.  8b142031, #429
-
-- Restored compatibility with the ~emoji.el~ that ships with Emacs
-  29.4.  #417
-
-* v0.12.0    2026-01-01
-
-- Fixed a regression when using the ~transient-value-preset~ class,
-  introduced in v0.10.0.  f960acdf
-
-- Stopped creating a new file to save an unmodified default value
-  (the empty list).  3fdd8043
-
-- Various makefile improvements. 4e6d3fc8..151622e1
-
-- Gave up on determining function arity upfront.  6d1d8656
 ...
 ...
