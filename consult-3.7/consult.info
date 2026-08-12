@@ -654,7 +654,7 @@ examples apply to ripgrep:
      files.
    • ‘#.* -F’: Treat input as fixed string, and not as regular
      expression.
-   • ‘#foo bar -s’: Treat input as case sensitive (‘-s’), sensitive
+   • ‘#foo bar -s’: Treat input as case sensitive (‘-s’), insensitive
      (‘-i’), or smart case (‘-S’).
 
    Input can come after the options and the dash can be escaped:
@@ -833,9 +833,9 @@ File: consult.info,  Node: Configuration,  Next: Recommended packages,  Prev: Sp
 
 Consult can be installed from ELPA
 (https://elpa.gnu.org/packages/consult.html) or MELPA
-(https://melpa.org/#/consult) via the Emacs built-in package manager.
-Alternatively it can be directly installed from the development
-repository via other non-standard package managers.
+(https://releases.melpa.org/#/consult) via the Emacs built-in package
+manager.  Alternatively it can be directly installed from the
+development repository via other non-standard package managers.
 
    There is the Consult wiki (https://github.com/minad/consult/wiki),
 where additional configuration examples can be contributed.
@@ -1188,9 +1188,9 @@ model fits best for you.
    • The builtin completion UI, which pops up the ‘*Completions*’
      buffer.
    • The builtin ‘icomplete-vertical-mode’.
-   • mct by Protesilaos Stavrou (https://git.sr.ht/~protesilaos/mct):
-     Minibuffer and Completions in Tandem, which builds on the default
-     completion UI.
+   • Mct (https://github.com/protesilaos/mct) by Protesilaos: Minibuffer
+     and Completions in Tandem, which builds on the default completion
+     UI.
 
    Note that all packages are independent and can be exchanged with
 alternative components, since there exist no hard dependencies.
@@ -1608,25 +1608,25 @@ Node: Special features22827
 Node: Live previews23954
 Node: Narrowing and grouping28008
 Node: Asynchronous search30009
-Node: Multiple sources33943
-Node: Embark integration38838
-Node: Configuration41056
-Node: Use-package example42166
-Node: Custom variables48489
-Node: Project support52420
-Node: Fine-tuning53683
-Node: Default completion UI with auto update56687
-Node: Recommended packages57783
-Node: Bug reports59904
-Node: Hacking62897
-Node: Creating simple commands63110
-Node: Creating asynchronous completion commands64741
-Node: Live preview66733
-Node: Contributions67928
-Node: Acknowledgments68692
-Node: Indices71223
-Node: Function index71459
-Node: Concept index75105
+Node: Multiple sources33945
+Node: Embark integration38840
+Node: Configuration41058
+Node: Use-package example42178
+Node: Custom variables48501
+Node: Project support52432
+Node: Fine-tuning53695
+Node: Default completion UI with auto update56699
+Node: Recommended packages57795
+Node: Bug reports59908
+Node: Hacking62901
+Node: Creating simple commands63114
+Node: Creating asynchronous completion commands64745
+Node: Live preview66737
+Node: Contributions67932
+Node: Acknowledgments68696
+Node: Indices71227
+Node: Function index71463
+Node: Concept index75109
 
 End Tag Table
 
