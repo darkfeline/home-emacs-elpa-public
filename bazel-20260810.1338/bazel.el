@@ -1,10 +1,10 @@
 ;;; bazel.el --- Bazel support for Emacs -*- lexical-binding: t; -*-
 
-;; URL: https://github.com/bazelbuild/emacs-bazel-mode
+;; URL: https://github.com/bazel-contrib/bazel.el
 ;; Keywords: build tools, languages
 ;; Package-Requires: ((emacs "29.1"))
-;; Package-Version: 20260416.2100
-;; Package-Revision: da1b5bb6fae0
+;; Package-Version: 20260810.1338
+;; Package-Revision: 816e1571ed53
 
 ;; Copyright (C) 2018-2023, 2026 Google LLC
 ;; Licensed under the Apache License, Version 2.0 (the "License");
@@ -47,7 +47,7 @@
   :group 'languages
   :link '(custom-manual "(bazel.el) Top")
   :link '(url-link "https://bazel.build")
-  :link '(url-link "https://github.com/bazelbuild/emacs-bazel-mode"))
+  :link '(url-link "https://github.com/bazel-contrib/bazel.el"))
 
 (defcustom bazel-command '("bazel")
   "Command and arguments that should be used to invoke Bazel.
@@ -111,7 +111,8 @@ See Info node ‘(elisp) Variable Definitions’ for an explanation
 of the OPTION and VALUE arguments."
   (cl-check-type option symbol)
   (dolist (function (eval value t))
-    (add-hook option function 80)))
+    (add-hook option function 80))
+  nil)
 
 (defcustom bazel-test-at-point-functions '(which-function)
   "Abnormal hook to find a test case at point.
@@ -196,7 +197,7 @@ of the symbols ‘build’, ‘bzl’, ‘workspace’, ‘module’, or
 ‘default’, corresponding to the file types documented at URL
 ‘https://github.com/bazelbuild/buildtools/tree/master/buildifier#usage’."
   (interactive "*" bazel-mode)
-  (cl-check-type type (member nil build bzl workspace default))
+  (cl-check-type type (member nil build bzl workspace module default))
   (let ((directory default-directory)
         (input-file buffer-file-name)
         (temp-buffer (temp-buffer-window-setup "*buildifier*"))
@@ -235,7 +236,8 @@ of the symbols ‘build’, ‘bzl’, ‘workspace’, ‘module’, or
 (defun bazel--buildifier-before-save-hook ()
   "Run buildifer in `before-save-hook'."
   (when bazel-buildifier-before-save
-    (bazel-buildifier)))
+    (bazel-buildifier))
+  nil)
 
 ;;;; ‘bazel-mode’ and child modes
 
@@ -257,48 +259,56 @@ The magic comments \"keep sorted\", \"do not sort\", and
 mentioned in the Buildifier source code at URL
 `https://git.io/JOuVL' and have tests.")
 
-(defconst bazel-font-lock-keywords-1
-  ;; Only include file directives.  See Info node ‘(elisp) Levels of Font Lock’.
-  `((,(regexp-opt '("workspace") 'symbols) . 'font-lock-builtin-face)
-    (,(regexp-opt '("load") 'symbols) . 'font-lock-keyword-face))
-  "Value of ‘font-lock-keywords’ in ‘bazel-mode’ at font lock level 1.")
+(eval-and-compile
+  (defconst bazel-font-lock-keywords-1
+    ;; Only include file directives.  See Info node ‘(elisp) Levels of Font
+    ;; Lock’.
+    (eval-when-compile
+      `((,(regexp-opt '("include" "module" "repo" "visibility" "workspace")
+                      'symbols)
+         . 'font-lock-builtin-face)
+        (,(regexp-opt '("load") 'symbols) . 'font-lock-keyword-face)))
+    "Value of ‘font-lock-keywords’ in ‘bazel-mode’ at font lock level 1.")
 
-(defconst bazel-font-lock-keywords-2
-  `(,@bazel-font-lock-keywords-1
-    ;; Include keywords and constants.  Keywords for BUILD files are the same as
-    ;; Starlark files.  Even if some of them are forbidden in BUILD files, they
-    ;; should be highlighted.  See
-    ;; https://github.com/bazelbuild/starlark/blob/master/spec.md.
-    (,(regexp-opt '("and" "else" "for" "if" "in" "not" "or" "load"
-                    "break" "continue" "def" "pass" "elif" "return")
-                  'symbols)
-     . 'font-lock-keyword-face)
-    ;; Reserved keywords
-    (,(regexp-opt '("as" "is" "assert" "lambda" "class" "nonlocal" "del" "raise"
-                    "except" "try" "finally" "while" "from" "with" "global"
-                    "yield" "import")
-                  'symbols)
-     . 'font-lock-keyword-face)
-    ;; Constants
-    (,(regexp-opt '("True" "False" "None")
-                  'symbols)
-     . 'font-lock-constant-face))
-  "Value of ‘font-lock-keywords’ in ‘bazel-mode’ at font lock level 2.")
+  (defconst bazel-font-lock-keywords-2
+    (eval-when-compile
+      `(,@bazel-font-lock-keywords-1
+        ;; Include keywords and constants.  Keywords for BUILD files are the
+        ;; same as Starlark files.  Even if some of them are forbidden in BUILD
+        ;; files, they should be highlighted.  See
+        ;; https://github.com/bazelbuild/starlark/blob/master/spec.md.  “load”
+        ;; is already included in level 1.
+        (,(regexp-opt '("and" "break" "continue" "def" "elif" "else" "for" "if"
+                        "in" "lambda" "not" "or" "pass" "return")
+                      'symbols)
+         . 'font-lock-keyword-face)
+        ;; Reserved keywords
+        (,(regexp-opt '("as" "assert" "async" "await" "class" "del" "except"
+                        "finally" "from" "global" "import" "is" "nonlocal"
+                        "raise" "try" "while" "with" "yield")
+                      'symbols)
+         . 'font-lock-warning-face)
+        ;; Constants
+        (,(regexp-opt '("True" "False" "None")
+                      'symbols)
+         . 'font-lock-constant-face)))
+    "Value of ‘font-lock-keywords’ in ‘bazel-mode’ at font lock level 2.")
 
-(defconst bazel-font-lock-keywords-3
-  `(,@bazel-font-lock-keywords-2
-    ;; Include builtin functions.  Some Starlark functions are exposed to BUILD
-    ;; files as builtins.  For details see
-    ;; https://github.com/bazelbuild/starlark/blob/master/spec.md.
-    (,(regexp-opt '("exports_files" "glob" "licenses" "package"
-                    "package_group" "select" "workspace")
-                  'symbols)
-     . 'font-lock-builtin-face)
-    ;; Target names
-    (bazel--find-target-name 2 'font-lock-variable-name-face prepend)
-    ;; Magic comments
-    (bazel--find-magic-comment 0 'font-lock-preprocessor-face prepend))
-  "Value of ‘font-lock-keywords’ in ‘bazel-mode’ at font lock level 3.")
+  (defconst bazel-font-lock-keywords-3
+    (eval-when-compile
+      `(,@bazel-font-lock-keywords-2
+        ;; Include builtin functions.  Some Starlark functions are exposed to
+        ;; BUILD files as builtins.  For details see
+        ;; https://github.com/bazelbuild/starlark/blob/master/spec.md.
+        (,(regexp-opt '("exports_files" "glob" "licenses" "package"
+                        "package_group" "select" "workspace")
+                      'symbols)
+         . 'font-lock-builtin-face)
+        ;; Target names
+        (bazel--find-target-name 2 'font-lock-variable-name-face prepend)
+        ;; Magic comments
+        (bazel--find-magic-comment 0 'font-lock-preprocessor-face prepend)))
+    "Value of ‘font-lock-keywords’ in ‘bazel-mode’ at font lock level 3."))
 
 (defconst bazel-font-lock-keywords bazel-font-lock-keywords-1
   "Default value of ‘font-lock-keywords’ in ‘bazel-mode’.")
@@ -340,7 +350,7 @@ mentioned in the Buildifier source code at URL
   "Major mode for editing Bazel files with Starlark-like syntax.
 This is the parent mode for the more specific modes
 ‘bazel-build-mode’, ‘bazel-workspace-mode’, ‘bazel-module-mode’,
-‘bazel-repo-mode’, and ‘bazel-starlark-mode’."
+‘bazel-repo-mode’, ‘bazel-vendor-mode’, and ‘bazel-starlark-mode’."
   ;; Almost all Starlark code in existence uses 4 spaces for indentation.
   ;; Buildifier also enforces this style.
   (setq-local tab-width 4)
@@ -379,7 +389,8 @@ This is the parent mode for the more specific modes
             nil :local)
   (when-let ((filename buffer-file-name))
     ;; Initialize filename cache.
-    (bazel--repository-relative-name filename)))
+    (bazel--repository-relative-name filename))
+  nil)
 
 ;;;###autoload
 (define-derived-mode bazel-build-mode bazel-mode "BUILD.bazel"
@@ -391,7 +402,8 @@ This is the parent mode for the more specific modes
   (setq-local end-of-defun-function #'python-nav-end-of-statement)
   (add-hook 'which-func-functions #'bazel-current-target-name nil :local)
   (setq-local add-log-current-defun-function #'bazel-current-target-name)
-  (setq-local imenu-create-index-function #'bazel-mode-create-index))
+  (setq-local imenu-create-index-function #'bazel-mode-create-index)
+  nil)
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist
@@ -408,7 +420,8 @@ This is the parent mode for the more specific modes
   (setq-local end-of-defun-function #'python-nav-end-of-statement)
   (add-hook 'which-func-functions #'bazel-current-target-name nil :local)
   (setq-local add-log-current-defun-function #'bazel-current-target-name)
-  (setq-local imenu-create-index-function #'bazel-mode-create-index))
+  (setq-local imenu-create-index-function #'bazel-mode-create-index)
+  nil)
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist
@@ -429,12 +442,16 @@ This is the parent mode for the more specific modes
   (setq-local end-of-defun-function #'python-nav-end-of-statement)
   (add-hook 'which-func-functions #'bazel-current-target-name nil :local)
   (setq-local add-log-current-defun-function #'bazel-current-target-name)
-  (setq-local imenu-create-index-function #'bazel-mode-create-index))
+  (setq-local imenu-create-index-function #'bazel-mode-create-index)
+  nil)
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist
              ;; https://bazel.build/build/bzlmod#module-bazel
-             (cons (rx "/MODULE.bazel" eos) #'bazel-module-mode))
+             ;; and
+             ;; https://bazel.build/rules/lib/globals/module#include
+             (cons (rx ?/ (? (+ nonl) ?.) "MODULE.bazel" eos)
+                   #'bazel-module-mode))
 
 ;;;###autoload
 (define-derived-mode bazel-repo-mode bazel-mode "REPO.bazel"
@@ -442,17 +459,31 @@ This is the parent mode for the more specific modes
   ;; Buildifier doesn’t have special support for REPO.bazel files yet.
   (setq bazel--buildifier-type 'default)
   ;; In REPO.bazel files, we don’t have function definitions.  Instead, treat
-  ;; rule target definitions (= Python statements) as functions.
+  ;; directives (= Python statements) as functions.
   (setq-local beginning-of-defun-function #'python-nav-beginning-of-statement)
   (setq-local end-of-defun-function #'python-nav-end-of-statement)
-  (add-hook 'which-func-functions #'bazel-current-target-name nil :local)
-  (setq-local add-log-current-defun-function #'bazel-current-target-name)
-  (setq-local imenu-create-index-function #'bazel-mode-create-index))
+  nil)
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist
              ;; https://docs.google.com/document/d/1rS-B3d_sfZFY2AcSwIq2ibQc7X1lgeycddLJqjYKgOA/comment
              (cons (rx "/REPO.bazel" eos) #'bazel-repo-mode))
+
+;;;###autoload
+(define-derived-mode bazel-vendor-mode bazel-mode "VENDOR.bazel"
+  "Major mode for editing VENDOR.bazel files."
+  ;; Buildifier doesn’t have special support for VENDOR.bazel files yet.
+  (setq bazel--buildifier-type 'default)
+  ;; In VENDOR.bazel files, we don’t have function definitions.  Instead, treat
+  ;; directives (= Python statements) as functions.
+  (setq-local beginning-of-defun-function #'python-nav-beginning-of-statement)
+  (setq-local end-of-defun-function #'python-nav-end-of-statement)
+  nil)
+
+;;;###autoload
+(add-to-list 'auto-mode-alist
+             ;; https://bazel.build/external/vendor#configure-vendor-mode
+             (cons (rx "/VENDOR.bazel" eos) #'bazel-vendor-mode))
 
 ;;;###autoload
 (define-derived-mode bazel-starlark-mode bazel-mode "Starlark"
@@ -465,7 +496,8 @@ This is the parent mode for the more specific modes
   (add-hook 'which-func-functions #'python-info-current-defun nil :local)
   (setq-local add-log-current-defun-function #'python-info-current-defun)
   (setq-local imenu-extract-index-name-function
-              #'bazel-mode-extract-function-name))
+              #'bazel-mode-extract-function-name)
+  nil)
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist
@@ -592,7 +624,8 @@ Return a list (NAME INTEGRITY PREFIX TIME) for
                                   "-C" (file-name-unquote directory))))
         (unless (eql status 0)
           (error "Program %s failed with status %s, output %s"
-                 program status (buffer-string)))))))
+                 program status (buffer-string))))))
+  nil)
 
 (defun bazel--workspace-name ()
   "Return the name of the workspace.
@@ -628,7 +661,8 @@ return its name.  See URL
 
 ;;;###autoload
 (define-derived-mode bazelrc-mode conf-space-mode "bazelrc"
-  "Major mode for editing .bazelrc files.")
+  "Major mode for editing .bazelrc files."
+  nil)
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist
@@ -665,7 +699,8 @@ return its name.  See URL
   ;; .bazelignore files don’t have any keywords, but we still need to set
   ;; ‘font-lock-defaults’ to a non-nil value to enable syntactic fontification.
   ;; See Info node ‘(elisp) Font Lock Basics’.
-  (setq-local font-lock-defaults '(nil)))
+  (setq-local font-lock-defaults '(nil))
+  nil)
 
 (defun bazelignore--syntax-propertize (start end)
   "Detect .bazelignore syntax between START and END.
@@ -681,15 +716,17 @@ and Info node ‘(elisp) Syntax Table Internals’."
         (put-text-property (match-beginning 0) (match-end 0)
                            'syntax-table '(11))
         (end-of-line)
-        (unless (eobp)  ; otherwise (1+ (point)) is invalid
+        (unless (eobp)                  ; otherwise (1+ (point)) is invalid
           (put-text-property (point) (1+ (point))
-                             'syntax-table '(12)))))))
+                             'syntax-table '(12))))))
+  nil)
 
 ;;;; ‘bazeliskrc-mode’
 
 ;;;###autoload
 (define-derived-mode bazeliskrc-mode conf-unix-mode
-  "Major mode for editing .bazeliskrc files.")
+  "Major mode for editing .bazeliskrc files."
+  nil)
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist
@@ -1083,8 +1120,8 @@ See Info node ‘(elisp) Completion in Buffers’ for context."
       ;; cover most cases (e.g. “deps” attributes), but not add large amounts of
       ;; false positives.
       (let ((state (syntax-ppss)))
-        (when (nth 3 state)  ; in string
-          (let ((start (1+ (nth 8 state))))  ; first character in string
+        (when (ppss-string-terminator state) ; in string
+          (let ((start (1+ (ppss-comment-or-string-start state))))
             (save-excursion
               ;; Jump to the closing quotation mark.
               (parse-partial-sexp (point) (point-max) nil nil state
@@ -1526,7 +1563,8 @@ COVERAGE."
                                   (+ previous taken)
                                 (or previous taken))))
                     (puthash branch new branches))))))
-          (goto-char end))))))
+          (goto-char end)))))
+  nil)
 
 (defun bazel--match-natnum (index)
   "Return the natural number matched by the subgroup INDEX.
@@ -1603,7 +1641,8 @@ structures.  Remove existing coverage overlays first."
                      (setq some-branch-coverage t)))))
       (when (and some-branch-coverage (< left-margin-width margin-width))
         (setq left-margin-width margin-width)
-        (bazel--update-margin-display)))))
+        (bazel--update-margin-display))))
+  nil)
 
 (defun bazel--branch-coverage-string (block-table)
   "Return a branch coverage information string for BLOCK-TABLE.
@@ -1663,7 +1702,8 @@ See Info node ‘(elisp) Display Margins’."
                (propertize "unused"  ; must be nonempty
                            ;; Don’t inherit face from surrounding text.
                            'face 'default
-                           'display `((margin left-margin) ,string))))
+                           'display `((margin left-margin) ,string)))
+  nil)
 
 (defun bazel-remove-coverage-display ()
   "Remove all Bazel coverage display in the current buffer.
@@ -1673,7 +1713,8 @@ portion."
   (bazel--remove-coverage-overlays)
   (unless (eq left-margin-width 0)
     (kill-local-variable 'left-margin-width)
-    (bazel--update-margin-display)))
+    (bazel--update-margin-display))
+  nil)
 
 ;; Default overlay properties.
 (put 'bazel-coverage 'priority 10)
@@ -1681,14 +1722,16 @@ portion."
 
 (defun bazel--remove-coverage-overlays ()
   "Remove line coverage overlays in the current buffer."
-  (remove-overlays (point-min) (point-max) 'category 'bazel-coverage))
+  (remove-overlays (point-min) (point-max) 'category 'bazel-coverage)
+  nil)
 
 (defun bazel--update-margin-display ()
   "Announce margin change in the current buffer to Emacs.
 See Info node ‘(elisp) Display Margins’."
   (let ((buffer (current-buffer)))
     (dolist (window (get-buffer-window-list buffer nil t))
-      (set-window-buffer window buffer))))
+      (set-window-buffer window buffer)))
+  nil)
 
 (defun bazel--add-visibility (root source destination begin end ask)
   "Make SOURCE visible to DESTINATION.
@@ -1748,8 +1791,8 @@ and REPOSITORY is the repository containing PACKAGE."
 (defun bazel-mode-create-index ()
   "Return an Imenu index for the rule targets defined in the current buffer.
 This function is useful as ‘imenu-create-index-function’ for
-‘bazel-build-mode’, ‘bazel-workspace-mode’, ‘bazel-module-mode’, and
-‘bazel-repo-mode’.  See Info node ‘(elisp) Imenu’ for details."
+‘bazel-build-mode’, ‘bazel-workspace-mode’, and
+‘bazel-module-mode’.  See Info node ‘(elisp) Imenu’ for details."
   (save-excursion
     (save-restriction
       (widen)
@@ -1774,8 +1817,8 @@ This function is useful as ‘imenu-create-index-function’ for
           (let ((name (match-string-no-properties 2)))
             (unless (python-syntax-comment-or-string-p)
               (let ((pos (save-excursion
-                            (python-nav-beginning-of-statement)
-                            (if imenu-use-markers (point-marker) (point)))))
+                           (python-nav-beginning-of-statement)
+                           (if imenu-use-markers (point-marker) (point)))))
                 (push (cons name pos) index)))))
         (nreverse index)))))
 
@@ -1789,16 +1832,16 @@ Return nil if not inside a Bazel rule target definition."
       (python-nav-beginning-of-statement)
       (cl-block nil
         (while (re-search-forward
-               ;; The target pattern isn’t the same as
-               ;; https://bazel.build/concepts/labels#target-names (we don’t
-               ;; allow quotation marks in target names), but should be good
-               ;; enough here.
-               (rx symbol-start "name" (* blank) ?= (* blank)
-                   (group (any ?\" ?'))
-                   (group (+ (any "a-z" "A-Z" "0-9"
-                                  ?- "!%@^_` #$&()*+,;<=>?[]{|}~/.")))
-                   (backref 1))
-               bound t)
+                ;; The target pattern isn’t the same as
+                ;; https://bazel.build/concepts/labels#target-names (we don’t
+                ;; allow quotation marks in target names), but should be good
+                ;; enough here.
+                (rx symbol-start "name" (* blank) ?= (* blank)
+                    (group (any ?\" ?'))
+                    (group (+ (any "a-z" "A-Z" "0-9"
+                                   ?- "!%@^_` #$&()*+,;<=>?[]{|}~/.")))
+                    (backref 1))
+                bound t)
           (let ((name (match-string-no-properties 2)))
             (unless (python-syntax-comment-or-string-p)
               (cl-return name))))))))
@@ -1970,7 +2013,8 @@ Return nil if no .bazelignore file exists."
 COMMAND is a Bazel command such as \"build\" or \"run\"."
   (cl-check-type command string)
   (cl-check-type target-pattern string)
-  (bazel--compile command "--" target-pattern))
+  (bazel--compile command "--" target-pattern)
+  nil)
 
 (defun bazel--compile (command &rest args)
   "Run Bazel in a Compilation buffer with the given COMMAND and ARGS.
@@ -1979,7 +2023,8 @@ COMMAND and ARGS."
   (compile (mapconcat #'shell-quote-argument
                       (append bazel-command (list command)
                               bazel-command-options args)
-                      " ")))
+                      " "))
+  nil)
 
 (defvar bazel-target-history nil
   "History for Bazel target pattern completion.
@@ -2167,12 +2212,6 @@ DIRECTORY can be a directory or file name."
   (and (file-directory-p directory)
        (bazel--locate-build-file directory)))
 
-;; This definition isn’t very restrictive, but catches the common case of an
-;; accidentally-empty repository name.  That would refer to the main repository,
-;; which might be incorrect depending on context.
-(cl-deftype bazel--repository-name ()
-  '(and string (not (satisfies string-empty-p))))
-
 (defun bazel--external-repository (repository-name this-repository-root)
   "Return the repository root of an external repository.
 REPOSITORY-NAME should be either a string naming an external
@@ -2180,8 +2219,9 @@ repository, or nil to refer to the current repository.
 THIS-REPOSITORY-ROOT should be the name of the current repository
 root directory, as returned by ‘bazel--repository-root’.  The
 return value is a directory name."
-  (cl-check-type repository-name (or null bazel--repository-name))
+  (cl-check-type repository-name (or null string))
   (cl-check-type this-repository-root string)
+  (cl-assert (not (string-empty-p repository-name)))
   (file-name-as-directory
    (if repository-name
        ;; See https://bazel.build/remote/output-directories for some overview of
@@ -2206,7 +2246,7 @@ directory as returned by ‘bazel--repository-root’."
   ;; repositories.
   (expand-file-name
    (concat "bazel-" (file-name-nondirectory (directory-file-name root))
-           "/external/" )
+           "/external/")
    root))
 
 (defun bazel--external-repository-roots (main-root)
@@ -2223,10 +2263,12 @@ root directory as returned by ‘bazel--repository-root’."
        (directory-files
         (bazel--external-repository-dir main-root)
         :full
-        ;; https://bazel.build/rules/lib/globals/workspace#parameters_3 states
-        ;; that workspace names may only contain letters, numbers, underscores,
-        ;; hyphens, and dots.
-        (rx bos (any "A-Z" "a-z") (* (any ?- ?. ?_ "A-Z" "a-z")) eos))))))
+        ;; https://bazel.build/rules/lib/globals/module#parameters-8 states that
+        ;; module names may only contain letters, numbers, underscores, hyphens,
+        ;; and dots.  We also include the plus sign since it’s part of canonical
+        ;; repository names.
+        (rx bos (any ?+ "A-Z" "a-z") (* (any ?+ ?- ?. ?_ "A-Z" "a-z" "0-9"))
+            eos))))))
 
 (defun bazel--target-completion-table (pattern only-tests)
   "Return a completion table for Bazel targets and target patterns.
@@ -2668,8 +2710,9 @@ for the lexical syntax of labels."
 For a package “foo/bar”, “bar” is the default target.  For a
 repository “foo”, “foo” in the root package is the default target.
 REPOSITORY can be nil to refer to the current repository."
-  (cl-check-type repository (or null bazel--repository-name))
+  (cl-check-type repository (or null string))
   (cl-check-type package string)
+  (cl-assert (not (string-empty-p repository)))
   (if (and (stringp repository) (string-empty-p package))
       repository
     (let ((case-fold-search nil)
@@ -2704,8 +2747,8 @@ either @REPOSITORY//PACKAGE:TARGET or //PACKAGE:TARGET."
 (defun bazel--string-at-point ()
   "Return the string literal at point, or nil if not inside a string literal."
   (let ((state (syntax-ppss)))
-    (when (nth 3 state)  ; in string
-      (let ((start (1+ (nth 8 state))))  ; (nth 8 state) is the opening quote
+    (when (ppss-string-terminator state) ; in string
+      (let ((start (1+ (ppss-comment-or-string-start state))))
         (save-excursion
           ;; Jump to the closing quotation mark.
           (parse-partial-sexp (point) (point-max) nil nil state 'syntax-table)
@@ -2728,7 +2771,8 @@ the match text.  The second match group matches the name."
               (backref 1) (* blank) (any ?, ?\)))
           bound t)
          (let ((syntax (syntax-ppss (match-beginning 0))))
-           (and (> (nth 0 syntax) 0) (null (nth 8 syntax)))))))
+           (and (> (ppss-depth syntax) 0)
+                (null (ppss-comment-or-string-start syntax)))))))
 
 (defun bazel--find-magic-comment (bound)
   "Search for a magic comment from point to BOUND.
@@ -2741,7 +2785,7 @@ the comment text."
         (search-spaces-regexp nil))
     (with-case-table ascii-case-table
       (and (re-search-forward bazel--magic-comment-regexp bound t)
-           (nth 4 (syntax-ppss))))))
+           (ppss-comment-depth (syntax-ppss))))))
 
 (defun bazel--line-column-pos (line column)
   "Return buffer position in the current buffer for LINE and COLUMN.
