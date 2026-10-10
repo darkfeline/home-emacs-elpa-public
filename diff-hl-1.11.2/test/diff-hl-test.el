@@ -50,11 +50,11 @@
     (erase-buffer)
     (insert diff-hl-test-initial-content)
     (save-buffer)
-    (pcase (vc-backend buffer-file-name)
+    (pcase (vc-backend (diff-hl--buffer-file-name))
       (`Git
-       (vc-git-command nil 0 buffer-file-name "reset"))
+       (vc-git-command nil 0 (diff-hl--buffer-file-name) "reset"))
       (`Hg
-       (vc-hg-command nil 0 buffer-file-name "revert")))))
+       (vc-hg-command nil 0 (diff-hl--buffer-file-name) "revert")))))
 
 (defun diff-hl-test-compute-diff-lines ()
   (diff-hl-test-in-source
@@ -78,6 +78,15 @@
          (progn ,@body)
        (diff-hl-test-teardown))))
 (put 'diff-hl-deftest 'lisp-indent-function 'defun)
+
+(ert-deftest diff-hl-update-once-schedules-per-buffer ()
+  (let ((diff-hl-timer nil)
+        (calls 0))
+    (cl-letf (((symbol-function 'run-with-idle-timer)
+               (lambda (&rest _) (cl-incf calls))))
+      (with-temp-buffer (diff-hl-update-once))
+      (with-temp-buffer (diff-hl-update-once)))
+    (should (= calls 2))))
 
 (diff-hl-deftest diff-hl-insert ()
   (diff-hl-test-in-source
@@ -117,6 +126,7 @@
     (insert "added\n")
     (save-buffer)
     (diff-hl-mode 1)
+    (diff-hl-update)
     (diff-hl-previous-hunk)
     (should (looking-at "added"))
     (diff-hl-previous-hunk)
@@ -127,6 +137,7 @@
     (should-error (diff-hl-next-hunk) :type 'user-error)))
 
 (diff-hl-deftest diff-hl-indirect-buffer-move-async ()
+  (skip-unless (>= emacs-major-version 27)) ;No `main-thread'.
   (diff-hl-test-in-source
    (let ((diff-hl-update-async t))
      (narrow-to-region (point-min) (point-max))
@@ -136,11 +147,13 @@
      (insert "added\n")
      (save-buffer)
      (diff-hl-mode 1)
+     (diff-hl-update)
 
-     ;; wait for all thread to complete.
-     (dolist (thread (all-threads))
-       (unless (eq thread main-thread)
-         (thread-join thread)))
+     (while (or (process-live-p
+                  (get-buffer-process " *diff-hl* "))
+                (process-live-p
+                  (get-buffer-process " *diff-hl-reference* ")))
+       (accept-process-output nil 0.05))
 
      (diff-hl-previous-hunk)
      (should (looking-at "added"))
@@ -156,39 +169,40 @@
     (goto-char (point-min))
     (insert "new line 1\n")
     (save-buffer)
-    (vc-git-command nil 0 buffer-file-name "add")
+    (vc-git-command nil 0 (diff-hl--buffer-file-name) "add")
     (goto-char (point-max))
     (insert "new line 2\n")
     (save-buffer)
     (let ((diff-hl-show-staged-changes t))
       (should
-       (equal (diff-hl-changes)
-              '((1 1 insert)
-                (12 1 insert)))))
-    (let ((diff-hl-show-staged-changes nil))
+       (null
+        (assoc-default :reference (diff-hl-changes)))))
+    (let* ((diff-hl-show-staged-changes nil)
+           (res-buf (assoc-default :reference (diff-hl-changes))))
       (should
-       (equal (diff-hl-changes)
-              '((12 1 insert)))))))
+       (equal
+        (diff-hl-changes-from-buffer res-buf)
+        '((1 1 0 insert)))))))
 
 (diff-hl-deftest diff-hl-flydiff-can-ignore-staged-changes ()
   (diff-hl-test-in-source
     (goto-char (point-min))
     (insert "new line 1\n")
     (save-buffer)
-    (vc-git-command nil 0 buffer-file-name "add")
+    (vc-git-command nil 0 (diff-hl--buffer-file-name) "add")
     (goto-char (point-max))
     (insert "new line 2\n")
     (let ((diff-hl-show-staged-changes t))
       (should
        (equal (diff-hl-changes-from-buffer
-               (diff-hl-diff-buffer-with-reference buffer-file-name))
-              '((1 1 insert)
-                (12 1 insert)))))
+               (diff-hl-diff-buffer-with-reference (diff-hl--buffer-file-name)))
+              '((1 1 0 insert)
+                (12 1 0 insert)))))
     (let ((diff-hl-show-staged-changes nil))
       (should
        (equal (diff-hl-changes-from-buffer
-               (diff-hl-diff-buffer-with-reference buffer-file-name))
-              '((12 1 insert)))))))
+               (diff-hl-diff-buffer-with-reference (diff-hl--buffer-file-name)))
+              '((12 1 0 insert)))))))
 
 (diff-hl-deftest diff-hl-can-split-away-no-trailing-newline ()
   (diff-hl-test-in-source
@@ -197,7 +211,7 @@
     (search-backward "}")
     (insert " ")
     (save-buffer)
-    (let ((file buffer-file-name)
+    (let ((file (diff-hl--buffer-file-name))
           (dest-buffer (get-buffer-create " *diff-hl-test*")))
       (diff-hl-diff-buffer-with-reference file dest-buffer nil 3)
       (with-current-buffer dest-buffer
@@ -206,17 +220,30 @@
             (diff-hl-diff-skip-to 10)))
         (let ((inhibit-read-only t))
           (diff-hl-split-away-changes 3))
-        (should (equal (buffer-substring (point) (point-max))
-                       "@@ -9,2 +9,2 @@
+        (should (string-prefix-p
+                 "@@ -9,2 +9,2 @@
 \x20
 -last line
 +last line
 \\ No newline at end of file
 
-"))))))
+Diff finished."
+                 (buffer-substring (point) (point-max))))))))
 
-(defun diff-hl-run-tests ()
-  (ert-run-tests-batch))
+(diff-hl-deftest diff-hl-resolved-revision-with-hg ()
+  (diff-hl-test-in-source
+    (setq-local diff-hl-reference-revision "test-rev")
+    (let ((vc-hg-program "chg"))
+      (condition-case err
+          (progn
+            (diff-hl-resolved-revision 'Hg "test-rev")
+            (ert-fail "Expected an error to be signaled but none was."))
+        ;; We don't have a hg repo, but we can use the error message to verify the
+        ;; underlying command.
+        (error
+         (should (string-match-p
+                  "chg .*identify -r test-rev -i"
+                  (error-message-string err))))))))
 
 (provide 'diff-hl-test)
 
