@@ -5,7 +5,7 @@
 ;; Author: Omar Antolín Camarena <omar@matem.unam.mx>, Daniel Mendler <mail@daniel-mendler.de>
 ;; Maintainer: Omar Antolín Camarena <omar@matem.unam.mx>, Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2020
-;; Version: 2.11
+;; Version: 2.13
 ;; Package-Requires: ((emacs "29.1") (compat "31"))
 ;; URL: https://github.com/minad/marginalia
 ;; Keywords: docs, help, matching, completion
@@ -1058,7 +1058,7 @@ These annotations are skipped for remote paths."
   "Format TIME as an absolute age."
   (let ((system-time-locale "C"))
     (format-time-string
-     (if (> (decoded-time-year (decode-time (current-time)))
+     (if (> (decoded-time-year (decode-time))
             (decoded-time-year (decode-time time)))
          " %Y %b %d"
        "%b %d %H:%M")
@@ -1100,19 +1100,18 @@ These annotations are skipped for remote paths."
 (defun marginalia--library-cache ()
   "Return hash table from library name to library file."
   (marginalia--in-minibuffer
-    ;; `locate-file' and `locate-library' are bottlenecks for the
-    ;; annotator. Therefore we compute all the library paths first.
-    (unless marginalia--library-cache
-      (setq marginalia--library-cache (make-hash-table :test #'equal))
-      (dolist (dir (delete-dups
-                    (reverse ;; Reverse because of shadowing
-                     (append load-path (custom-theme--load-path))))) ;; Include themes
-        (dolist (file (ignore-errors
-                        (directory-files dir 'full
-                                         "\\.el\\(?:\\.gz\\)?\\'")))
-          (puthash (marginalia--library-name file)
-                   file marginalia--library-cache))))
-    marginalia--library-cache))
+    (with-memoization marginalia--library-cache
+      ;; `locate-file' and `locate-library' are bottlenecks for the
+      ;; annotator. Therefore we compute all the library paths first.
+      (let ((cache (make-hash-table :test #'equal)))
+        (dolist (dir (delete-dups
+                      (reverse ;; Reverse because of shadowing
+                       (append load-path (custom-theme--load-path))))) ;; Include themes
+          (dolist (file (ignore-errors
+                          (directory-files dir 'full
+                                           "\\.el\\(?:\\.gz\\)?\\'")))
+            (puthash (marginalia--library-name file) file cache)))
+        cache))))
 
 (defun marginalia--library-name (file)
   "Get name of library FILE."
@@ -1345,6 +1344,8 @@ PROP is the property which is looked up."
 (defun marginalia--minibuffer-setup ()
   "Setup the minibuffer for Marginalia.
 Remember `this-command' for `marginalia-classify-by-command-name'."
+  ;; TODO: On Emacs 32 we can use `current-minibuffer-command'. See Emacs
+  ;; bug#80815 and also `embark--record-this-command'.
   (setq marginalia--cache t marginalia--command this-command)
   ;; Reset cache if window size changes, recompute alignment
   (add-hook 'window-state-change-hook #'marginalia--cache-reset nil 'local)
