@@ -21,10 +21,10 @@ END-INFO-DIR-ENTRY
 
 File: tramp.info,  Node: Top,  Next: Overview,  Prev: (dir),  Up: (dir)
 
-TRAMP 2.8.2.1 User Manual
+TRAMP 2.8.2.3 User Manual
 *************************
 
-This file documents TRAMP 2.8.2.1, a remote file editing package for
+This file documents TRAMP 2.8.2.3, a remote file editing package for
 Emacs.
 
    TRAMP stands for "Transparent Remote (file) Access, Multiple
@@ -1215,9 +1215,7 @@ this is not possible, TRAMP emulates those operations otherwise.
 
      All remote files are available via the local mount point.  TRAMP
      aids in mounting the file system if it isn't mounted yet.  The
-     remote file name syntax is
-
-          /sshfs:user@host#port:/path/to/file
+     remote file name syntax is /sshfs:user@host#port:/path/to/file.
 
      User name and port number are optional.  This method does not
      support password handling, the file system must either be mounted
@@ -1399,8 +1397,8 @@ check points.
      regular expressions or ‘nil’, interpreted as a regular expression
      which always matches.
 
-     PROXY is a literal TRAMP file name whose local name part is
-     ignored, and the method and user name parts are optional.
+     PROXY is a literal TRAMP file name whose localname part is ignored,
+     and the method and user name parts are optional.
 
      The method must be an inline method (*note Inline methods::).  If
      PROXY is ‘nil’, no additional hop is required reaching USER@HOST.
@@ -2595,21 +2593,23 @@ of the secretfile is now owned by the user logged in from TRAMP and not
    When ‘backup-directory-alist’ is ‘nil’ (the default), such problems
 do not occur.
 
-   To "turn off" the backup feature for remote files and stop TRAMP from
-saving to the backup directory, use this:
+   In case you do not want to use backup files for remote files, use
+connection-local variable ‘make-backup-files’ (*note (emacs)Connection
+Variables::) like this:
 
-     (add-to-list 'backup-directory-alist
-                  (cons tramp-file-name-regexp nil))
+     (connection-local-set-profile-variables
+      'no-remote-backup-files '((make-backup-files . nil)))
+
+     (connection-local-set-profiles
+      '(:application tramp) 'no-remote-backup-files)
 
 Disabling backups can be targeted to just the ‘su’ and ‘sudo’ methods:
 
-     (setq backup-enable-predicate
-           (lambda (name)
-             (and (normal-backup-enable-predicate name)
-                  (not
-                   (let ((method (file-remote-p name 'method)))
-                     (when (stringp method)
-                       (member method '("su" "sudo"))))))))
+     (connection-local-set-profiles
+      '(:application tramp :protocol "su") 'no-remote-backup-files)
+
+     (connection-local-set-profiles
+      '(:application tramp :protocol "sudo") 'no-remote-backup-files)
 
    Another option is to create better backup file naming with user and
 host names prefixed to the file name.  For example, transforming
@@ -2806,8 +2806,8 @@ File: tramp.info,  Node: File name syntax,  Next: Change file name syntax,  Up: 
 5.1 TRAMP file name conventions
 ===============================
 
-‘/method:host:/path/to/file’ opens file /PATH/TO/FILE on the remote host
-HOST, using the method METHOD.
+‘/method:user@host:/path/to/file’ opens the file /PATH/TO/FILE on the
+remote host HOST for the user USER, using the method METHOD.
 
 ‘/ssh:melancholia:.emacs’
      For the file ‘.emacs’ located in the home directory, on the host
@@ -2818,7 +2818,8 @@ HOST, using the method METHOD.
      name of the host.
 
 ‘/ssh:melancholia:~/.emacs’
-     For the file ‘.emacs’ specified using the ‘~’, which is expanded.
+     For the file ‘.emacs’ specified using the tilde ‘~’, which is
+     expanded.
 
 ‘/ssh:melancholia:~daniel/.emacs’
      For the file ‘.emacs’ located in ‘daniel’'s home directory on the
@@ -2835,7 +2836,9 @@ embedded in square brackets ‘[’ and ‘]’.
    By default, TRAMP will use the current local user name as the remote
 user name for log in to the remote host.  Specifying a different name
 using the proper syntax will override this default behavior:
-‘/method:user@host:path/to/file’.
+‘/method:user@host:path/to/file’.  The user name can also be taken from
+an environment variable, like
+‘/method:$MY_REMOTE_USER@host:path/to/file’.
 
    ‘/ssh:daniel@melancholia:.emacs’ is for file ‘.emacs’ in ‘daniel’'s
 home directory on the host, ‘melancholia’, accessing via method ‘ssh’.
@@ -2844,10 +2847,22 @@ home directory on the host, ‘melancholia’, accessing via method ‘ssh’.
 example: ‘/ssh:daniel@melancholia#42:.emacs’.  If the host is an IPv6
 address, the port is appended like this: ‘/ssh:[::1]#42:.emacs’.
 
-   All method, user name, host name, port number and local name parts
-are optional, *Note Default Method::, *Note Default User::, *Note
-Default Host::.  For syntactical reasons, the default method must be
-indicated by the pseudo method ‘-’.
+   All method, user name, host name, port number and localname parts are
+optional, *Note Default Method::, *Note Default User::, *Note Default
+Host::.  For syntactical reasons, the default method must be indicated
+by the pseudo method ‘-’.
+
+ -- Variable: tramp-method-regexp
+ -- Variable: tramp-user-regexp
+ -- Variable: tramp-host-regexp
+ -- Variable: tramp-port-regexp
+ -- Variable: tramp-localname-regexp
+
+     These regular expressions define the syntax of remote file name
+     components.
+
+     A method name must be defined in the association list
+     ‘tramp-methods’.
 
 
 File: tramp.info,  Node: Change file name syntax,  Next: File name completion,  Prev: File name syntax,  Up: Usage
@@ -3128,6 +3143,19 @@ Example:
 
    When your remote file name does not contain a ‘user’ part, the
 connection property "~" must be used instead.
+
+   In case there is no remote home directory and you haven't specified a
+respective connection property, you should avoid using ‘~’ in file
+names.  This means for example
+
+   • Don't use a remote file name like ‘/ssh:user@host:’ or
+     ‘/ssh:user@host:~/’.  Use an absolute localname part instead, like
+     ‘/ssh:user@host:/path/to/file’.
+
+   • Disable ‘tramp-histfile-override’, *note Managing remote shell
+     history:::
+
+          (setopt tramp-histfile-override nil)
 
 
 File: tramp.info,  Node: Remote processes,  Next: Cleanup remote connections,  Prev: Home directories,  Up: Usage
@@ -5951,7 +5979,7 @@ Variable Index
 * auto-revert-remote-files <1>:          Frequently Asked Questions.
                                                               (line  93)
 * auto-save-file-name-transforms:        Auto-save File Lock and Backup.
-                                                              (line  58)
+                                                              (line  60)
 * backup-directory-alist:                Auto-save File Lock and Backup.
                                                               (line   6)
 * COLUMNS, environment variable:         Remote processes.    (line 230)
@@ -5990,7 +6018,9 @@ Variable Index
 * INSIDE_EMACS, environment variable <1>: Remote shell setup. (line 207)
 * INSIDE_EMACS, environment variable <2>: Remote processes.   (line  39)
 * lock-file-name-transforms:             Auto-save File Lock and Backup.
-                                                              (line  79)
+                                                              (line  81)
+* make-backup-files:                     Auto-save File Lock and Backup.
+                                                              (line  21)
 * non-essential:                         External packages.   (line  13)
 * password-word-equivalents:             Remote shell setup.  (line  95)
 * PATH, environment variable:            External methods.    (line 201)
@@ -6007,17 +6037,17 @@ Variable Index
 * remote-file-name-access-timeout:       Frequently Asked Questions.
                                                               (line 234)
 * remote-file-name-inhibit-auto-save:    Auto-save File Lock and Backup.
-                                                              (line  71)
+                                                              (line  73)
 * remote-file-name-inhibit-auto-save <1>: Frequently Asked Questions.
                                                               (line  72)
 * remote-file-name-inhibit-auto-save-visited: Auto-save File Lock and Backup.
-                                                              (line  74)
+                                                              (line  76)
 * remote-file-name-inhibit-cache:        Frequently Asked Questions.
                                                               (line  50)
 * remote-file-name-inhibit-delete-by-moving-to-trash: Frequently Asked Questions.
                                                               (line 383)
 * remote-file-name-inhibit-locks:        Auto-save File Lock and Backup.
-                                                              (line  89)
+                                                              (line  91)
 * remote-file-name-inhibit-locks <1>:    Frequently Asked Questions.
                                                               (line  68)
 * RemoteCommand, ssh option:             Remote shell setup.  (line  36)
@@ -6041,16 +6071,16 @@ Variable Index
                                                               (line 439)
 * tramp-adb-program:                     External methods.    (line 201)
 * tramp-allow-unsafe-temporary-files:    Auto-save File Lock and Backup.
-                                                              (line  92)
+                                                              (line  94)
 * tramp-apptainer-program:               Inline methods.      (line 242)
 * tramp-archive-all-gvfs-methods:        Archive file names.  (line  97)
 * tramp-archive-compression-suffixes:    Archive file names.  (line  89)
 * tramp-archive-enabled:                 Archive file names.  (line 124)
 * tramp-archive-suffixes:                Archive file names.  (line  29)
 * tramp-auto-save-directory:             Auto-save File Lock and Backup.
-                                                              (line  68)
+                                                              (line  70)
 * tramp-backup-directory-alist:          Auto-save File Lock and Backup.
-                                                              (line  37)
+                                                              (line  39)
 * tramp-chunksize:                       Frequently Asked Questions.
                                                               (line 207)
 * tramp-cleanup-all-connections-hook:    Frequently Asked Questions.
@@ -6116,6 +6146,7 @@ Variable Index
 * tramp-handle-write-region-hook:        Frequently Asked Questions.
                                                               (line 328)
 * tramp-histfile-override:               Remote processes.    (line 134)
+* tramp-host-regexp:                     File name syntax.    (line  54)
 * tramp-ignored-file-name-regexp:        Frequently Asked Questions.
                                                               (line 793)
 * tramp-inhibit-errors-if-setting-file-attributes-fail: Frequently Asked Questions.
@@ -6127,6 +6158,8 @@ Variable Index
 * tramp-kubernetes-program:              Inline methods.      (line 198)
 * tramp-local-host-regexp:               Frequently Asked Questions.
                                                               (line 227)
+* tramp-localname-regexp:                File name syntax.    (line  56)
+* tramp-method-regexp:                   File name syntax.    (line  52)
 * tramp-methods:                         Customizing Methods. (line   6)
 * tramp-nspawn-program:                  Inline methods.      (line 254)
 * tramp-otp-password-prompt-regexp:      Remote shell setup.  (line  72)
@@ -6134,6 +6167,7 @@ Variable Index
 * tramp-password-prompt-regexp:          Remote shell setup.  (line  71)
 * tramp-persistency-file-name:           Connection caching.  (line   6)
 * tramp-podman-program:                  Inline methods.      (line 185)
+* tramp-port-regexp:                     File name syntax.    (line  55)
 * tramp-process-attributes-ps-args:      Remote processes.    (line 408)
 * tramp-process-attributes-ps-format:    Remote processes.    (line 412)
 * tramp-process-connection-type:         Remote processes.    (line 358)
@@ -6166,6 +6200,7 @@ Variable Index
 * tramp-use-fingerprint:                 Frequently Asked Questions.
                                                               (line 279)
 * tramp-use-scp-direct-remote-copying:   Ssh setup.           (line 123)
+* tramp-user-regexp:                     File name syntax.    (line  53)
 * tramp-verbose:                         Traces and Profiles. (line   6)
 * tramp-version:                         Obtaining TRAMP.     (line   6)
 * tramp-wrong-passwd-regexp:             Remote shell setup.  (line  73)
@@ -6617,65 +6652,65 @@ Node: Inline methods26056
 Node: External methods36145
 Node: GVFS-based methods45846
 Node: FUSE-based methods50092
-Node: Default Method52724
-Ref: Default Method-Footnote-155943
-Node: Default User56051
-Node: Default Host57580
-Node: Multi-hops58851
-Node: Firewalls63046
-Node: Customizing Methods64516
-Node: Customizing Completion66526
-Node: Password handling70016
-Ref: Using an authentication file70486
-Ref: Caching passwords72883
-Ref: Password handling-Footnote-173818
-Ref: Password handling-Footnote-273889
-Node: Connection caching73939
-Node: Predefined connection information74869
-Ref: Predefined connection information-Footnote-179672
-Node: Remote programs79768
-Node: Remote shell setup82679
-Node: Ssh setup93404
-Ref: Using ssh connection sharing95359
-Node: FUSE setup101729
-Ref: Setup of rclone method102713
-Ref: Setup of sshfs method103623
-Ref: FUSE setup-Footnote-1104115
-Node: Android shell setup104151
-Node: Kubernetes setup107449
-Node: Auto-save File Lock and Backup108521
-Node: Keeping files encrypted112971
-Node: Usage117800
-Node: File name syntax119222
-Node: Change file name syntax121319
-Node: File name completion122749
-Node: Ad-hoc multi-hops125810
-Ref: tramp-show-ad-hoc-proxies126941
-Ref: tramp-save-ad-hoc-proxies127632
-Node: Home directories131603
-Node: Remote processes133330
-Ref: Managing remote shell history139643
-Ref: Running a debugger on a remote host145254
-Ref: Running remote processes on MS Windows hosts146386
-Ref: Improving performance of asynchronous remote processes153819
-Node: Cleanup remote connections157620
-Node: Renaming remote files160486
-Node: Archive file names164803
-Node: Bug Reports169523
-Node: Frequently Asked Questions173464
-Ref: Frequently Asked Questions-Footnote-1206664
-Node: Files directories and localnames206729
-Node: Temporary directory207360
-Node: Localname deconstruction208460
-Node: External packages209141
-Node: Extension packages212497
-Node: New operations217914
-Node: Traces and Profiles223958
-Node: GNU Free Documentation License227307
-Node: Function Index252480
-Node: Variable Index257656
-Node: Key Index274900
-Node: Concept Index275182
+Node: Default Method52714
+Ref: Default Method-Footnote-155933
+Node: Default User56041
+Node: Default Host57570
+Node: Multi-hops58841
+Node: Firewalls63035
+Node: Customizing Methods64505
+Node: Customizing Completion66515
+Node: Password handling70005
+Ref: Using an authentication file70475
+Ref: Caching passwords72872
+Ref: Password handling-Footnote-173807
+Ref: Password handling-Footnote-273878
+Node: Connection caching73928
+Node: Predefined connection information74858
+Ref: Predefined connection information-Footnote-179661
+Node: Remote programs79757
+Node: Remote shell setup82668
+Node: Ssh setup93393
+Ref: Using ssh connection sharing95348
+Node: FUSE setup101718
+Ref: Setup of rclone method102702
+Ref: Setup of sshfs method103612
+Ref: FUSE setup-Footnote-1104104
+Node: Android shell setup104140
+Node: Kubernetes setup107438
+Node: Auto-save File Lock and Backup108510
+Node: Keeping files encrypted113016
+Node: Usage117845
+Node: File name syntax119267
+Node: Change file name syntax121859
+Node: File name completion123289
+Node: Ad-hoc multi-hops126350
+Ref: tramp-show-ad-hoc-proxies127481
+Ref: tramp-save-ad-hoc-proxies128172
+Node: Home directories132143
+Node: Remote processes134369
+Ref: Managing remote shell history140682
+Ref: Running a debugger on a remote host146293
+Ref: Running remote processes on MS Windows hosts147425
+Ref: Improving performance of asynchronous remote processes154858
+Node: Cleanup remote connections158659
+Node: Renaming remote files161525
+Node: Archive file names165842
+Node: Bug Reports170562
+Node: Frequently Asked Questions174503
+Ref: Frequently Asked Questions-Footnote-1207703
+Node: Files directories and localnames207768
+Node: Temporary directory208399
+Node: Localname deconstruction209499
+Node: External packages210180
+Node: Extension packages213536
+Node: New operations218953
+Node: Traces and Profiles224997
+Node: GNU Free Documentation License228346
+Node: Function Index253519
+Node: Variable Index258695
+Node: Key Index276450
+Node: Concept Index276732
 
 End Tag Table
 

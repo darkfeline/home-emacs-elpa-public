@@ -13,50 +13,50 @@
 
  (when (featurep 'tramp-compat)
   (load "tramp-compat" 'noerror 'nomessage))
-(defvar tramp-mode (fboundp 'make-process) "\
-Whether Tramp is enabled.
+(defvar tramp-mode (fboundp 'make-process)
+"Whether Tramp is enabled.
 If it is set to nil, all remote file names are used literally.  Don't
 set it manually, use `inhibit-remote-files' or `without-remote-files'
 instead.")
-(defconst tramp-initial-file-name-regexp "\\`/[^/:]+:[^/:]*:" "\
-Value for `tramp-file-name-regexp' for autoload.
+(defconst tramp-initial-file-name-regexp "\\`/[^/:]+:[^/:]*:"
+"Value for `tramp-file-name-regexp' for autoload.
 It must match the initial `tramp-syntax' settings.")
-(defvar tramp-file-name-regexp tramp-initial-file-name-regexp "\
-Regular expression matching file names handled by Tramp.
+(defvar tramp-file-name-regexp tramp-initial-file-name-regexp
+"Regular expression matching file names handled by Tramp.
 This regexp should match Tramp file names but no other file
 names.  When calling `tramp-register-file-name-handlers', the
 initial value is overwritten by the car of `tramp-file-name-structure'.")
-(defvar tramp-ignored-file-name-regexp nil "\
-Regular expression matching file names that are not under Tramp's control.")
+(defvar tramp-ignored-file-name-regexp nil
+"Regular expression matching file names that are not under Tramp's control.")
 (custom-autoload 'tramp-ignored-file-name-regexp "tramp" t)
-(defconst tramp-autoload-file-name-regexp "\\`/\\(?:-\\|[^/:|]\\{2,\\}\\):" "\
-Regular expression matching file names handled by Tramp autoload.
+(defconst tramp-autoload-file-name-regexp "\\`/\\(?:-\\|[^/:|]\\{2,\\}\\):"
+"Regular expression matching file names handled by Tramp autoload.
 It must match the initial `tramp-syntax' settings.  It should not
 match file names at root of the underlying local file system,
 like \"/sys\" or \"/C:\".")
-(defvar tramp-foreign-file-name-handler-alist nil "\
-Alist of elements (FUNCTION . HANDLER) for foreign methods handled specially.
+(defvar tramp-foreign-file-name-handler-alist nil
+"Alist of elements (FUNCTION . HANDLER) for foreign methods handled specially.
 If (FUNCTION FILENAME) returns non-nil, then all I/O on that file is done by
 calling HANDLER.")
-(autoload 'tramp-file-name-handler "tramp" "\
-Invoke Tramp file name handler for OPERATION and ARGS.
+(autoload 'tramp-file-name-handler "tramp"
+"Invoke Tramp file name handler for OPERATION and ARGS.
 Fall back to normal file name handler if no Tramp file name handler exists.
 
 (fn OPERATION &rest ARGS)")
-(defun tramp-autoload-file-name-handler (operation &rest args) "\
-Load Tramp file name handler, and perform OPERATION." (tramp-unload-file-name-handlers) (when tramp-mode (let ((default-directory temporary-file-directory)) (when (bound-and-true-p tramp-archive-autoload) (load "tramp-archive" 'noerror 'nomessage)) (load "tramp" 'noerror 'nomessage))) (apply operation args))
-(defun tramp-register-autoload-file-name-handlers nil "\
-Add Tramp file name handlers to `file-name-handler-alist' during autoload." (unless (rassq #'tramp-file-name-handler file-name-handler-alist) (add-to-list 'file-name-handler-alist (cons tramp-autoload-file-name-regexp #'tramp-autoload-file-name-handler)) (put #'tramp-autoload-file-name-handler 'safe-magic t)))
+(defun tramp-autoload-file-name-handler (operation &rest args)
+"Load Tramp file name handler, and perform OPERATION." (tramp-unload-file-name-handlers) (when tramp-mode (let ((default-directory temporary-file-directory)) (when (bound-and-true-p tramp-archive-autoload) (load "tramp-archive" 'noerror 'nomessage)) (load "tramp" 'noerror 'nomessage))) (apply operation args))
+(defun tramp-register-autoload-file-name-handlers nil
+"Add Tramp file name handlers to `file-name-handler-alist' during autoload." (unless (rassq #'tramp-file-name-handler file-name-handler-alist) (add-to-list 'file-name-handler-alist (cons tramp-autoload-file-name-regexp #'tramp-autoload-file-name-handler)) (put #'tramp-autoload-file-name-handler 'safe-magic t)))
  (tramp-register-autoload-file-name-handlers)
-(defun tramp-unload-file-name-handlers nil "\
-Unload Tramp file name handlers from `file-name-handler-alist'." (dolist (fnh file-name-handler-alist) (when (and (symbolp (cdr fnh)) (string-prefix-p "tramp-" (symbol-name (cdr fnh)))) (setq file-name-handler-alist (delq fnh file-name-handler-alist)))))
-(defun inhibit-remote-files nil "\
-Deactivate remote file names." (interactive) (when (fboundp 'tramp-cleanup-all-connections) (funcall 'tramp-cleanup-all-connections)) (tramp-unload-file-name-handlers) (setq tramp-mode nil))
-(defmacro without-remote-files (&rest body) "\
-Deactivate remote file names temporarily.
+(defun tramp-unload-file-name-handlers nil
+"Unload Tramp file name handlers from `file-name-handler-alist'." (dolist (fnh file-name-handler-alist) (when (and (symbolp (cdr fnh)) (string-prefix-p "tramp-" (symbol-name (cdr fnh)))) (setq file-name-handler-alist (delq fnh file-name-handler-alist)))))
+(defun inhibit-remote-files nil
+"Deactivate remote file names." (interactive) (when (fboundp 'tramp-cleanup-all-connections) (funcall 'tramp-cleanup-all-connections)) (tramp-unload-file-name-handlers) (setq tramp-mode nil))
+(defmacro without-remote-files (&rest body)
+"Deactivate remote file names temporarily.
 Run BODY." (declare (indent 0) (debug t)) `(let ((file-name-handler-alist (copy-tree file-name-handler-alist)) tramp-mode) (tramp-unload-file-name-handlers) ,@body))
-(defun tramp-unload-tramp nil "\
-Discard Tramp from loading remote files." (interactive) (ignore-errors (unload-feature 'tramp 'force)))
+(defun tramp-unload-tramp nil
+"Discard Tramp from loading remote files." (interactive) (ignore-errors (unload-feature 'tramp 'force)))
 (register-definition-prefixes "tramp" '("tramp-" "with-"))
 
 
@@ -72,20 +72,20 @@ Discard Tramp from loading remote files." (interactive) (ignore-errors (unload-f
 
 ;;; Generated autoloads from tramp-archive.el
 
-(defvar tramp-archive-enabled (featurep 'dbusbind) "\
-Non-nil when file archive support is available.")
-(defconst tramp-archive-suffixes '("7z" "apk" "ar" "cab" "CAB" "cpio" "crate" "deb" "depot" "epub" "exe" "iso" "jar" "lzh" "LZH" "msu" "MSU" "mtree" "odb" "odf" "odg" "odp" "ods" "odt" "pax" "rar" "rpm" "shar" "tar" "tbz" "tgz" "tlz" "txz" "tzst" "warc" "xar" "xpi" "xps" "zip" "ZIP") "\
-List of suffixes which indicate a file archive.
+(defvar tramp-archive-enabled (featurep 'dbusbind)
+"Non-nil when file archive support is available.")
+(defconst tramp-archive-suffixes '("7z" "apk" "ar" "cab" "CAB" "cpio" "crate" "deb" "depot" "epub" "exe" "iso" "jar" "lzh" "LZH" "msu" "MSU" "mtree" "odb" "odf" "odg" "odp" "ods" "odt" "pax" "rar" "rpm" "shar" "tar" "tbz" "tgz" "tlz" "txz" "tzst" "warc" "xar" "xpi" "xps" "zip" "ZIP")
+"List of suffixes which indicate a file archive.
 It must be supported by libarchive(3).")
-(defconst tramp-archive-compression-suffixes '("bz2" "gz" "lrz" "lz" "lz4" "lzma" "lzo" "uu" "xz" "Z" "zst") "\
-List of suffixes which indicate a compressed file.
+(defconst tramp-archive-compression-suffixes '("bz2" "gz" "lrz" "lz" "lz4" "lzma" "lzo" "uu" "xz" "Z" "zst")
+"List of suffixes which indicate a compressed file.
 It must be supported by libarchive(3).")
-(defmacro tramp-archive-autoload-file-name-regexp nil "\
-Regular expression matching archive file names." `(rx bos (group (+ nonl) "." (| ,@tramp-archive-suffixes) (32 "." (| ,@tramp-archive-compression-suffixes))) (group "/" (* nonl)) eos))
-(defun tramp-archive-autoload-file-name-handler (operation &rest args) "\
-Load Tramp archive file name handler, and perform OPERATION." (defvar tramp-archive-autoload) (let ((default-directory temporary-file-directory) (tramp-archive-autoload tramp-archive-enabled)) (apply #'tramp-autoload-file-name-handler operation args)))
-(defun tramp-register-archive-autoload-file-name-handler nil "\
-Add archive file name handler to `file-name-handler-alist'." (when (and tramp-archive-enabled (not (rassq 'tramp-archive-file-name-handler file-name-handler-alist))) (add-to-list 'file-name-handler-alist (cons (tramp-archive-autoload-file-name-regexp) #'tramp-archive-autoload-file-name-handler)) (put #'tramp-archive-autoload-file-name-handler 'safe-magic t)))
+(defmacro tramp-archive-autoload-file-name-regexp nil
+"Regular expression matching archive file names." `(rx bos (group (+ nonl) "." (| ,@tramp-archive-suffixes) (32 "." (| ,@tramp-archive-compression-suffixes))) (group "/" (* nonl)) eos))
+(defun tramp-archive-autoload-file-name-handler (operation &rest args)
+"Load Tramp archive file name handler, and perform OPERATION." (defvar tramp-archive-autoload) (let ((default-directory temporary-file-directory) (tramp-archive-autoload tramp-archive-enabled)) (apply #'tramp-autoload-file-name-handler operation args)))
+(defun tramp-register-archive-autoload-file-name-handler nil
+"Add archive file name handler to `file-name-handler-alist'." (when (and tramp-archive-enabled (not (rassq 'tramp-archive-file-name-handler file-name-handler-alist))) (add-to-list 'file-name-handler-alist (cons (tramp-archive-autoload-file-name-regexp) #'tramp-archive-autoload-file-name-handler)) (put #'tramp-archive-autoload-file-name-handler 'safe-magic t)))
 (add-hook 'after-init-hook #'tramp-register-archive-autoload-file-name-handler)
 (add-hook 'tramp-archive-unload-hook (lambda nil (remove-hook 'after-init-hook #'tramp-register-archive-autoload-file-name-handler)))
 (register-definition-prefixes "tramp-archive" '("tramp-" "with-parsed-tramp-archive-file-name"))
@@ -98,8 +98,8 @@ Add archive file name handler to `file-name-handler-alist'." (when (and tramp-ar
 
 ;;; Generated autoloads from tramp-cmds.el
 
-(autoload 'tramp-revert-buffer-with-sudo "tramp-cmds" "\
-Visit the current file again with superuser, or root, permissions.
+(autoload 'tramp-revert-buffer-with-sudo "tramp-cmds"
+"Visit the current file again with superuser, or root, permissions.
 
 By default this is done using the \"sudo\" Tramp method.
 You can customize `tramp-file-name-with-method' to change this.
@@ -108,8 +108,8 @@ Interactively, with a prefix argument, prompt for a different method.
 
 If the buffer visits a file, the file is replaced.
 If the buffer runs `dired', the buffer is reverted." t)
-(autoload 'tramp-dired-find-file-with-sudo "tramp-cmds" "\
-Visit the file or directory named on this line as the superuser.
+(autoload 'tramp-dired-find-file-with-sudo "tramp-cmds"
+"Visit the file or directory named on this line as the superuser.
 
 By default this is done using the \"sudo\" Tramp method.
 You can customize `tramp-file-name-with-method' to change this.
