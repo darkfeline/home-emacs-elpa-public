@@ -251,8 +251,8 @@
 
 ;;; Generated autoloads from oc.el
 
-(autoload 'org-cite-insert "oc" "\
-Insert a citation at point.
+(autoload 'org-cite-insert "oc"
+"Insert a citation at point.
 Insertion is done according to the processor set in `org-cite-insert-processor'.
 ARG is the prefix argument received when calling interactively the function.
 
@@ -357,34 +357,34 @@ ARG is the prefix argument received when calling interactively the function.
 
 ;;; Generated autoloads from org.el
 
-(autoload 'org-babel-do-load-languages "org" "\
-Load the languages defined in `org-babel-load-languages'.
+(autoload 'org-babel-do-load-languages "org"
+"Load the languages defined in `org-babel-load-languages'.
 
 (fn SYM VALUE)")
-(autoload 'org-babel-load-file "org" "\
-Load Emacs Lisp source code blocks in the Org FILE.
+(autoload 'org-babel-load-file "org"
+"Load Emacs Lisp source code blocks in the Org FILE.
 This function exports the source code using `org-babel-tangle'
 and then loads the resulting file using `load-file'.  With
 optional prefix argument COMPILE, the tangled Emacs Lisp file is
 byte-compiled before it is loaded.
 
 (fn FILE &optional COMPILE)" t)
-(autoload 'org-version "org" "\
-Show the Org version.
+(autoload 'org-version "org"
+"Show the Org version.
 Interactively, or when MESSAGE is non-nil, show it in echo area.
 With prefix argument, or when HERE is non-nil, insert it at point.
 In non-interactive uses, a reduced version string is output unless
 FULL is given.
 
 (fn &optional HERE FULL MESSAGE)" t)
-(autoload 'org-load-modules-maybe "org" "\
-Load all extensions listed in `org-modules'.
+(autoload 'org-load-modules-maybe "org"
+"Load all extensions listed in `org-modules'.
 
 (fn &optional FORCE)")
-(autoload 'org-clock-persistence-insinuate "org" "\
-Set up hooks for clock persistence.")
-(autoload 'org-mode "org" "\
-Outline-based notes management and organizer, alias
+(autoload 'org-clock-persistence-insinuate "org"
+"Set up hooks for clock persistence.")
+(autoload 'org-mode "org"
+"Outline-based notes management and organizer, alias
 \"Carsten's outline-mode for keeping track of everything.\"
 
 Org mode develops organizational tasks around a NOTES file which
@@ -402,16 +402,18 @@ The following commands are available:
 
 \\{org-mode-map}
 
-(fn)" t)
-(autoload 'org-run-like-in-org-mode "org" "\
-Run a command, pretending that the current buffer is in Org mode.
+In addition to any hooks its parent mode `outline-mode' might have
+run, this mode runs the hook `org-mode-hook', as the final or
+penultimate step during initialization." t)
+(autoload 'org-run-like-in-org-mode "org"
+"Run a command, pretending that the current buffer is in Org mode.
 This will temporarily bind local variables that are typically bound in
 Org mode to the values they have in Org mode, and then interactively
 call CMD.
 
 (fn CMD)")
-(autoload 'org-open-file "org" "\
-Open the file at PATH.
+(autoload 'org-open-file "org"
+"Open the file at PATH.
 First, this expands any special file name abbreviations.  Then the
 configuration variable `org-file-apps' is checked if it contains an
 entry for this file type, and if yes, the corresponding command is launched.
@@ -433,8 +435,8 @@ link, please customize `org-link-frame-setup'.
 If the file does not exist, throw an error.
 
 (fn PATH &optional IN-EMACS LINE SEARCH)")
-(autoload 'org-open-at-point-global "org" "\
-Follow a link or a timestamp like Org mode does.
+(autoload 'org-open-at-point-global "org"
+"Follow a link or a timestamp like Org mode does.
 Pass ARG to `org-link-open-to-string'.
 Also follow links and emails as seen by `thing-at-point'.
 This command can be called in any mode to follow an external
@@ -443,52 +445,52 @@ is undefined when called on internal links like fuzzy links.
 Raise a user error when there is nothing to follow.
 
 (fn &optional ARG)" t)
-(autoload 'org-offer-links-in-entry "org" "\
-Offer links in the current entry and return the selected link.
+(autoload 'org-offer-links-in-entry "org"
+"Offer links in the current entry and return the selected link.
 If there is only one link, return it.
 If NTH is an integer, return the NTH link found.
 If ZERO is a string, check also this string for a link, and if
 there is one, return it.
 
 (fn BUFFER MARKER &optional NTH ZERO)")
-(autoload 'org-switchb "org" "\
-Switch between Org buffers.
+(autoload 'org-switchb "org"
+"Switch between Org buffers.
 
 With `\\[universal-argument]' prefix, restrict available buffers to files.
 
 With `\\[universal-argument] \\[universal-argument]' prefix, restrict available buffers to agenda files.
 
 (fn &optional ARG)" t)
-(autoload 'org-cycle-agenda-files "org" "\
-Cycle through the files in `org-agenda-files'.
+(autoload 'org-cycle-agenda-files "org"
+"Cycle through the files in `org-agenda-files'.
 If the current buffer visits an agenda file, find the next one in the list.
 If the current buffer does not, find the first agenda file." t)
-(autoload 'org-submit-bug-report "org" "\
-Submit a bug report on Org via mail.
+(autoload 'org-submit-bug-report "org"
+"Submit a bug report on Org via mail.
 
 Don't hesitate to report any problems or inaccurate documentation.
 
 If you don't have setup sending mail from (X)Emacs, please copy the
 output buffer into your mail program, as it gives us important
 information about your Org version and configuration." t)
-(autoload 'org-reload "org" "\
-Reload all Org Lisp files.
+(autoload 'org-reload "org"
+"Reload all Org Lisp files.
 With prefix arg UNCOMPILED, load the uncompiled versions.
 
 (fn &optional UNCOMPILED)" t)
-(autoload 'org-customize "org" "\
-Call the customize function with org as argument." t)
+(autoload 'org-customize "org"
+"Call the customize function with org as argument." t)
 (register-definition-prefixes "org" '("org-" "turn-on-org-cdlatex"))
 
 
 ;;; Generated autoloads from org-agenda.el
 
-(autoload 'org-toggle-sticky-agenda "org-agenda" "\
-Toggle `org-agenda-sticky'.
+(autoload 'org-toggle-sticky-agenda "org-agenda"
+"Toggle `org-agenda-sticky'.
 
 (fn &optional ARG)" t)
-(autoload 'org-agenda "org-agenda" "\
-Dispatch agenda commands to collect entries to the agenda buffer.
+(autoload 'org-agenda "org-agenda"
+"Dispatch agenda commands to collect entries to the agenda buffer.
 Prompts for a command to execute.  Any prefix arg will be passed
 on to the selected command.  The default selections are:
 
@@ -522,8 +524,8 @@ Pressing `<' twice means to restrict to the current subtree or region
 (if active).
 
 (fn &optional ARG KEYS RESTRICTION)" t)
-(autoload 'org-batch-agenda "org-agenda" "\
-Run an agenda command in batch mode and send the result to STDOUT.
+(autoload 'org-batch-agenda "org-agenda"
+"Run an agenda command in batch mode and send the result to STDOUT.
 If CMD-KEY is a string of length 1, it is used as a key in
 `org-agenda-custom-commands' and triggers this command.  If it is a
 longer string it is used as a tags/todo match string.
@@ -531,8 +533,8 @@ Parameters are alternating variable names and values that will be bound
 before running the agenda command.
 
 (fn CMD-KEY &rest PARAMETERS)" nil t)
-(autoload 'org-batch-agenda-csv "org-agenda" "\
-Run an agenda command in batch mode and send the result to STDOUT.
+(autoload 'org-batch-agenda-csv "org-agenda"
+"Run an agenda command in batch mode and send the result to STDOUT.
 If CMD-KEY is a string of length 1, it is used as a key in
 `org-agenda-custom-commands' and triggers this command.  If it is a
 longer string it is used as a tags/todo match string.
@@ -567,16 +569,16 @@ priority-n   The computed numerical priority
 agenda-day   The day in the agenda where this is listed
 
 (fn CMD-KEY &rest PARAMETERS)" nil t)
-(autoload 'org-store-agenda-views "org-agenda" "\
-Store agenda views.
+(autoload 'org-store-agenda-views "org-agenda"
+"Store agenda views.
 
 (fn &rest PARAMETERS)" t)
-(autoload 'org-batch-store-agenda-views "org-agenda" "\
-Run all custom agenda commands that have a file argument.
+(autoload 'org-batch-store-agenda-views "org-agenda"
+"Run all custom agenda commands that have a file argument.
 
 (fn &rest PARAMETERS)" nil t)
-(autoload 'org-agenda-list "org-agenda" "\
-Produce a daily/weekly view from all files in variable `org-agenda-files'.
+(autoload 'org-agenda-list "org-agenda"
+"Produce a daily/weekly view from all files in variable `org-agenda-files'.
 The view will be for the current day or week, but from the overview buffer
 you will be able to go to other days/weeks.
 
@@ -591,8 +593,8 @@ When WITH-HOUR is non-nil, only include scheduled and deadline
 items if they have an hour specification like [h]h:mm.
 
 (fn &optional ARG START-DAY SPAN WITH-HOUR)" t)
-(autoload 'org-search-view "org-agenda" "\
-Show all entries that contain a phrase or words or regular expressions.
+(autoload 'org-search-view "org-agenda"
+"Show all entries that contain a phrase or words or regular expressions.
 
 With optional prefix argument TODO-ONLY, only consider entries that are
 TODO entries.  The argument STRING can be used to pass a default search
@@ -637,28 +639,28 @@ listed in `org-agenda-text-search-extra-files' unless a restriction lock
 is active.
 
 (fn &optional TODO-ONLY STRING EDIT-AT)" t)
-(autoload 'org-todo-list "org-agenda" "\
-Show all (not done) TODO entries from all agenda files in a single list.
+(autoload 'org-todo-list "org-agenda"
+"Show all (not done) TODO entries from all agenda files in a single list.
 The prefix arg can be used to select a specific TODO keyword and limit
 the list to these.  When using `\\[universal-argument]', you will be prompted
 for a keyword.  A numeric prefix directly selects the Nth keyword in
 `org-todo-keywords-1'.
 
 (fn &optional ARG)" t)
-(autoload 'org-tags-view "org-agenda" "\
-Show all headlines for all `org-agenda-files' matching a TAGS criterion.
+(autoload 'org-tags-view "org-agenda"
+"Show all headlines for all `org-agenda-files' matching a TAGS criterion.
 The prefix arg TODO-ONLY limits the search to TODO entries.
 
 (fn &optional TODO-ONLY MATCH)" t)
-(autoload 'org-agenda-list-stuck-projects "org-agenda" "\
-Create agenda view for projects that are stuck.
+(autoload 'org-agenda-list-stuck-projects "org-agenda"
+"Create agenda view for projects that are stuck.
 Stuck projects are project that have no next actions.  For the definitions
 of what a project is and how to check if it stuck, customize the variable
 `org-stuck-projects'.
 
 (fn &rest IGNORE)" t)
-(autoload 'org-diary "org-agenda" "\
-Return diary information from org files.
+(autoload 'org-diary "org-agenda"
+"Return diary information from org files.
 This function can be used in a \"sexp\" diary entry in the Emacs calendar.
 It accesses org files and extracts information from those files to be
 listed in the diary.  The function accepts arguments specifying what
@@ -685,12 +687,12 @@ by the caller, because this is how the calendar works.  Don't use this
 function from a program - use `org-agenda-get-day-entries' instead.
 
 (fn &rest ARGS)")
-(autoload 'org-agenda-check-for-timestamp-as-reason-to-ignore-todo-item "org-agenda" "\
-Do we have a reason to ignore this TODO entry because it has a time stamp?
+(autoload 'org-agenda-check-for-timestamp-as-reason-to-ignore-todo-item "org-agenda"
+"Do we have a reason to ignore this TODO entry because it has a time stamp?
 
 (fn &optional END)")
-(autoload 'org-agenda-set-restriction-lock "org-agenda" "\
-Set restriction lock for agenda to current subtree or file.
+(autoload 'org-agenda-set-restriction-lock "org-agenda"
+"Set restriction lock for agenda to current subtree or file.
 When in a restricted subtree, remove it.
 
 The restriction will span over the entire file if TYPE is `file',
@@ -699,11 +701,11 @@ in the file.  Otherwise, only apply the restriction to the current
 subtree.
 
 (fn &optional TYPE)" t)
-(autoload 'org-calendar-goto-agenda "org-agenda" "\
-Compute the Org agenda for the calendar date displayed at the cursor.
+(autoload 'org-calendar-goto-agenda "org-agenda"
+"Compute the Org agenda for the calendar date displayed at the cursor.
 This is a command that has to be installed in `calendar-mode-map'." t)
-(autoload 'org-agenda-to-appt "org-agenda" "\
-Activate appointments found in `org-agenda-files'.
+(autoload 'org-agenda-to-appt "org-agenda"
+"Activate appointments found in `org-agenda-files'.
 
 With a `\\[universal-argument]' prefix, refresh the list of appointments.
 
@@ -756,12 +758,12 @@ to override `appt-message-warning-time'.
 
 ;;; Generated autoloads from org-capture.el
 
-(autoload 'org-capture-string "org-capture" "\
-Capture STRING with the template selected by KEYS.
+(autoload 'org-capture-string "org-capture"
+"Capture STRING with the template selected by KEYS.
 
 (fn STRING &optional KEYS)" t)
-(autoload 'org-capture "org-capture" "\
-Capture something.
+(autoload 'org-capture "org-capture"
+"Capture something.
 \\<org-capture-mode-map>
 This will let you select a template from `org-capture-templates', and
 then file the newly captured information.  The text is immediately
@@ -790,8 +792,8 @@ agenda will use the date at point as the default date.  Then, a
 of the day at point (if any) or the current HH:MM time.
 
 (fn &optional GOTO KEYS)" t)
-(autoload 'org-capture-import-remember-templates "org-capture" "\
-Set `org-capture-templates' to be similar to `org-remember-templates'." t)
+(autoload 'org-capture-import-remember-templates "org-capture"
+"Set `org-capture-templates' to be similar to `org-remember-templates'." t)
 (register-definition-prefixes "org-capture" '("org-capture-"))
 
 
@@ -812,16 +814,16 @@ Set `org-capture-templates' to be similar to `org-remember-templates'." t)
 
 ;;; Generated autoloads from org-crypt.el
 
-(autoload 'org-encrypt-entry "org-crypt" "\
-Encrypt the content of the current headline." t)
-(autoload 'org-decrypt-entry "org-crypt" "\
-Decrypt the content of the current headline." t)
-(autoload 'org-encrypt-entries "org-crypt" "\
-Encrypt all top-level entries in the current buffer." t)
-(autoload 'org-decrypt-entries "org-crypt" "\
-Decrypt all entries in the current buffer." t)
-(autoload 'org-crypt-use-before-save-magic "org-crypt" "\
-Add a hook to automatically encrypt entries before a file is saved to disk.")
+(autoload 'org-encrypt-entry "org-crypt"
+"Encrypt the content of the current headline." t)
+(autoload 'org-decrypt-entry "org-crypt"
+"Decrypt the content of the current headline." t)
+(autoload 'org-encrypt-entries "org-crypt"
+"Encrypt all top-level entries in the current buffer." t)
+(autoload 'org-decrypt-entries "org-crypt"
+"Decrypt all entries in the current buffer." t)
+(autoload 'org-crypt-use-before-save-magic "org-crypt"
+"Add a hook to automatically encrypt entries before a file is saved to disk.")
 (register-definition-prefixes "org-crypt" '("org-"))
 
 
@@ -832,8 +834,8 @@ Add a hook to automatically encrypt entries before a file is saved to disk.")
 
 ;;; Generated autoloads from org-cycle.el
 
-(autoload 'org-cycle "org-cycle" "\
-TAB-action and visibility cycling for Org mode.
+(autoload 'org-cycle "org-cycle"
+"TAB-action and visibility cycling for Org mode.
 
 This is the command invoked in Org mode by the `TAB' key.  Its main
 purpose is outline visibility cycling, but it also invokes other actions
@@ -883,8 +885,8 @@ is non-nil, this function acts as if called with prefix argument (`\\[universal-
 same as `S-TAB') also when called without prefix argument.
 
 (fn &optional ARG)" t)
-(autoload 'org-cycle-global "org-cycle" "\
-Cycle the global visibility.  For details see `org-cycle'.
+(autoload 'org-cycle-global "org-cycle"
+"Cycle the global visibility.  For details see `org-cycle'.
 With `\\[universal-argument]' prefix ARG, switch to startup visibility.
 With a numeric prefix, show all headlines up to that level.
 
@@ -1054,11 +1056,11 @@ With a numeric prefix, show all headlines up to that level.
 
 ;;; Generated autoloads from org-version.el
 
-(autoload 'org-release "org-version" "\
-The release version of Org.
+(autoload 'org-release "org-version"
+"The release version of Org.
 Inserted by installing Org mode or when a release is made.")
-(autoload 'org-git-version "org-version" "\
-The Git version of Org mode.
+(autoload 'org-git-version "org-version"
+"The Git version of Org mode.
 Inserted by installing Org or when a release is made.")
 
 
@@ -1089,8 +1091,8 @@ Inserted by installing Org or when a release is made.")
 
 ;;; Generated autoloads from ox-koma-letter.el
 
-(autoload 'org-koma-letter-export-as-latex "ox-koma-letter" "\
-Export current buffer as a KOMA Scrlttr2 letter.
+(autoload 'org-koma-letter-export-as-latex "ox-koma-letter"
+"Export current buffer as a KOMA Scrlttr2 letter.
 
 If narrowing is active in the current buffer, only export its
 narrowed part.
@@ -1120,8 +1122,8 @@ will be displayed if `org-export-show-temporary-export-buffer' is
 non-nil.
 
 (fn &optional ASYNC SUBTREEP VISIBLE-ONLY BODY-ONLY EXT-PLIST)" t)
-(autoload 'org-koma-letter-export-to-latex "ox-koma-letter" "\
-Export current buffer as a KOMA Scrlttr2 letter (tex).
+(autoload 'org-koma-letter-export-to-latex "ox-koma-letter"
+"Export current buffer as a KOMA Scrlttr2 letter (tex).
 
 If narrowing is active in the current buffer, only export its
 narrowed part.
@@ -1152,8 +1154,8 @@ directory.
 Return output file's name.
 
 (fn &optional ASYNC SUBTREEP VISIBLE-ONLY BODY-ONLY EXT-PLIST)" t)
-(autoload 'org-koma-letter-export-to-pdf "ox-koma-letter" "\
-Export current buffer as a KOMA Scrlttr2 letter (pdf).
+(autoload 'org-koma-letter-export-to-pdf "ox-koma-letter"
+"Export current buffer as a KOMA Scrlttr2 letter (pdf).
 
 If narrowing is active in the current buffer, only export its
 narrowed part.
