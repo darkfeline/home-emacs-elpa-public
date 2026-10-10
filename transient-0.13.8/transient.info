@@ -32,7 +32,7 @@ used to implement similar menus in other packages.
 resource to get over that hurdle is Psionic K's interactive tutorial,
 available at <https://github.com/positron-solutions/transient-showcase>.
 
-This manual is for Transient version 0.13.7.
+This manual is for Transient version 0.13.8.
 
      Copyright (C) 2018-2026 Free Software Foundation, Inc.
 
@@ -1487,6 +1487,8 @@ constructor of that class.
      ‘transient-column’ is used and a warning is displayed.  This
      warning will eventually be replaced with an error.
 
+          ;; -*- lexical-binding:t -*-
+          ;; Before evaluating this example, make sure `lexical-binding' is t.
           (transient-define-prefix my-finder-by-keyword ()
             "Select a keyword and list matching packages."
             ;; The real `finder-by-keyword' is more convenient
@@ -4114,51 +4116,51 @@ Node: Technical Introduction53607
 Node: Defining Transients59310
 Node: Binding Suffix and Infix Commands62657
 Node: Group Specifications63513
-Node: Suffix Specifications70443
-Node: Defining Suffix and Infix Commands75476
-Node: Using Infix Arguments78524
-Node: Using Prefix Scope81552
-Node: Current Suffix Command83588
-Node: Current Prefix Command85945
-Node: Transient State88497
-Ref: Pre-commands for Infixes92832
-Ref: Pre-commands for Suffixes93348
-Ref: Pre-commands for Non-Suffixes95801
-Ref: Special Pre-Commands96937
-Node: Classes and Methods97445
-Node: Group Classes99532
-Node: Group Methods101457
-Node: Prefix Classes102716
-Node: Suffix Classes103557
-Node: Prefix Methods108351
-Node: Suffix Methods111572
-Node: Suffix Value Methods111893
-Node: Suffix Format Methods115240
-Node: Prefix Slots118225
-Ref: Value and Scope118375
-Ref: Behavior121367
-Ref: Appearance122708
-Ref: Documentation123392
-Ref: Internal124287
-Node: Suffix Slots125638
-Ref: Slots of transient-child126006
-Ref: Slots of transient-suffix127721
-Ref: Slots of transient-infix130162
-Ref: Slots of transient-variable133915
-Ref: Slots of transient-switches134017
-Node: Predicate Slots134380
-Node: FAQ136717
-Ref: Can I control how the menu buffer is displayed?136846
-Ref: How can I copy text from the menu buffer?137170
-Ref: How can I autoload prefix and suffix commands?137877
-Ref: How does Transient compare to prefix keys and universal arguments?138345
-Ref: How does Transient compare to Magit-Popup and Hydra?138588
-Ref: Why does q not quit popups anymore?138782
-Node: Keystroke Index139883
-Node: Command and Function Index141748
-Node: Variable Index150104
-Node: Concept Index153394
-Node: GNU General Public License156130
+Node: Suffix Specifications70561
+Node: Defining Suffix and Infix Commands75594
+Node: Using Infix Arguments78642
+Node: Using Prefix Scope81670
+Node: Current Suffix Command83706
+Node: Current Prefix Command86063
+Node: Transient State88615
+Ref: Pre-commands for Infixes92950
+Ref: Pre-commands for Suffixes93466
+Ref: Pre-commands for Non-Suffixes95919
+Ref: Special Pre-Commands97055
+Node: Classes and Methods97563
+Node: Group Classes99650
+Node: Group Methods101575
+Node: Prefix Classes102834
+Node: Suffix Classes103675
+Node: Prefix Methods108469
+Node: Suffix Methods111690
+Node: Suffix Value Methods112011
+Node: Suffix Format Methods115358
+Node: Prefix Slots118343
+Ref: Value and Scope118493
+Ref: Behavior121485
+Ref: Appearance122826
+Ref: Documentation123510
+Ref: Internal124405
+Node: Suffix Slots125756
+Ref: Slots of transient-child126124
+Ref: Slots of transient-suffix127839
+Ref: Slots of transient-infix130280
+Ref: Slots of transient-variable134033
+Ref: Slots of transient-switches134135
+Node: Predicate Slots134498
+Node: FAQ136835
+Ref: Can I control how the menu buffer is displayed?136964
+Ref: How can I copy text from the menu buffer?137288
+Ref: How can I autoload prefix and suffix commands?137995
+Ref: How does Transient compare to prefix keys and universal arguments?138463
+Ref: How does Transient compare to Magit-Popup and Hydra?138706
+Ref: Why does q not quit popups anymore?138900
+Node: Keystroke Index140001
+Node: Command and Function Index141866
+Node: Variable Index150222
+Node: Concept Index153512
+Node: GNU General Public License156248
 
 End Tag Table
 

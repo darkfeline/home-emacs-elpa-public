@@ -1,4 +1,8 @@
 # -*- mode: org -*-
+* v0.13.8   2026-09-01
+
+- Thoughts and whitespace.
+
 * v0.13.7   2026-08-06
 
 - Fixed a minor regression introduced in v0.13.6 affecting infixes
@@ -117,7 +121,5 @@ not (primarily) concern accessibility.
   anonymous commands, that could cause the transient menu to enter
   an inconsistent state, because we failed to adequately advise
   such commands, to protect against that possibility.  63f90723 ff
-
-- If an error occurred because of a window misconfiguration by some
 ...
 ...
