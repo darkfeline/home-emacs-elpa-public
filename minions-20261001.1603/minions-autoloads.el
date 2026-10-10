@@ -11,16 +11,16 @@
 
 ;;; Generated autoloads from minions.el
 
-(defvar minions-mode nil "\
-Non-nil if Minions mode is enabled.
+(defvar minions-mode nil
+"Non-nil if Minions mode is enabled.
 See the `minions-mode' command
 for a description of this minor mode.
 Setting this variable directly does not take effect;
 either customize it (see the info node `Easy Customization')
 or call the function `minions-mode'.")
 (custom-autoload 'minions-mode "minions" nil)
-(autoload 'minions-mode "minions" "\
-Display a minor-mode menu in the mode line.
+(autoload 'minions-mode "minions"
+"Display a minor-mode menu in the mode line.
 
 This replaces the likely incomplete and possibly cut off list of
 minor modes that is usually displayed directly in the mode line.
