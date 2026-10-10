@@ -1,6 +1,24 @@
-#+title: consult.el - Changelog
+#+title: consult.el - News
 #+author: Daniel Mendler
 #+language: en
+
+* Version 3.10 (2026-09-26)
+
+- Bugfixes.
+
+* Version 3.9 (2026-09-13)
+
+- =consult-buffer=, =consult--multi=: Populate sources lazily, such that expensive
+  hidden sources are not computed unnecessarily.
+- =consult-theme=: Group themes by package.
+- Minor internal refactoring.
+
+* Version 3.8 (2026-09-03)
+
+- =consult-completion-in-region=: Support default completion UI if eager display
+  and update is enabled, such that in-buffer completion can be transferred to
+  the minibuffer.
+- =consult-focus-lines=: Handle revert buffer.
 
 * Version 3.7 (2026-08-05)
 

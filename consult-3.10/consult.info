@@ -96,6 +96,7 @@ Configuration
 * Use-package example::          Configuration example based on use-package
 * Custom variables::             Short description of all customization settings
 * Project support::              Project discovery support for search commands
+* Workspace isolation::
 * Fine-tuning::                  Fine-grained configuration for special requirements
 * Default completion UI with auto update::
 
@@ -703,10 +704,12 @@ be added to this list.
 
    Either the ‘:items’ or the ‘:async’ source field is required:
    • ‘:items’ List of strings to select from or function returning list
-     of strings.  The strings can carry metadata in text properties,
-     which is then available to the ‘:annotate’, ‘:action’ and ‘:state’
-     functions.  The list can also consist of pairs, with the string in
-     the ‘car’ used for display and the ‘cdr’ the actual candidate.
+     of strings.  The function is only called for visible sources, such
+     that candidates are only computed on demand.  The strings can carry
+     metadata in text properties, which is then available to the
+     ‘:annotate’, ‘:action’ and ‘:state’ functions.  The list can also
+     consist of pairs, with the string in the ‘car’ used for display and
+     the ‘cdr’ the actual candidate.
    • ‘:async’ Alternative to ‘:items’ for asynchronous sources.  See the
      docstring for details.
 
@@ -814,14 +817,14 @@ exported to an Occur buffer where they can be edited via the
 ‘occur-edit-mode’ (press key ‘e’).  Similarly, Embark supports exporting
 the matches found by ‘consult-grep’, ‘consult-ripgrep’ and
 ‘consult-git-grep’ to a Grep buffer, where the matches across files can
-be edited, via ‘grep-edit-mode’ on Emacs 31 (or via the wgrep
-(https://github.com/mhayashi1120/Emacs-wgrep) package).  These three
-workflows are symmetric.
+be edited, via the wgrep (https://github.com/mhayashi1120/Emacs-wgrep)
+package (or the less featureful ‘grep-edit-mode’ on Emacs 31).  These
+three workflows are symmetric.
 
    • ‘consult-line’ -> ‘embark-export’ to ‘occur-mode’ buffer ->
      ‘occur-edit-mode’ for editing of matches.
    • ‘consult-grep’ -> ‘embark-export’ to ‘grep-mode’ buffer ->
-     ‘grep-edit-mode’ for editing of matches.
+     ‘wgrep-change-to-wgrep-mode’ for editing of matches.
    • ‘consult-find’ -> ‘embark-export’ to ‘dired-mode’ buffer ->
      ‘wdired-change-to-wdired-mode’ for editing.
 
@@ -849,6 +852,7 @@ binding, since they use lambdas and closures.
 * Use-package example::          Configuration example based on use-package
 * Custom variables::             Short description of all customization settings
 * Project support::              Project discovery support for search commands
+* Workspace isolation::
 * Fine-tuning::                  Fine-grained configuration for special requirements
 * Default completion UI with auto update::
 
@@ -1034,7 +1038,7 @@ consult-themes                     List of themes to be presented for selection
 consult-widen-key                  Widening key during completion
 
 
-File: consult.info,  Node: Project support,  Next: Fine-tuning,  Prev: Custom variables,  Up: Configuration
+File: consult.info,  Node: Project support,  Next: Workspace isolation,  Prev: Custom variables,  Up: Configuration
 
 3.3 Project support
 ===================
@@ -1061,9 +1065,30 @@ possible to configure alternative methods via the customization variable
      (setq consult-project-function nil)
 
 
-File: consult.info,  Node: Fine-tuning,  Next: Default completion UI with auto update,  Prev: Project support,  Up: Configuration
+File: consult.info,  Node: Workspace isolation,  Next: Fine-tuning,  Prev: Project support,  Up: Configuration
 
-3.4 Fine-tuning of individual commands
+3.4 Workspace isolation
+=======================
+
+By default Consult operates on all buffers in your Emacs instance, as
+returned by ‘(buffer-list)’.  The variable
+‘consult-buffer-list-function’ specifies a function which returns the
+list of buffers.  This function is called for instance by
+‘consult-buffer’ sources.  The variable variable can be set to
+alternative functions.
+
+   For per-frame/per-tab isolation set ‘consult-buffer-list-function’ to
+‘consult--frame-buffer-list’.  Alternatively use special buffer
+functions provided by workspace packages like beframe
+(https://github.com/protesilaos/beframe), tabspaces
+(https://codeberg.org/mclear-tools/tabspaces) or bufferlo
+(https://github.com/florommel/bufferlo).  This way Consult integrates
+with your favored solution for workspaces and buffer isolation.
+
+
+File: consult.info,  Node: Fine-tuning,  Next: Default completion UI with auto update,  Prev: Workspace isolation,  Up: Configuration
+
+3.5 Fine-tuning of individual commands
 ======================================
 
 *NOTE:* Consult supports fine-grained customization of individual
@@ -1133,7 +1158,7 @@ by the following techniques:
 
 File: consult.info,  Node: Default completion UI with auto update,  Prev: Fine-tuning,  Up: Configuration
 
-3.5 Default completion UI with auto update
+3.6 Default completion UI with auto update
 ==========================================
 
 I recommend to use Vertico for best performance and an intuitive UI.
@@ -1177,9 +1202,9 @@ I use and recommend this combination of packages:
      Action commands, which can act on the completion candidates
    • orderless (https://github.com/oantolin/orderless): Completion style
      which offers flexible candidate filtering
-   • wgrep (https://github.com/mhayashi1120/Emacs-wgrep) (or
-     ‘grep-edit-mode’ on Emacs 31): Editing of grep buffers.  Use with
-     ‘consult-grep’ via ‘embark-export’.
+   • wgrep (https://github.com/mhayashi1120/Emacs-wgrep) (or the less
+     featureful ‘grep-edit-mode’ on Emacs 31): Editing of grep buffers.
+     Use with ‘consult-grep’ via ‘embark-export’.
 
    There exist multiple fine completion UIs beside Vertico, which are
 supported by Consult.  Give them a try and find out which interaction
@@ -1591,42 +1616,43 @@ File: consult.info,  Node: Concept index,  Prev: Function index,  Up: Indices
 
 Tag Table:
 Node: Top221
-Node: Available commands5288
-Node: Virtual Buffers6863
-Node: Editing9038
-Node: Register9892
-Node: Navigation11611
-Node: Search12852
-Node: Grep and Find14761
-Node: Compilation17174
-Node: Histories17884
-Node: Modes19102
-Node: Org Mode19580
-Node: Help20194
-Node: Miscellaneous21396
-Node: Special features22827
-Node: Live previews23954
-Node: Narrowing and grouping28008
-Node: Asynchronous search30009
-Node: Multiple sources33945
-Node: Embark integration38840
-Node: Configuration41058
-Node: Use-package example42178
-Node: Custom variables48501
-Node: Project support52432
-Node: Fine-tuning53695
-Node: Default completion UI with auto update56699
-Node: Recommended packages57795
-Node: Bug reports59908
-Node: Hacking62901
-Node: Creating simple commands63114
-Node: Creating asynchronous completion commands64745
-Node: Live preview66737
-Node: Contributions67932
-Node: Acknowledgments68696
-Node: Indices71227
-Node: Function index71463
-Node: Concept index75109
+Node: Available commands5312
+Node: Virtual Buffers6887
+Node: Editing9062
+Node: Register9916
+Node: Navigation11635
+Node: Search12876
+Node: Grep and Find14785
+Node: Compilation17198
+Node: Histories17908
+Node: Modes19126
+Node: Org Mode19604
+Node: Help20218
+Node: Miscellaneous21420
+Node: Special features22851
+Node: Live previews23978
+Node: Narrowing and grouping28032
+Node: Asynchronous search30033
+Node: Multiple sources33969
+Node: Embark integration38974
+Node: Configuration41220
+Node: Use-package example42364
+Node: Custom variables48687
+Node: Project support52618
+Node: Workspace isolation53889
+Node: Fine-tuning54836
+Node: Default completion UI with auto update57844
+Node: Recommended packages58940
+Node: Bug reports61072
+Node: Hacking64065
+Node: Creating simple commands64278
+Node: Creating asynchronous completion commands65909
+Node: Live preview67901
+Node: Contributions69096
+Node: Acknowledgments69860
+Node: Indices72391
+Node: Function index72627
+Node: Concept index76273
 
 End Tag Table
 
