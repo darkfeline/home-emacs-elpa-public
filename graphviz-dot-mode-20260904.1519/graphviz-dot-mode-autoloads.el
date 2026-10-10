@@ -16,8 +16,8 @@
 
 ;;; Generated autoloads from graphviz-dot-mode.el
 
-(autoload 'graphviz-dot-mode "graphviz-dot-mode" "\
-Major mode for the dot language.
+(autoload 'graphviz-dot-mode "graphviz-dot-mode"
+"Major mode for the dot language.
 
 Functionality specific to this mode:
 
@@ -43,19 +43,21 @@ Variables specific to this mode:
   `graphviz-dot-save-before-view'              (default t)
        Automatically save current buffer berore `graphviz-dot-view'.
 
-(fn)" t)
-(autoload 'graphviz-dot-preview "graphviz-dot-mode" "\
-Compile the graph between BEGIN and END and preview it in an other buffer.
+In addition to any hooks its parent mode `prog-mode' might have run,
+this mode runs the hook `graphviz-dot-mode-hook', as the final or
+penultimate step during initialization." t)
+(autoload 'graphviz-dot-preview "graphviz-dot-mode"
+"Compile the graph between BEGIN and END and preview it in an other buffer.
 BEGIN (resp. END) is a number defaulting to `point-min' (resp. `point-max')
 representing the current buffer's point where the graph definition starts
 (resp. stops).
 
 (fn &optional BEGIN END)" t)
-(autoload 'graphviz-turn-on-live-preview "graphviz-dot-mode" "\
-Turn on live preview.
+(autoload 'graphviz-turn-on-live-preview "graphviz-dot-mode"
+"Turn on live preview.
 This will update the preview on every save." t)
-(autoload 'graphviz-turn-off-live-preview "graphviz-dot-mode" "\
-Turn off live preview.
+(autoload 'graphviz-turn-off-live-preview "graphviz-dot-mode"
+"Turn off live preview.
 Saving the file will no longer also update the preview." t)
 (add-to-list 'auto-mode-alist '("\\.dot\\'" . graphviz-dot-mode))
 (add-to-list 'auto-mode-alist '("\\.gv\\'" . graphviz-dot-mode))
