@@ -238,9 +238,9 @@ older Emacs versions you can use the following advice:
 We maintain small extension packages to Vertico in this repository in the
 subdirectory [[https://github.com/minad/vertico/tree/main/extensions][extensions/]]. The extensions are installed together with Vertico.
 The extensions are inactive by default and can be enabled manually if desired.
-Furthermore it is possible to install all of the files separately, both
-~vertico.el~ and the ~vertico-*.el~ extensions. Currently the following extensions
-come with the Vertico package:
+Furthermore it is possible to install each of the files individually, ~vertico.el~
+and the ~vertico-*.el~ extensions. Currently the following extensions come with
+the Vertico package:
 
 - [[https://github.com/minad/vertico/blob/main/extensions/vertico-buffer.el][vertico-buffer]]: =vertico-buffer-mode= to display Vertico like a regular buffer.
 - [[https://github.com/minad/vertico/blob/main/extensions/vertico-directory.el][vertico-directory]]: Commands for Ido-like directory navigation.
@@ -276,9 +276,7 @@ Configuration example for =vertico-directory=:
   :bind (:map vertico-map
               ("RET" . vertico-directory-enter)
               ("DEL" . vertico-directory-delete-char)
-              ("M-DEL" . vertico-directory-delete-word))
-  ;; Tidy shadowed file names
-  :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
+              ("M-DEL" . vertico-directory-delete-word)))
 #+end_src
 
 ** Configure Vertico per command or completion category
@@ -424,8 +422,8 @@ quick start approach:
    I am using the mnemonic keybindings =M-.= and =C-.= since these commands allow
    you to act on the object at point or in the minibuffer.
 7. Install Embark-Consult to export from =consult-line= to editable =occur-mode=
-   buffers and from =consult-grep= to =grep-mode= buffers. On Emacs 31, use
-   =grep-edit-mode= for editing or [[https://github.com/mhayashi1120/Emacs-wgrep][wgrep]] on older Emacs version.
+   buffers and from =consult-grep= to =grep-mode= buffers. Install [[https://github.com/mhayashi1120/Emacs-wgrep][wgrep]] for editable
+   Grep buffers, or use the less featureful =grep-edit-mode= on Emacs 31.
 8. Fine tune Vertico with [[#extensions][extensions]].
 
 The ecosystem is modular. You don't have to use all of these components. Use

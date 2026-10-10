@@ -321,9 +321,9 @@ the subdirectory extensions/
 (https://github.com/minad/vertico/tree/main/extensions).  The extensions
 are installed together with Vertico.  The extensions are inactive by
 default and can be enabled manually if desired.  Furthermore it is
-possible to install all of the files separately, both ‘vertico.el’ and
-the ‘vertico-*.el’ extensions.  Currently the following extensions come
-with the Vertico package:
+possible to install each of the files individually, ‘vertico.el’ and the
+‘vertico-*.el’ extensions.  Currently the following extensions come with
+the Vertico package:
 
    • vertico-buffer
      (https://github.com/minad/vertico/blob/main/extensions/vertico-buffer.el):
@@ -389,9 +389,7 @@ according to the buffer height.
        :bind (:map vertico-map
                    ("RET" . vertico-directory-enter)
                    ("DEL" . vertico-directory-delete-char)
-                   ("M-DEL" . vertico-directory-delete-word))
-       ;; Tidy shadowed file names
-       :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
+                   ("M-DEL" . vertico-directory-delete-word)))
 
 * Menu:
 
@@ -545,9 +543,9 @@ the following quick start approach:
      the minibuffer.
   7. Install Embark-Consult to export from ‘consult-line’ to editable
      ‘occur-mode’ buffers and from ‘consult-grep’ to ‘grep-mode’
-     buffers.  On Emacs 31, use ‘grep-edit-mode’ for editing or wgrep
-     (https://github.com/mhayashi1120/Emacs-wgrep) on older Emacs
-     version.
+     buffers.  Install wgrep
+     (https://github.com/mhayashi1120/Emacs-wgrep) for editable Grep
+     buffers, or use the less featureful ‘grep-edit-mode’ on Emacs 31.
   8. Fine tune Vertico with *note extensions: Extensions.
 
    The ecosystem is modular.  You don't have to use all of these
@@ -888,20 +886,20 @@ Node: Completion styles and TAB completion9151
 Node: Completion-at-point and completion-in-region11561
 Node: Completing-read-multiple12629
 Node: Extensions13764
-Node: Configure Vertico per command or completion category17822
-Node: Complementary packages22814
-Node: Child frames and Popups25253
-Node: Alternatives26628
-Node: Resources28755
-Node: Debugging Vertico30621
-Node: Problematic completion commands30977
-Node: org-refile31648
-Node: org-agenda-filter and org-tags-view33589
-Node: completion-table-dynamic34864
-Node: Submitting the empty string35944
-Node: tmm-menubar (Fixed on Emacs 31)37392
-Node: ffap-menu (Fixed on Emacs 31)38294
-Node: Tramp hostname and username completion (Fixed on Emacs 29)39209
+Node: Configure Vertico per command or completion category17718
+Node: Complementary packages22710
+Node: Child frames and Popups25168
+Node: Alternatives26543
+Node: Resources28670
+Node: Debugging Vertico30536
+Node: Problematic completion commands30892
+Node: org-refile31563
+Node: org-agenda-filter and org-tags-view33504
+Node: completion-table-dynamic34779
+Node: Submitting the empty string35859
+Node: tmm-menubar (Fixed on Emacs 31)37307
+Node: ffap-menu (Fixed on Emacs 31)38209
+Node: Tramp hostname and username completion (Fixed on Emacs 29)39124
 
 End Tag Table
 
