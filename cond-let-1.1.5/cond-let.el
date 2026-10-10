@@ -9,7 +9,7 @@
 ;; Homepage: https://github.com/tarsius/cond-let
 ;; Keywords: extensions
 
-;; Package-Version: 1.1.3
+;; Package-Version: 1.1.5
 ;; Package-Requires: ((emacs "28.1"))
 
 ;; SPDX-License-Identifier: GPL-3.0-or-later
@@ -549,6 +549,15 @@ BODY can be one or more expressions.
   "Highlight `$' using `font-lock-variable-name-face'.
 To add these keywords, add this to your configuration:
 \(font-lock-add-keywords \\='emacs-lisp-mode cond-let-font-lock-keywords t)")
+
+;;;###autoload
+(define-minor-mode cond-let-fontify-mode
+  "In Emacs Lisp mode, highlight `$' using `font-lock-variable-name-face'."
+  :global t
+  :group 'font-lock-extra-types
+  (if cond-let-fontify-mode
+      (font-lock-add-keywords  'emacs-lisp-mode cond-let-font-lock-keywords t)
+    (font-lock-remove-keywords 'emacs-lisp-mode cond-let-font-lock-keywords)))
 
 ;;; Compatibility
 
