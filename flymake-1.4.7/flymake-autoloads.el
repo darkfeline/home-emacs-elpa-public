@@ -11,16 +11,16 @@
 
 ;;; Generated autoloads from flymake.el
 
-(autoload 'flymake-log "flymake" "\
-Log, at level LEVEL, the message MSG formatted with ARGS.
+(autoload 'flymake-log "flymake"
+"Log, at level LEVEL, the message MSG formatted with ARGS.
 LEVEL is passed to `display-warning', which is used to display
 the warning.  If this form is included in a file,
 the generated warning contains an indication of the file that
 generated it.
 
 (fn LEVEL MSG &rest ARGS)" nil t)
-(autoload 'flymake-make-diagnostic "flymake" "\
-Make a Flymake diagnostic for LOCUS's region from BEG to END.
+(autoload 'flymake-make-diagnostic "flymake"
+"Make a Flymake diagnostic for LOCUS's region from BEG to END.
 LOCUS is a buffer object or a string designating a file name.
 
 TYPE is a diagnostic symbol (see Info Node `(Flymake)Flymake error
@@ -46,22 +46,22 @@ in the `flymake-overlay-control' property of the diagnostic's type
 symbol.
 
 (fn LOCUS BEG END TYPE INFO &optional DATA OVERLAY-PROPERTIES)")
-(autoload 'flymake-diagnostics "flymake" "\
-Get Flymake diagnostics in region determined by BEG and END.
+(autoload 'flymake-diagnostics "flymake"
+"Get Flymake diagnostics in region determined by BEG and END.
 
 If neither BEG or END is supplied, use whole accessible buffer,
 otherwise if BEG is non-nil and END is nil, consider only
 diagnostics at BEG.
 
 (fn &optional BEG END)")
-(autoload 'flymake-diag-region "flymake" "\
-Compute BUFFER's region (BEG . END) corresponding to LINE and COL.
+(autoload 'flymake-diag-region "flymake"
+"Compute BUFFER's region (BEG . END) corresponding to LINE and COL.
 If COL is nil, return a region just for LINE.  Return nil if the
 region is invalid.  This function saves match data.
 
 (fn BUFFER LINE &optional COL)")
-(autoload 'flymake-mode "flymake" "\
-Toggle Flymake mode on or off.
+(autoload 'flymake-mode "flymake"
+"Toggle Flymake mode on or off.
 
 Flymake is an Emacs minor mode for on-the-fly syntax checking.
 Flymake collects diagnostic information from multiple sources,
@@ -114,13 +114,11 @@ evaluate the variable `flymake-mode'.
 The mode's hook is called both when the mode is enabled and when it is
 disabled.
 
-\\{flymake-mode-map}
-
 (fn &optional ARG)" t)
-(autoload 'flymake-mode-on "flymake" "\
-Turn Flymake mode on.")
-(autoload 'flymake-mode-off "flymake" "\
-Turn Flymake mode off.")
+(autoload 'flymake-mode-on "flymake"
+"Turn Flymake mode on.")
+(autoload 'flymake-mode-off "flymake"
+"Turn Flymake mode off.")
 (register-definition-prefixes "flymake" '("flymake-"))
 
 ;;; End of scraped data
