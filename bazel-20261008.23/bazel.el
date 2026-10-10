@@ -2,9 +2,9 @@
 
 ;; URL: https://github.com/bazel-contrib/bazel.el
 ;; Keywords: build tools, languages
-;; Package-Requires: ((emacs "29.1"))
-;; Package-Version: 20260810.1338
-;; Package-Revision: 816e1571ed53
+;; Package-Requires: ((emacs "30.1"))
+;; Package-Version: 20261008.23
+;; Package-Revision: 5986655b5785
 
 ;; Copyright (C) 2018-2023, 2026 Google LLC
 ;; Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,10 +33,12 @@
 (require 'ffap)
 (require 'imenu)
 (require 'json)
+(require 'multisession)
 (require 'project)
 (require 'python)
 (eval-when-compile (require 'subr-x))
 (require 'testcover)
+(require 'vc-git)
 (require 'which-func)
 (require 'xref)
 
@@ -109,6 +111,7 @@ Bazel options that are really Emacs-specific, such as
   "Initialize the option ‘bazel-test-at-point-functions’.
 See Info node ‘(elisp) Variable Definitions’ for an explanation
 of the OPTION and VALUE arguments."
+  (declare (ftype (function (symbol t) null)))
   (cl-check-type option symbol)
   (dolist (function (eval value t))
     (add-hook option function 80))
@@ -181,7 +184,9 @@ If nil, don’t pass a -type flag to Buildifier.")
     "Evaluate VAL and bind it to VAR in BODY.
 Assume that VAL returns the name of a temporary file.  After BODY
 finishes, delete the temporary file."
-    (declare (debug (symbolp form body)) (indent 2))
+    (declare (ftype (function (symbol t &rest t) t))
+             (debug (symbolp form body))
+             (indent 2))
     (cl-with-gensyms (file)
       `(let ((,file ,val))
          (unwind-protect
@@ -196,6 +201,9 @@ and visited filename, if available.  Otherwise, TYPE must be one
 of the symbols ‘build’, ‘bzl’, ‘workspace’, ‘module’, or
 ‘default’, corresponding to the file types documented at URL
 ‘https://github.com/bazelbuild/buildtools/tree/master/buildifier#usage’."
+  (declare (ftype (function
+                   (&optional (member build bzl workspace module default))
+                   null)))
   (interactive "*" bazel-mode)
   (cl-check-type type (member nil build bzl workspace module default))
   (let ((directory default-directory)
@@ -218,7 +226,7 @@ of the symbols ‘build’, ‘bzl’, ‘workspace’, ‘module’, or
               (insert-file-contents temp-file nil nil nil :replace)
               (kill-buffer temp-buffer))
           (with-current-buffer temp-buffer
-            (when-let ((root (bazel--repository-root (or input-file directory))))
+            (when-let* ((root (bazel--repository-root (or input-file directory))))
               ;; Files in Buildifier error messages are local to the repository
               ;; root.  Make sure that ‘next-error’ finds them.
               (setq-local default-directory root))
@@ -235,6 +243,7 @@ of the symbols ‘build’, ‘bzl’, ‘workspace’, ‘module’, or
 
 (defun bazel--buildifier-before-save-hook ()
   "Run buildifer in `before-save-hook'."
+  (declare (ftype (function () null)))
   (when bazel-buildifier-before-save
     (bazel-buildifier))
   nil)
@@ -259,56 +268,53 @@ The magic comments \"keep sorted\", \"do not sort\", and
 mentioned in the Buildifier source code at URL
 `https://git.io/JOuVL' and have tests.")
 
-(eval-and-compile
-  (defconst bazel-font-lock-keywords-1
-    ;; Only include file directives.  See Info node ‘(elisp) Levels of Font
-    ;; Lock’.
-    (eval-when-compile
-      `((,(regexp-opt '("include" "module" "repo" "visibility" "workspace")
-                      'symbols)
-         . 'font-lock-builtin-face)
-        (,(regexp-opt '("load") 'symbols) . 'font-lock-keyword-face)))
-    "Value of ‘font-lock-keywords’ in ‘bazel-mode’ at font lock level 1.")
+(defconst bazel-font-lock-keywords-1
+  ;; Only include file directives.  See Info node ‘(elisp) Levels of Font Lock’.
+  `((,(rx line-start
+          (or "include" "module" "repo" "visibility" "workspace")
+          symbol-end)
+     . 'font-lock-builtin-face)
+    (,(rx line-start "load" symbol-end) . 'font-lock-keyword-face))
+  "Value of ‘font-lock-keywords’ in ‘bazel-mode’ at font lock level 1.")
 
-  (defconst bazel-font-lock-keywords-2
-    (eval-when-compile
-      `(,@bazel-font-lock-keywords-1
-        ;; Include keywords and constants.  Keywords for BUILD files are the
-        ;; same as Starlark files.  Even if some of them are forbidden in BUILD
-        ;; files, they should be highlighted.  See
-        ;; https://github.com/bazelbuild/starlark/blob/master/spec.md.  “load”
-        ;; is already included in level 1.
-        (,(regexp-opt '("and" "break" "continue" "def" "elif" "else" "for" "if"
-                        "in" "lambda" "not" "or" "pass" "return")
-                      'symbols)
-         . 'font-lock-keyword-face)
-        ;; Reserved keywords
-        (,(regexp-opt '("as" "assert" "async" "await" "class" "del" "except"
-                        "finally" "from" "global" "import" "is" "nonlocal"
-                        "raise" "try" "while" "with" "yield")
-                      'symbols)
-         . 'font-lock-warning-face)
-        ;; Constants
-        (,(regexp-opt '("True" "False" "None")
-                      'symbols)
-         . 'font-lock-constant-face)))
-    "Value of ‘font-lock-keywords’ in ‘bazel-mode’ at font lock level 2.")
+(defconst bazel-font-lock-keywords-2
+  `(,@bazel-font-lock-keywords-1
+    ;; Include keywords and constants.  Keywords for BUILD files are the same as
+    ;; Starlark files.  Even if some of them are forbidden in BUILD files, they
+    ;; should be highlighted.  See
+    ;; https://github.com/bazelbuild/starlark/blob/master/spec.md.  “load” is
+    ;; already included in level 1.
+    (,(rx symbol-start
+          (or "and" "break" "continue" "def" "elif" "else" "for" "if" "in"
+              "lambda" "not" "or" "pass" "return")
+          symbol-end)
+     . 'font-lock-keyword-face)
+    ;; Reserved keywords
+    (,(rx symbol-start
+          (or "as" "assert" "async" "await" "class" "del" "except" "finally"
+              "from" "global" "import" "is" "nonlocal" "raise" "try" "while"
+              "with" "yield")
+          symbol-end)
+     . 'font-lock-warning-face)
+    ;; Constants
+    (,(rx symbol-start (or "True" "False" "None") symbol-end)
+     . 'font-lock-constant-face))
+  "Value of ‘font-lock-keywords’ in ‘bazel-mode’ at font lock level 2.")
 
-  (defconst bazel-font-lock-keywords-3
-    (eval-when-compile
-      `(,@bazel-font-lock-keywords-2
-        ;; Include builtin functions.  Some Starlark functions are exposed to
-        ;; BUILD files as builtins.  For details see
-        ;; https://github.com/bazelbuild/starlark/blob/master/spec.md.
-        (,(regexp-opt '("exports_files" "glob" "licenses" "package"
-                        "package_group" "select" "workspace")
-                      'symbols)
-         . 'font-lock-builtin-face)
-        ;; Target names
-        (bazel--find-target-name 2 'font-lock-variable-name-face prepend)
-        ;; Magic comments
-        (bazel--find-magic-comment 0 'font-lock-preprocessor-face prepend)))
-    "Value of ‘font-lock-keywords’ in ‘bazel-mode’ at font lock level 3."))
+(defconst bazel-font-lock-keywords-3
+  `(,@bazel-font-lock-keywords-2
+    ;; Include builtin functions.  Some Starlark functions are exposed to BUILD
+    ;; files as builtins.  For details see
+    ;; https://bazel.build/reference/be/functions.
+    (,(rx line-start (or "package" "package_group" "exports_files") symbol-end)
+     . 'font-lock-builtin-face)
+    (,(rx symbol-start (group (or "glob" "select" "subpackages")) (* blank) ?\()
+     1 font-lock-builtin-face)
+    ;; Target names
+    (bazel--find-target-name 2 'font-lock-variable-name-face prepend)
+    ;; Magic comments
+    (bazel--find-magic-comment 0 'font-lock-preprocessor-face prepend))
+  "Value of ‘font-lock-keywords’ in ‘bazel-mode’ at font lock level 3.")
 
 (defconst bazel-font-lock-keywords bazel-font-lock-keywords-1
   "Default value of ‘font-lock-keywords’ in ‘bazel-mode’.")
@@ -387,7 +393,7 @@ This is the parent mode for the more specific modes
   (add-hook 'xref-backend-functions #'bazel-mode-xref-backend nil :local)
   (add-hook 'completion-at-point-functions #'bazel-completion-at-point
             nil :local)
-  (when-let ((filename buffer-file-name))
+  (when-let* ((filename buffer-file-name))
     ;; Initialize filename cache.
     (bazel--repository-relative-name filename))
   nil)
@@ -509,6 +515,132 @@ This is the parent mode for the more specific modes
              ;; https://bazel.build/external/lockfile#lockfile-generation
              (cons (rx "/MODULE.bazel.lock" eos) #'js-json-mode))
 
+(defvar bazel-module-history nil
+  "Minibuffer history for Bazel module names.
+This is used by ‘bazel-insert-dependency’.
+See Info node ‘(emacs) Minibuffer History’,
+and see Info node ‘(elisp) Minibuffer History’.")
+
+(define-skeleton bazel-insert-dependency
+  "Insert a “bazel_dep” statement at point."
+  ;; We store the BCR table in ‘v1’.  Note that ‘skeleton-insert’ evaluates the
+  ;; interactor only when it’s first required (i.e., upon first encountering
+  ;; ‘str’, unless passed to the skeleton function as argument), so we can
+  ;; initialize ‘v1’ lexically after the interactor.  The ‘n’ element needs to
+  ;; be the first to work correctly.
+  (completing-read "Module: " v1 nil 'confirm nil 'bazel-module-history)
+  n "bazel_dep(name = \"" '(setq v1 (bazel--central-registry)) str
+  "\", version = \"" (gethash str v1) | _ "\")\n")
+
+(function-put #'bazel-insert-dependency 'interactive-only t)
+(function-put #'bazel-insert-dependency 'command-modes '(bazel-module-mode))
+
+(cl-defstruct (bazel--central-registry
+               (:constructor nil)
+               (:constructor bazel--make-central-registry (last-update table))
+               (:copier nil))
+  "Cache for the contents of the Bazel Central Registry."
+  (last-update nil
+               :read-only t
+               :type (or integer cons)
+               :documentation "The timestamp of the last fetch")
+  (table nil
+         :read-only t
+         :type hash-table
+         :documentation "Map of module names to their most recent versions"))
+
+(define-multisession-variable bazel--central-registry nil
+  "Cache for the contents of the Bazel Central Registry.
+If set, the value is a structure of type ‘bazel--central-registry’.")
+
+(defun bazel--central-registry ()
+  "Return the contents of the Bazel Central Registry.
+Return a hashtable mapping package names to their most recent versions.
+Use a cached value if the cache is not stale, and fetch the contents
+from the registry otherwise."
+  (declare (ftype (function () hash-table)))
+  (let ((cache (multisession-value bazel--central-registry)))
+    (if (and cache (time-less-p (time-subtract nil 3600)
+                                (bazel--central-registry-last-update cache)))
+        (bazel--central-registry-table cache)
+      (let ((table (bazel--fetch-central-registry)))
+        (setf (multisession-value bazel--central-registry)
+              (bazel--make-central-registry (current-time) table))
+        table))))
+
+(defvar bazel--central-registry-url
+  "https://github.com/bazelbuild/bazel-central-registry.git"
+  "URL of the Bazel Central Registry Git repository.
+This should only be overwritten in tests.")
+
+(defun bazel--fetch-central-registry ()
+  "Download the Bazel Central Registry.
+Return a hashtable mapping package names to their most recent versions."
+  (declare (ftype (function () hash-table)))
+  ;; Cache the Git repository of the Bazel Central Registry locally.  We clone
+  ;; into a new temporary directory each time.  Alternatively, we could keep a
+  ;; single clone in a cache directory, but according to some benchmarks, that
+  ;; would only be a bit faster (1.0 s vs. 1.3 s), and the added complexity
+  ;; doesn’t seem worth it.  Be sure to bind ‘default-directory’ so that Git
+  ;; runs on the correct host.
+  (with-temp-buffer
+    (let* ((git-dir
+            (file-name-as-directory (make-temp-file "bcr-" :directory ".git")))
+           (reporter
+            (make-progress-reporter "Fetching Bazel Central Registry..." 0 4))
+           (table (make-hash-table :test #'equal))
+           (default-directory git-dir)
+           (coding-system-for-read file-name-coding-system)
+           (coding-system-for-write file-name-coding-system))
+      ;; We only need the filenames in the registry, so we use a bare repisitory
+      ;; and filter out blobs (--filter=blob:none).  We also don’t need history
+      ;; (--depth=1) or tags (--no-tags).
+      (vc-git-command nil 0 nil "clone" "--bare" "--single-branch"
+                      "--filter=blob:none" "--depth=1" "--no-tags" "--"
+                      bazel--central-registry-url ".")
+      (progress-reporter-update reporter 1)
+      ;; List the files in the modules directory.  The filenames are terminated
+      ;; with NULL characters.  See
+      ;; https://bazel.build/external/registry#index_registry for the directory
+      ;; structure.  Instead of parsing the metadata.json files, we take the
+      ;; module names and versions from the filenames.
+      (vc-git-command t 0 nil "ls-tree" "-r" "-z" "--name-only" "--"
+                      "HEAD" "modules")
+      (progress-reporter-update reporter 2)
+      (goto-char (point-min))
+      ;; Look for source.json files and take module names and versions from
+      ;; their filenames.
+      (while (not (eobp))
+        (let* ((begin (point))
+               (end (+ begin (skip-chars-forward "^\0"))))
+          (pcase (buffer-substring-no-properties begin end)
+            ;; See https://bazel.build/rules/lib/globals/module#module and
+            ;; https://bazel.build/external/module#version-format for allowed
+            ;; module names and version strings.  We use somewhat relaxed
+            ;; formats here.
+            ((rx bos "modules/"
+                 (let mod (any "a-z") (* (any "a-z" "0-9" ?. ?- ?_))) ?/
+                 (let ver (+ (any "A-Z" "a-z" "0-9" ?. ?+ ?-)))
+                 "/source.json" eos)
+             ;; If the version is newer than the one in the hashtable, update
+             ;; the hashtable accordingly.  Note that we ignore errors when
+             ;; parsing versions; module versions can contain arbitrary strings
+             ;; that ‘version-to-list’ can’t parse.  Ignoring errors is harmless
+             ;; since users can’t rely on the returned version to be correct
+             ;; anyway.  The logic below simply takes the last version found in
+             ;; the buffer if version parsing fails.
+             (let ((max (gethash mod table)))
+               (unless (and max (ignore-errors (version<= ver max)))
+                 (puthash mod ver table))))))
+        ;; Skip over NULL character.
+        (forward-char))
+      (progress-reporter-update reporter 3)
+      ;; We delete the temporary directory only on success, so that the user can
+      ;; investigate if something goes wrong.
+      (delete-directory git-dir :recursive)
+      (progress-reporter-done reporter)
+      table)))
+
 (define-skeleton bazel-insert-http-archive
   "Insert an “http_archive” statement at point.
 See URL ‘https://bazel.build/rules/lib/repo/http#http_archive’
@@ -538,6 +670,7 @@ comment."
   "Download and interpret HTTP archive at URL.
 Return a list (NAME INTEGRITY PREFIX TIME) for
 ‘bazel-insert-http-archive’."
+  (declare (ftype (function (string) cons)))
   (cl-check-type url string)
   (let* ((temp-dir (make-temp-file "bazel-http-archive-" :directory))
          (name (url-file-nondirectory url))
@@ -589,7 +722,7 @@ Return a list (NAME INTEGRITY PREFIX TIME) for
                       (cdar archive-entries)
                     (get-text-property 0 'attributes prefix))))
            (root-dir (expand-file-name prefix archive-dir))
-           (name (when-let ((workspace (bazel--locate-workspace-file root-dir)))
+           (name (when-let* ((workspace (bazel--locate-workspace-file root-dir)))
                    (with-temp-buffer
                      (insert-file-contents workspace)
                      (bazel-workspace-mode)
@@ -609,6 +742,7 @@ Return a list (NAME INTEGRITY PREFIX TIME) for
 
 (defun bazel--extract-archive (file directory)
   "Extract the archive FILE into DIRECTORY."
+  (declare (ftype (function (string string) null)))
   (cl-check-type file string)
   (cl-check-type directory string)
   (when (or (file-remote-p file) (file-remote-p directory))
@@ -633,6 +767,7 @@ The current buffer should contain the contents of a Bazel
 WORKSPACE file.  Look around for a “workspace” statement and
 return its name.  See URL
 ‘https://bazel.build/rules/lib/globals#workspace’."
+  (declare (ftype (function () (or null string))))
   (save-excursion
     (goto-char (point-min))
     (cl-block nil
@@ -689,9 +824,8 @@ return its name.  See URL
   (setq-local comment-end "")
   (setq-local comment-use-syntax t)
   ;; In .bazelignore files, comments need to cover whole lines,
-  ;; cf. https://github.com/bazelbuild/bazel/blob/09c621e4cf5b968f4c6cdf905ab142d5961f9ddc/src/main/java/com/google/devtools/build/lib/skyframe/IgnoredPackagePrefixesFunction.java#L123.
-  ;; We need to install a custom ‘syntax-propertize-function’ to deal with
-  ;; this.
+  ;; cf. https://github.com/bazelbuild/bazel/blob/9.2.0/src/main/java/com/google/devtools/build/lib/skyframe/IgnoredSubdirectoriesFunction.java#L208
+  ;; We need to install a custom ‘syntax-propertize-function’ to deal with this.
   (setq-local syntax-propertize-function #'bazelignore--syntax-propertize)
   ;; Ensure that ‘syntax-propertize’ always looks at entire lines.
   (add-hook 'syntax-propertize-extend-region-functions
@@ -707,6 +841,7 @@ return its name.  See URL
 ‘bazelignore-mode’ uses this as ‘syntax-propertize-function’.
 See Info node ‘(elisp) Syntax Properties’
 and Info node ‘(elisp) Syntax Table Internals’."
+  (declare (ftype (function (integer integer) null)))
   (save-excursion
     (goto-char start)
     (let ((case-fold-search nil)
@@ -733,6 +868,59 @@ and Info node ‘(elisp) Syntax Table Internals’."
              ;; https://github.com/bazelbuild/bazelisk#bazeliskrc-configuration-file
              (cons (rx "/.bazeliskrc" eos) #'bazeliskrc-mode))
 
+;;;; Bazel Central Registry browser
+
+;;;###autoload
+(defun bazel-central-registry ()
+  "Browse the Bazel Central Registry.
+This displays a buffer that lists the modules in the Bazel Central
+Registry together with their most recent version.  See URL
+‘https://bazel.build/external/registry#bazel-central-registry’.
+
+The buffer uses the major mode ‘bazel-central-registry-mode’.  In the
+buffer, you can use the following keys:
+
+\\{bazel-central-registry-mode-map}"
+  (declare (ftype (function () null))
+           (interactive-only t))
+  (interactive)
+  (let ((buffer (get-buffer-create "*Bazel Central Registry*")))
+    (with-current-buffer buffer
+      (bazel-central-registry-mode)
+      (tabulated-list-print))
+    (pop-to-buffer buffer)
+    nil))
+
+(defvar-keymap bazel-central-registry-mode-map
+  "v" #'bazel-central-registry-visit-module)
+
+(defun bazel-central-registry-visit-module ()
+  "Visit the Bazel module at point in the default web browser."
+  (declare (ftype (function () null))
+           (interactive-only t))
+  (interactive nil bazel-central-registry-mode)
+  (let ((module (tabulated-list-get-id)))
+    (unless module (user-error "No module at point"))
+    (browse-url (concat "https://registry.bazel.build/modules/"
+                        (url-hexify-string module))))
+  nil)
+
+(define-derived-mode bazel-central-registry-mode tabulated-list-mode "BCR"
+  (setq-local tabulated-list-format [("Module" 50 t) ("Version" 30 nil)]
+              tabulated-list-sort-key '("Module" . nil)
+              tabulated-list-entries #'bazel--central-registry-entries)
+  (tabulated-list-init-header)
+  nil)
+
+(defun bazel--central-registry-entries ()
+  "Return entries for ‘bazel-central-registry-mode’.
+This function (or its return value) can be used for the value
+‘tabulated-list-entries’ in ‘bazel-central-registry-mode’."
+  (declare (ftype (function () list)))
+  (cl-loop for module being the hash-keys of (bazel--central-registry)
+           using (hash-values version)
+           collect `(,module [,module ,version])))
+
 ;;;; Menu item
 
 (easy-menu-add-item
@@ -752,8 +940,11 @@ and Info node ‘(elisp) Syntax Table Internals’."
    ["Find MODULE.bazel file" bazel-find-module-file]
    ["Format buffer with Buildifier" bazel-buildifier
     (derived-mode-p 'bazel-mode)]
+   ["Insert bazel_dep statement..." bazel-insert-dependency
+    (derived-mode-p 'bazel-module-mode)]
    ["Insert http_archive statement..." bazel-insert-http-archive
-    (derived-mode-p 'bazel-workspace-mode 'bazel-starlark-mode)])
+    (derived-mode-p 'bazel-workspace-mode 'bazel-starlark-mode)]
+   ["Browse the Bazel Central Registry..." bazel-central-registry])
  "Debugger (GDB)...")
 
 ;;;; Flymake support using Buildifier
@@ -772,8 +963,9 @@ for how to install Buildifier.  The function ‘bazel-mode’ adds
 this function to ‘flymake-diagnostic-functions’.  See Info node
 ‘(Flymake) Backend functions’ for details about Flymake
 backends."
+  (declare (ftype (function ((function (t &rest t) t) &rest t) null)))
   (cl-check-type report-fn function)
-  (when-let ((process bazel--flymake-process))
+  (when-let* ((process bazel--flymake-process))
     ;; The order here is important: ‘delete-process’ will trigger the sentinel,
     ;; and then ‘bazel--flymake-process’ already has to be nil to avoid an
     ;; obsolete report.
@@ -824,8 +1016,7 @@ backends."
                                 :sentinel sentinel
                                 :stderr error-buffer)))
     (setq bazel--flymake-process process)
-    (save-restriction
-      (widen)
+    (without-restriction
       (process-send-region process (point-min) (point-max)))
     (process-send-eof process))
   nil)
@@ -836,11 +1027,12 @@ TYPE should be one of the possible values of
 ‘bazel--buildifier-type’.  Use TYPE and FILENAME to derive
 appropriate flags, if possible.  Otherwise, return an empty
 list."
+  (declare (ftype (function (symbol (or string null)) (or string null))))
   (cl-check-type type symbol)
   (cl-check-type filename (or string null))
   (append
    (and filename
-        (when-let ((name (bazel--repository-relative-name filename)))
+        (when-let* ((name (bazel--repository-relative-name filename)))
           (list (concat "-path=" name))))
    (and type (list (concat "-type=" (symbol-name type))))))
 
@@ -853,11 +1045,11 @@ All filenames in OUTPUT-BUFFER are ignored; all messages are
 attached to the current buffer.  Return a list of Flymake
 diagnostics; see Info node ‘(Flymake) Backend functions’ for
 details."
+  (declare (ftype (function (buffer) list)))
   (cl-check-type output-buffer buffer)
   (cl-loop with report = (with-current-buffer output-buffer
                            (save-excursion
-                             (save-restriction
-                               (widen)
+                             (without-restriction
                                (goto-char (point-min))
                                ;; Skip over standard error messages if possible.
                                (let ((case-fold-search nil)
@@ -874,6 +1066,7 @@ details."
 WARNING should be a hashtable containing a single warning, as
 described in URL
 ‘https://github.com/bazelbuild/buildtools/blob/master/buildifier/README.md#file-diagnostics-in-json’."
+  (declare (ftype (function (hash-table) t)))
   (cl-check-type warning hash-table)
   (let* ((case-fold-search nil)
          (search-spaces-regexp nil)
@@ -913,6 +1106,7 @@ described in URL
 (defun bazel-mode-xref-backend ()
   "XRef backend function for ‘bazel-mode’.
 This gets added to ‘xref-backend-functions’."
+  (declare (ftype (function () (member bazel-mode nil))))
   (and (derived-mode-p 'bazel-mode)
        buffer-file-name
        ;; It only makes sense to find targets if we are in a repository,
@@ -939,9 +1133,9 @@ This gets added to ‘xref-backend-functions’."
              (package
               (or package
                   (and buffer-file-name this-repository
-                       (when-let ((directory
-                                   (bazel--package-directory
-                                    buffer-file-name this-repository)))
+                       (when-let* ((directory
+                                    (bazel--package-directory
+                                     buffer-file-name this-repository)))
                          (bazel--package-name directory this-repository))))))
         (propertize (bazel--canonical repository package target)
                     ;; The text property should really be called
@@ -965,15 +1159,13 @@ IDENTIFIER should be an XRef identifier returned by
                  (package
                   (or package
                       (and buffer-file-name
-                           (when-let ((directory
-                                       (bazel--package-directory
-                                        buffer-file-name this-repository)))
+                           (when-let* ((directory
+                                        (bazel--package-directory
+                                         buffer-file-name this-repository)))
                              (bazel--package-name directory
                                                   this-repository)))))
-                 (location
-                  (bazel--target-location
-                   (bazel--external-repository repository this-repository)
-                   package target)))
+                 (root (bazel--external-repository repository this-repository))
+                 (location (bazel--target-location root package target)))
        (list (xref-make (bazel--canonical repository package target)
                         location))))))
 
@@ -982,6 +1174,8 @@ IDENTIFIER should be an XRef identifier returned by
   "Return a completion table for Bazel targets."
   (bazel--target-completion-table nil nil))
 
+;;;; Jumping from a source file to its consuming target
+
 (defun bazel-show-consuming-target ()
   "Find the definition of the rule target consuming the current file.
 The current buffer must visit a file, and the file must be in a
@@ -989,7 +1183,8 @@ Bazel repository.  Use ‘xref-show-definitions-function’ to display
 the rule target definition.  Right now, perform a best-effort attempt
 for finding the consuming rule target by a textual search in the BUILD
 file."
-  (declare (interactive-only t))
+  (declare (ftype (function () null))
+           (interactive-only t))
   (interactive)
   (let* ((source-file (or buffer-file-name
                           (user-error "Buffer doesn’t visit a file")))
@@ -1028,14 +1223,16 @@ If there’s an existing buffer visiting FILENAME, use that and
 bind EXISTING to t.  Otherwise, create a new temporary buffer,
 insert the contents of FILENAME there, and bind EXISTING to nil.
 In any case, return the value of the last BODY form."
-    (declare (debug (symbolp form body)) (indent 2))
+    (declare (ftype (function (symbol t &rest t) t))
+             (debug (symbolp form body))
+             (indent 2))
     (cl-check-type existing symbol)
     (cl-once-only (filename)
       (cl-with-gensyms (function buffer arg)
         ;; Bind a temporary function to reduce code duplication in the
         ;; byte-compiled version.
         `(cl-flet ((,function (,arg) (let ((,existing ,arg)) ,@body)))
-           (if-let ((,buffer (find-buffer-visiting ,filename)))
+           (if-let* ((,buffer (find-buffer-visiting ,filename)))
                (with-current-buffer ,buffer
                  (,function t))
              (with-temp-buffer
@@ -1048,6 +1245,7 @@ In any case, return the value of the last BODY form."
 If CASE-FOLD-FILE is non-nil, ignore filename case when
 searching.  If ONLY-TESTS is non-nil, look only for test targets.
 Return nil if no consuming rule target was found."
+  (declare (ftype (function (string string t t) (or string null))))
   (cl-check-type build-file string)
   (cl-check-type source-file string)
   ;; Prefer a buffer that’s already visiting BUILD-FILE.
@@ -1078,7 +1276,7 @@ Return nil if no consuming rule target was found."
               (when (looking-back
                      (rx symbol-start "srcs" (* blank) ?= (* blank))
                      (line-beginning-position))
-                (when-let ((target-name (bazel-current-target-name)))
+                (when-let* ((target-name (bazel-current-target-name)))
                   (when (or (not only-tests) (bazel--in-test-target-p))
                     (cl-return target-name))))
               ;; Ensure we don’t loop forever if we ended up in a weird place.
@@ -1091,6 +1289,7 @@ and the package PACKAGE.  Its local name is TARGET.  If no target
 was found, return nil.  This function uses heuristics to find the
 target; in particular, it assumes that a target that looks like a
 valid file target is indeed a file target."
+  (declare (ftype (function (string string string) (or xref-location null))))
   (cl-check-type repository string)
   (cl-check-type package string)
   (cl-check-type target string)
@@ -1101,7 +1300,7 @@ valid file target is indeed a file target."
         (bazel--file-location filename)
       ;; A label that likely refers to a rule target.  Try to find the target
       ;; definition in the BUILD file of the package.
-      (when-let ((build-file (bazel--locate-build-file directory)))
+      (when-let* ((build-file (bazel--locate-build-file directory)))
         (bazel--rule-target-location build-file target)))))
 
 ;;;; Completion support
@@ -1111,10 +1310,11 @@ valid file target is indeed a file target."
 ‘bazel-mode’ adds this function to
 ‘completion-at-point-functions’.
 See Info node ‘(elisp) Completion in Buffers’ for context."
+  (declare (ftype (function () list)))
   ;; This function should be fast, so we perform the quick checks (reading
   ;; variables, syntax tables) first before hitting the filesystem to find the
   ;; repository root.
-  (when-let ((file-name buffer-file-name))
+  (when-let* ((file-name buffer-file-name))
     (when (derived-mode-p 'bazel-mode)
       ;; We assume for now that labels always appear as strings.  That should
       ;; cover most cases (e.g. “deps” attributes), but not add large amounts of
@@ -1128,17 +1328,8 @@ See Info node ‘(elisp) Completion in Buffers’ for context."
                                   'syntax-table)
               (let ((end (1- (point))))
                 (when (>= end start)
-                  ;; A somewhat crude method to determine whether this operation
-                  ;; is deemed essential.  If it comes from a timer, assume it’s
-                  ;; something like Company idle completion.
-                  ;; https://github.com/company-mode/company-mode/pull/1288
-                  ;; should make this mostly obsolete.
-                  (let ((non-essential
-                         (or non-essential
-                             (and (backtrace-frame 0 #'timer-event-handler)
-                                  t))))
-                    (when-let ((table (bazel--completion-at-point-table start)))
-                      (list start end table))))))))))))
+                  (when-let* ((table (bazel--completion-at-point-table start)))
+                    (list start end table)))))))))))
 
 (defun bazel--completion-at-point-table (start)
   "Return a completion table for ‘completion-at-point-functions’.
@@ -1148,21 +1339,24 @@ visits.  START should be the buffer position of the beginning of
 the target name to complete.  If ‘non-essential’ is non-nil and
 the buffer visits a remote file, avoid hitting the filesystem and
 only complete rule targets defined within the current buffer."
+  (declare (ftype (function (integer) t)))
   (cl-check-type start natnum)
-  (if (and non-essential (file-remote-p default-directory))
-      ;; Completing targets in other packages would require filesystem
-      ;; access.  Only complete local rule targets starting with a colon.
-      (when (eql (char-after start) ?:)
-        (bazel--completion-table-with-prefix ":"
-          (completion-table-with-cache
-           (lambda (prefix)
-             (cl-check-type prefix string)
-             (bazel--complete-targets prefix nil))
-           completion-ignore-case)))
-    (bazel--target-completion-table nil nil)))
+  (bazel--target-completion-table-with-metadata
+   (if (and non-essential (file-remote-p default-directory))
+       ;; Completing targets in other packages would require filesystem
+       ;; access.  Only complete local rule targets starting with a colon.
+       (when (eql (char-after start) ?:)
+         (bazel--completion-table-with-prefix ":"
+           (completion-table-with-cache
+            (lambda (prefix)
+              (cl-check-type prefix string)
+              (bazel--complete-targets prefix nil))
+            completion-ignore-case)))
+     (bazel--target-completion-table nil nil))))
 
 (defun bazel--file-location (filename)
   "Return an ‘xref-location’ for the source file FILENAME."
+  (declare (ftype (function (string) xref-location)))
   (cl-check-type filename string)
   ;; The location actually refers to the whole file.  Avoid jumping around
   ;; within the already-visited file by pretending the reference isn’t found so
@@ -1172,18 +1366,22 @@ only complete rule targets defined within the current buffer."
 (defun bazel--complete-files (prefix)
   "Return file names in the current directory starting with PREFIX.
 Exclude files that are normally not Bazel targets, such as
-directories and BUILD files."
+directories and BUILD files.
+
+The returned file names have a ‘bazel-target-kind’ property of
+\"source file\"."
+  (declare (ftype (function (string) list)))
   (cl-check-type prefix string)
   (let ((files ()))
     (dolist (filename (file-name-all-completions prefix default-directory))
       (and (not (directory-name-p filename))
            (not (member filename '("BUILD" "BUILD.bazel"
                                    "WORKSPACE" "WORKSPACE.bazel"
-                                   "MODULE.bazel" "REPO.bazel")))
+                                   "MODULE.bazel" "REPO.bazel" "VENDOR.bazel")))
            (not (equal (file-name-extension filename) "BUILD"))
            (not (string-prefix-p "bazel-" filename))
            (file-regular-p filename)
-           (push filename files)))
+           (push (propertize filename 'bazel-target-kind "source file") files)))
     (sort files #'string-lessp)))
 
 (defun bazel--rule-target-location (build-file name)
@@ -1192,6 +1390,7 @@ The name of the BUILD file is BUILD-FILE, and NAME is the local
 name of the rule target.  If a definition for NAME doesn’t seem to exist
 in BUILD-FILE, return a location referring to an arbitrary position
 within the BUILD file."
+  (declare (ftype (function (string string) xref-location)))
   (cl-check-type build-file string)
   (cl-check-type name string)
   (bazel--xref-location build-file (lambda () (bazel--find-rule-target name))))
@@ -1201,12 +1400,12 @@ within the BUILD file."
 The current buffer should visit a BUILD file.  If there’s a definition
 of a rule target with the given NAME, return its location.  Otherwise,
 return nil."
+  (declare (ftype (function (string) (or integer null))))
   (cl-check-type name string)
   (let ((case-fold-search nil)
         (search-spaces-regexp nil))
     (save-excursion
-      (save-restriction
-        (widen)
+      (without-restriction
         (goto-char (point-min))
         ;; Heuristic: we search for a “name” attribute as it would show up
         ;; in typical BUILD files.  That’s not 100% correct, but doesn’t
@@ -1228,6 +1427,8 @@ contents of FILENAME.  FIND-FUNCTION should then either return
 nil (if the entity isn’t found) or the position of the entity
 within the current buffer.  FIND-FUNCTION should not move point
 or change the buffer state permanently."
+  (declare (ftype (function (string (function () (or null integer)))
+                            xref-location)))
   (cl-check-type filename string)
   (cl-check-type find-function function)
   ;; Prefer a buffer that already visits FILENAME.
@@ -1245,7 +1446,11 @@ or change the buffer state permanently."
   "Find all rule targets starting with the given PREFIX in the current buffer.
 The current buffer should visit a BUILD file.  Return a list of
 target names that start with PREFIX.  If ONLY-TESTS is non-nil,
-restrict the returned targets to test targets."
+restrict the returned targets to test targets.
+
+The returned target name strings have a ‘bazel-target-kind’ property
+that specifies the rule kind if the target, if it can be determined."
+  (declare (ftype (function (string t) list)))
   (cl-check-type prefix string)
   (when (derived-mode-p 'bazel-mode)
     (let ((case-fold-search nil)
@@ -1262,28 +1467,47 @@ restrict the returned targets to test targets."
                     (backref 1))
                 nil t)
           (let ((name (match-string-no-properties 2)))
-            (and (not (python-syntax-comment-or-string-p))
-                 (or (not only-tests) (bazel--in-test-target-p))
-                 (push name targets)))))
+            (unless (python-syntax-comment-or-string-p)
+              (let ((kind (bazel--target-kind)))
+                (when (or (not only-tests) (bazel--is-test-target-p kind))
+                  (push (if kind (propertize name 'bazel-target-kind kind) name)
+                        targets)))))))
       (nreverse targets))))
 
-(defun bazel--in-test-target-p ()
-  "Return non-nil if point is probably in a test rule target definition."
+(defun bazel--target-kind ()
+  "Return the rule kind of the rule target at point.
+This is a heuristic.  Return nil if the rule kind can’t be determined."
+  (declare (ftype (function () (or null string))))
   (save-excursion
     (let ((case-fold-search nil)
           (search-spaces-regexp nil))
-      ;; A rule target is a test target if and only if its rule name ends in
-      ;; “_test”.  See
-      ;; https://bazel.build/extending/rules#executable_rules_and_test_rules.
       (python-nav-beginning-of-statement)
-      (looking-at-p (rx symbol-start (+ (or (syntax word) (syntax symbol)))
-                        "_test" (* blank) ?\()))))
+      (when (looking-at (rx symbol-start
+                            (group (+ (or (syntax word) (syntax symbol))))
+                            (* blank) ?\())
+        (match-string-no-properties 1)))))
+
+(defun bazel--is-test-target-p (kind)
+  "Return non-nil if KIND is a test rule kind."
+  (declare (ftype (function ((or null string)) t))
+           (side-effect-free t))
+  (cl-check-type kind (or null string))
+  ;; A rule target is a test target if and only if its rule name ends in
+  ;; “_test”.  See
+  ;; https://bazel.build/extending/rules#executable_rules_and_test_rules.
+  (and kind (string-suffix-p "_test" kind)))
+
+(defun bazel--in-test-target-p ()
+  "Return non-nil if point is probably in a test rule target definition."
+  (declare (ftype (function () t)))
+  (bazel--is-test-target-p (bazel--target-kind)))
 
 ;;;; Finding BUILD and WORKSPACE files
 
 (defun bazel-find-build-file ()
   "Find the BUILD file for the current package."
-  (declare (interactive-only t))
+  (declare (ftype (function () null))
+           (interactive-only t))
   (interactive)
   (let* ((source-file
           (or buffer-file-name default-directory
@@ -1299,7 +1523,8 @@ restrict the returned targets to test targets."
 
 (defun bazel-find-workspace-file ()
   "Find the WORKSPACE file for the current Bazel repository."
-  (declare (interactive-only t))
+  (declare (ftype (function () null))
+           (interactive-only t))
   (interactive)
   (let* ((source-file
           (or buffer-file-name default-directory
@@ -1314,6 +1539,7 @@ restrict the returned targets to test targets."
 
 (defun bazel-find-module-file ()
   "Find the MODULE.bazel file for the current Bazel workspace."
+  (declare (ftype (function () null)))
   (interactive)
   (let* ((source-file
           (or buffer-file-name default-directory
@@ -1333,6 +1559,7 @@ restrict the returned targets to test targets."
 (defun bazel-mode-ffap (filename)
   "Attempt to find FILENAME in all repositories.
 This gets added to ‘ffap-alist’."
+  (declare (ftype (function (string) (or string null))))
   (cl-check-type filename string)
   (when-let* ((this-file (or buffer-file-name default-directory))
               (main-root (bazel--repository-root this-file)))
@@ -1352,6 +1579,7 @@ This gets added to ‘ffap-alist’."
 (defun bazelrc-ffap (name)
   "Function for ‘ffap-alist’ in ‘bazelrc-mode’.
 Look for an imported file with the given NAME."
+  (declare (ftype (function (string) (or string null))))
   (cl-check-type name string)
   ;; https://bazel.build/run/bazelrc#imports
   (let ((case-fold-search nil)
@@ -1398,6 +1626,21 @@ Look for an imported file with the given NAME."
                       ?: (group (+ digit)) ?: (group (+ digit)) ": ")
                  3 4 5 (1 . 2))))
 
+(add-hook 'compilation-mode-hook #'bazel-set-up-compilation)
+(add-hook 'compilation-minor-mode-hook #'bazel-set-up-compilation)
+
+(defun bazel-set-up-compilation ()
+  "Set up compilation mode for Bazel output.
+Add support for --attempt_to_print_relative_paths by adding the
+repository root to ‘compilation-search-path’.  This function gets added
+to ‘compilation-mode-hook’ and ‘compilation-minor-mode-hook’.
+See Info node ‘(emacs) Compilation Mode’."
+  (declare (ftype (function () null)))
+  (when-let* ((dir (or compilation-directory default-directory))
+              (root (bazel--repository-root dir)))
+    (setq-local compilation-search-path (cons root compilation-search-path)))
+  nil)
+
 (add-hook 'compilation-finish-functions #'bazel-finish-compilation)
 
 (defun bazel-finish-compilation (buffer message)
@@ -1410,6 +1653,7 @@ non-nil, attempt to add missing target visibility attributes
 using Buildozer.  MESSAGE is the status message for the Bazel
 process exit; \"finished\\n\" if Bazel completed successfully.
 This function is suitable for ‘compilation-finish-functions’."
+  (declare (ftype (function (buffer string) null)))
   (cl-check-type buffer buffer)
   (cl-check-type message string)
   (when (and bazel-display-coverage (buffer-live-p buffer)
@@ -1423,23 +1667,22 @@ This function is suitable for ‘compilation-finish-functions’."
           ;; First collect potential coverage files.  If there are none (typical
           ;; case), we don’t have to hit the filesystem.
           (save-excursion
-            (save-restriction
-              (goto-char (point-min))
-              ;; Parse Bazel output.  It’s supposed to be stable and easy to
-              ;; parse, cf. https://bazel.build/run/scripts#parsing-output.  We
-              ;; assume that coverage instrumentation files are always called
-              ;; “coverage.dat”.
-              (while (re-search-forward
-                      (rx bol "  " (group ?/ (+ nonl) "/coverage.dat") eol)
-                      nil t)
-                (let ((file (match-string-no-properties 1)))
-                  ;; The coverage files are external filenames, so quote them
-                  ;; (to avoid clashes with filename handlers) and make them
-                  ;; remote if necessary.
-                  (push (concat remote (file-name-quote file)) files))))))
+            (goto-char (point-min))
+            ;; Parse Bazel output.  It’s supposed to be stable and easy to
+            ;; parse, cf. https://bazel.build/run/scripts#parsing-output.  We
+            ;; assume that coverage instrumentation files are always called
+            ;; “coverage.dat”.
+            (while (re-search-forward
+                    (rx bol "  " (group ?/ (+ nonl) "/coverage.dat") eol)
+                    nil t)
+              (let ((file (match-string-no-properties 1)))
+                ;; The coverage files are external filenames, so quote them (to
+                ;; avoid clashes with filename handlers) and make them remote if
+                ;; necessary.
+                (push (concat remote (file-name-quote file)) files)))))
         (when files
           ;; Only continue if we’re in a Bazel repository.
-          (when-let ((root (bazel--repository-root default-directory)))
+          (when-let* ((root (bazel--repository-root default-directory)))
             ;; COVERAGE maps buffers to hashtables that in turn map line numbers
             ;; to ‘bazel--coverage’ structures.  We first collect coverage
             ;; information into this hashtable to correctly deal with duplicate
@@ -1483,7 +1726,7 @@ This function is suitable for ‘compilation-finish-functions’."
                   infos)))
         (when infos
           ;; Only continue if we’re in a Bazel repository.
-          (when-let ((root (bazel--repository-root default-directory)))
+          (when-let* ((root (bazel--repository-root default-directory)))
             (pcase-dolist (`(,source ,dest ,begin ,end) (nreverse infos))
               (bazel--add-visibility root source dest begin end ask)))))))
   nil)
@@ -1507,6 +1750,7 @@ hashtable that maps buffers to hashtables that in turn map line
 numbers ‘bazel--coverage’ structures.  The function walks over
 the coverage information in the current buffer and fills in
 COVERAGE."
+  (declare (ftype (function (string hashtable) null)))
   ;; See the manual page of ‘geninfo’ for a description of the coverage format.
   (let ((case-fold-search nil)
         (search-spaces-regexp nil))
@@ -1516,10 +1760,10 @@ COVERAGE."
             ;; DATA is a hashtable mapping line numbers to ‘bazel--coverage’
             ;; structures for the current file.  It’s initialized lazily.
             (data nil))
-        (when-let ((end (re-search-forward (rx bol "end_of_record" eol) nil t))
-                   ;; Only collect coverage for files that are visited in some
-                   ;; buffer.
-                   (buffer (find-buffer-visiting file)))
+        (when-let* ((end (re-search-forward (rx bol "end_of_record" eol) nil t))
+                    ;; Only collect coverage for files that are visited in some
+                    ;; buffer.
+                    (buffer (find-buffer-visiting file)))
           ;; Collect line coverage data.
           (goto-char begin)
           (while (re-search-forward (rx bol "DA:" (group (+ digit)) ?,
@@ -1530,7 +1774,7 @@ COVERAGE."
               (setq data (or (gethash buffer coverage)
                              (puthash buffer (make-hash-table :test #'eql)
                                       coverage)))
-              (if-let ((info (gethash line data)))
+              (if-let* ((info (gethash line data)))
                   (cl-incf (bazel--coverage-hits info) hits)
                 (puthash line (bazel--make-coverage :hits hits) data))))
           ;; Collect branch coverage data, but only if we have any coverage data
@@ -1550,7 +1794,7 @@ COVERAGE."
                      (executedp (match-beginning 4))
                      (taken (and executedp (bazel--match-natnum 4))))
                 ;; Ignore branch coverage for uncovered lines.
-                (when-let ((coverage (gethash line data)))
+                (when-let* ((coverage (gethash line data)))
                   (let* ((blocks (or (bazel--coverage-blocks coverage)
                                      (setf (bazel--coverage-blocks coverage)
                                            (make-hash-table :test #'eql))))
@@ -1569,7 +1813,8 @@ COVERAGE."
 (defun bazel--match-natnum (index)
   "Return the natural number matched by the subgroup INDEX.
 Return 0 if the subgroup match isn’t an integer."
-  (declare (side-effect-free t))
+  (declare (ftype (function (integer) integer))
+           (side-effect-free t))
   (cl-check-type index natnum)
   (cl-the natnum (string-to-number (match-string-no-properties index))))
 
@@ -1577,6 +1822,7 @@ Return 0 if the subgroup match isn’t an integer."
   "Add overlays for coverage information in BUFFER.
 COVERAGE is a hashtable mapping line numbers to ‘bazel--coverage’
 structures.  Remove existing coverage overlays first."
+  (declare (ftype (function (buffer hashtable) null)))
   (cl-check-type buffer buffer)
   (cl-check-type coverage hash-table)
   (let ((pairs ())
@@ -1590,7 +1836,7 @@ structures.  Remove existing coverage overlays first."
        (let ((face (if (cl-plusp (bazel--coverage-hits coverage))
                        'bazel-covered-line
                      'bazel-uncovered-line))
-             (branches (when-let ((blocks (bazel--coverage-blocks coverage)))
+             (branches (when-let* ((blocks (bazel--coverage-blocks coverage)))
                          (bazel--branch-coverage-string blocks))))
          (push (list line face branches) pairs)))
      coverage)
@@ -1609,8 +1855,7 @@ structures.  Remove existing coverage overlays first."
     (cl-callf nreverse runs)
     (with-current-buffer buffer
       (save-excursion
-        (save-restriction
-          (widen)
+        (without-restriction
           ;; ‘line-beginning-position’ and ‘line-end-position’ below count lines
           ;; starting from the current line, so to be able to use absolute line
           ;; numbers from ‘coverage.dat’, we need to go to the very beginning of
@@ -1652,6 +1897,7 @@ for unevaluated blocks).  The returned string is suitable for
 display in the buffer margins.  Return nil if there’s no branch
 coverage data in BLOCK-TABLE.
 See Info node ‘(elisp) Display Margins’."
+  (declare (ftype (function (hashtable) (or string null))))
   (cl-check-type block-table hash-table)
   ;; Extract block and branch information into association lists, and sort them
   ;; for stability.
@@ -1696,6 +1942,7 @@ See Info node ‘(elisp) Display Margins’."
 Use OVERLAY to attach margin properties.  Don’t alter the display
 of the main buffer text.
 See Info node ‘(elisp) Display Margins’."
+  (declare (ftype (function (string overlay) null)))
   (cl-check-type string string)
   (cl-check-type overlay overlay)
   (overlay-put overlay 'before-string
@@ -1709,6 +1956,7 @@ See Info node ‘(elisp) Display Margins’."
   "Remove all Bazel coverage display in the current buffer.
 If the current buffer is narrowed, only act on the accessible
 portion."
+  (declare (ftype (function () null)))
   (interactive)
   (bazel--remove-coverage-overlays)
   (unless (eq left-margin-width 0)
@@ -1722,12 +1970,14 @@ portion."
 
 (defun bazel--remove-coverage-overlays ()
   "Remove line coverage overlays in the current buffer."
+  (declare (ftype (function () null)))
   (remove-overlays (point-min) (point-max) 'category 'bazel-coverage)
   nil)
 
 (defun bazel--update-margin-display ()
   "Announce margin change in the current buffer to Emacs.
 See Info node ‘(elisp) Display Margins’."
+  (declare (ftype (function () null)))
   (let ((buffer (current-buffer)))
     (dolist (window (get-buffer-window-list buffer nil t))
       (set-window-buffer window buffer)))
@@ -1742,6 +1992,7 @@ is non-nil, prompt the user first using ‘y-or-n-p’, and
 temporarily highlight the region between BEGIN and END in the
 current buffer.  Use Buildozer (the ‘bazel-buildozer-command’) to
 change the visibility of the affected BUILD file."
+  (declare (ftype (function (string string string integer integer t) null)))
   (cl-check-type root string)
   (cl-check-type source string)
   (cl-check-type destination string)
@@ -1775,15 +2026,16 @@ change the visibility of the affected BUILD file."
   "Save the buffer visiting the BUILD file for PACKAGE.
 ROOT is the repository root directory of the current repository,
 and REPOSITORY is the repository containing PACKAGE."
+  (declare (ftype (function (string string string) null)))
   (cl-check-type root string)
   (cl-check-type repository (or null string))
   (cl-check-type package string)
-  (let ((external-root (bazel--external-repository repository root)))
-    (when-let* ((build-file (bazel--locate-build-file
-                             (expand-file-name package external-root))))
-      (save-some-buffers nil (lambda ()
-                               (when-let ((file-name buffer-file-truename))
-                                 (file-equal-p file-name build-file))))))
+  (when-let* ((external-root (bazel--external-repository repository root))
+              (build-file (bazel--locate-build-file
+                           (expand-file-name package external-root))))
+    (save-some-buffers nil (lambda ()
+                             (when-let* ((file-name buffer-file-truename))
+                               (file-equal-p file-name build-file)))))
   nil)
 
 ;;;; Imenu support
@@ -1793,9 +2045,9 @@ and REPOSITORY is the repository containing PACKAGE."
 This function is useful as ‘imenu-create-index-function’ for
 ‘bazel-build-mode’, ‘bazel-workspace-mode’, and
 ‘bazel-module-mode’.  See Info node ‘(elisp) Imenu’ for details."
+  (declare (ftype (function () list)))
   (save-excursion
-    (save-restriction
-      (widen)
+    (without-restriction
       (goto-char (point-min))
       (let ((case-fold-search nil)
             (search-spaces-regexp nil)
@@ -1825,6 +2077,7 @@ This function is useful as ‘imenu-create-index-function’ for
 (defun bazel-current-target-name ()
   "Return the name of the Bazel rule target defined at point.
 Return nil if not inside a Bazel rule target definition."
+  (declare (ftype (function () (or string null))))
   (let ((case-fold-search nil)
         (search-spaces-regexp nil)
         (bound (save-excursion (python-nav-end-of-statement) (point))))
@@ -1853,6 +2106,7 @@ Return nil if not inside a Bazel rule target definition."
   "Return the name of the Starlark function at point.
 Return nil if no name was found.  This function is useful as
 ‘imenu-extract-index-name-function’ for ‘bazel-starlark-mode’."
+  (declare (ftype (function () (or string null))))
   (let ((case-fold-search nil)
         (search-spaces-regexp nil))
     (and (looking-at python-nav-beginning-of-defun-regexp)
@@ -1889,8 +2143,9 @@ Return nil if no name was found.  This function is useful as
 Return nil if outside a Bazel repository or a project instance for
 the containing repository.  This function is suitable for
 ‘project-find-functions’."
+  (declare (ftype (function (string) (or bazel-workspace null))))
   (cl-check-type directory string)
-  (when-let ((root (bazel--repository-root directory)))
+  (when-let* ((root (bazel--repository-root directory)))
     (make-bazel-workspace :root root)))
 
 (cl-defmethod project-root ((project bazel-workspace))
@@ -1915,6 +2170,7 @@ See URL ‘https://bazel.build/run/bazelrc#bazelignore’."
   "Parse a .bazelignore file in REPOSITORY-ROOT.
 Return a list of glob patterns for ‘project-ignores’.
 Return nil if no .bazelignore file exists."
+  (declare (ftype (function (string) list)))
   (cl-check-type repository-root string)
   (with-temp-buffer
     ;; Bazel always treats .bazelignore files as UTF-8,
@@ -1944,13 +2200,15 @@ Return nil if no .bazelignore file exists."
 
 (defun bazel-build (target)
   "Build a Bazel TARGET."
-  (interactive (list (bazel--read-target-pattern "build" nil)))
+  (declare (ftype (function (string) null)))
+  (interactive (list (bazel--read-target-pattern "Build target" nil)))
   (cl-check-type target string)
   (bazel--run-bazel-command "build" target)
   nil)
 
 (defun bazel-compile-current-file ()
   "Compile the file that the current buffer visits with Bazel."
+  (declare (ftype (function () null)))
   (interactive)
   (let* ((file-name (or buffer-file-name
                         (user-error "Buffer doesn’t visit a file")))
@@ -1962,21 +2220,24 @@ Return nil if no .bazelignore file exists."
 
 (defun bazel-run (target)
   "Build and run a Bazel TARGET."
-  (interactive (list (bazel--read-target-pattern "run" nil)))
+  (declare (ftype (function (string) null)))
+  (interactive (list (bazel--read-target-pattern "Run target" nil)))
   (cl-check-type target string)
   (bazel--run-bazel-command "run" target)
   nil)
 
 (defun bazel-test (target)
   "Build and run a Bazel test TARGET."
-  (interactive (list (bazel--read-target-pattern "test" :only-tests)))
+  (declare (ftype (function (string) null)))
+  (interactive (list (bazel--read-target-pattern "Test target" :only-tests)))
   (cl-check-type target string)
   (bazel--run-bazel-command "test" target)
   nil)
 
 (defun bazel-test-at-point ()
   "Run the test case at point."
-  (declare (interactive-only t))
+  (declare (ftype (function () null))
+           (interactive-only t))
   (interactive)
   (let* ((source-file (or buffer-file-name
                           (user-error "Buffer doesn’t visit a file")))
@@ -2003,7 +2264,8 @@ Return nil if no .bazelignore file exists."
 
 (defun bazel-coverage (target)
   "Run Bazel test TARGET with coverage instrumentation enabled."
-  (interactive (list (bazel--read-target-pattern "coverage" :only-tests)))
+  (declare (ftype (function (string) null)))
+  (interactive (list (bazel--read-target-pattern "Test target" :only-tests)))
   (cl-check-type target string)
   (bazel--run-bazel-command "coverage" target)
   nil)
@@ -2011,6 +2273,7 @@ Return nil if no .bazelignore file exists."
 (defun bazel--run-bazel-command (command target-pattern)
   "Run Bazel tool with given COMMAND on the given TARGET-PATTERN.
 COMMAND is a Bazel command such as \"build\" or \"run\"."
+  (declare (ftype (function (string string) null)))
   (cl-check-type command string)
   (cl-check-type target-pattern string)
   (bazel--compile command "--" target-pattern)
@@ -2020,6 +2283,7 @@ COMMAND is a Bazel command such as \"build\" or \"run\"."
   "Run Bazel in a Compilation buffer with the given COMMAND and ARGS.
 Insert command options from ‘bazel-command-options’ between
 COMMAND and ARGS."
+  (declare (ftype (function (string &rest string) null)))
   (compile (mapconcat #'shell-quote-argument
                       (append bazel-command (list command)
                               bazel-command-options args)
@@ -2030,11 +2294,13 @@ COMMAND and ARGS."
   "History for Bazel target pattern completion.
 See Info node ‘(elisp) Minibuffer History’.")
 
-(defun bazel--read-target-pattern (command only-tests)
+(defun bazel--read-target-pattern (prompt only-tests)
   "Read a Bazel build target pattern from the minibuffer.
-COMMAND is a Bazel command to be included in the minibuffer
-prompt.  If ONLY-TESTS is non-nil, look only for test targets."
-  (cl-check-type command string)
+PROMPT is the minibuffer prompt without trailing colon; it is run
+through ‘format-prompt’.  If ONLY-TESTS is non-nil, look only for test
+targets."
+  (declare (ftype (function (string t) string)))
+  (cl-check-type prompt string)
   (let* ((file-name
           (or buffer-file-name default-directory
               (user-error "Buffer doesn’t visit a file or directory")))
@@ -2044,12 +2310,11 @@ prompt.  If ONLY-TESTS is non-nil, look only for test targets."
                         (user-error "File is not in a Bazel package")))
          (package-name (or (bazel--package-name directory repository-root)
                            (user-error "File is not in a Bazel package")))
-         (prompt (combine-and-quote-strings
-                  `(,@bazel-command ,command "--" "")))
          (table (bazel--target-completion-table :pattern only-tests))
          (default (bazel--target-completion-default
                    buffer-file-name repository-root package-name only-tests)))
-    (completing-read prompt table nil nil nil 'bazel-target-history default)))
+    (completing-read (format-prompt prompt default) table nil nil nil
+                     'bazel-target-history default)))
 
 (defun bazel--target-completion-default (source-file root package only-tests)
   "Return default completion target for SOURCE-FILE.
@@ -2057,6 +2322,8 @@ ROOT is the repository root directory, and PACKAGE is the package
 name.  If ONLY-TESTS is non-nil, look only for test targets.
 Return nil if SOURCE-FILE is nil or no suitable default target
 was found."
+  (declare (ftype (function ((or string null) string string t)
+                            (or string null))))
   (cl-check-type source-file (or string null))
   (cl-check-type root string)
   (cl-check-type package string)
@@ -2076,6 +2343,7 @@ was found."
 (defun bazel-c++-mode-hook ()
   "Set up ‘c++-mode’ to work with Bazel.
 Added to ‘c++-mode-hook’."
+  (declare (ftype (function () null)))
   (add-hook 'bazel-test-at-point-functions #'bazel-c++-test-at-point
             nil :local)
   nil)
@@ -2084,6 +2352,7 @@ Added to ‘c++-mode-hook’."
   "Return the name of the C++ test at point.
 Useful for ‘bazel-test-at-point-functions’.
 See URL ‘https://google.github.io/googletest/primer.html’."
+  (declare (ftype (function () (or string null))))
   (save-excursion
     (let ((case-fold-search nil)
           (search-spaces-regexp nil))
@@ -2105,6 +2374,7 @@ See URL ‘https://google.github.io/googletest/primer.html’."
 (defun bazel-go-mode-hook ()
   "Set up ‘go-mode’ to work with Bazel.
 Added to ‘go-mode-hook’."
+  (declare (ftype (function () null)))
   (add-hook 'bazel-test-at-point-functions #'bazel-go-test-at-point
             nil :local)
   nil)
@@ -2113,6 +2383,7 @@ Added to ‘go-mode-hook’."
   "Return the name of the Go test at point.
 Useful for ‘bazel-test-at-point-functions’.
 See URL ‘https://pkg.go.dev/testing’."
+  (declare (ftype (function () (or string null))))
   (save-excursion
     (let ((case-fold-search nil)
           (search-spaces-regexp nil))
@@ -2136,19 +2407,20 @@ See URL ‘https://pkg.go.dev/testing’."
 If FILE-NAME is not in a Bazel repository, return nil.  Otherwise,
 the return value is a directory name.  FILE-NAME can be a file or
 directory name."
+  (declare (ftype (function (string) (or string null))))
   (cl-check-type file-name string)
-  (when-let ((result (locate-dominating-file file-name
-                                             #'bazel--repository-root-p)))
+  (when-let* ((result (locate-dominating-file file-name
+                                              #'bazel--repository-root-p)))
     (file-name-as-directory result)))
 
 (defun bazel--repository-root-p (directory)
   "Return non-nil if DIRECTORY is a Bazel repository root directory.
 DIRECTORY can be a directory or file name."
+  (declare (ftype (function (string) t)))
   (cl-check-type directory string)
-  (and (file-directory-p directory)
-       (or (bazel--locate-workspace-file directory)
-           (bazel--locate-file "MODULE.bazel" (list directory))
-           (bazel--locate-file "REPO.bazel" (list directory)))))
+  (cl-loop
+   for marker in '("MODULE.bazel" "REPO.bazel" "WORKSPACE" "WORKSPACE.bazel")
+   thereis (file-exists-p (expand-file-name marker directory))))
 
 (defvar bazel--repository-relative-name (make-hash-table :test #'equal)
   "Cache for the function ‘bazel--repository-relative-name’.
@@ -2160,12 +2432,13 @@ repository root.")
 Return nil if FILE is not in a Bazel repository.  If
 ‘non-essential’ is non-nil, avoid hitting the filesystem;
 instead, look up FILE in a cache, so the results might be stale."
+  (declare (ftype (function (string) (or string null))))
   (cl-check-type file string)
   (let ((cache bazel--repository-relative-name))
     (if non-essential
         (gethash file cache)
       (puthash file
-               (when-let ((root (bazel--repository-root file)))
+               (when-let* ((root (bazel--repository-root file)))
                  (file-relative-name file root))
                cache))))
 
@@ -2173,16 +2446,14 @@ instead, look up FILE in a cache, so the results might be stale."
   "Return the Bazel package directory for FILE-NAME under REPOSITORY-ROOT.
 If FILE-NAME is not in a Bazel package, return nil.  FILE-NAME
 and REPOSITORY-ROOT can be file or directory names."
+  (declare (ftype (function (string string) (or string null))))
   (cl-check-type file-name string)
   (cl-check-type repository-root string)
-  (let* ((parent (file-name-directory (directory-file-name repository-root)))
-         ;; Don’t search beyond repository root.
-         (locate-dominating-stop-dir-regexp
-          (if parent
-              (rx (or (seq bos (literal parent) eos)
-                      (regexp locate-dominating-stop-dir-regexp)))
-            locate-dominating-stop-dir-regexp)))
-    (locate-dominating-file file-name #'bazel--package-directory-p)))
+  (locate-dominating-file file-name
+                          (lambda (directory)
+                            ;; Don’t search beyond repository root.
+                            (and (file-in-directory-p directory repository-root)
+                                 (bazel--package-directory-p directory)))))
 
 (defun bazel--package-name (build-file-directory repository-root)
   "Return the Bazel package name for BUILD-FILE-DIRECTORY.
@@ -2190,6 +2461,7 @@ BUILD-FILE-DIRECTORY must be a Bazel package, i.e., it must
 contain a BUILD file.  REPOSITORY-ROOT is the Bazel repository
 root directory.  BUILD-FILE-DIRECTORY and REPOSITORY-ROOT can be
 directory or file names."
+  (declare (ftype (function (string string) (or string null))))
   (cl-check-type build-file-directory string)
   (cl-check-type repository-root string)
   (cond ((file-equal-p repository-root build-file-directory) "")
@@ -2208,6 +2480,7 @@ directory or file names."
   "Return non-nil if DIRECTORY is a Bazel package directory.
 This doesn’t check whether DIRECTORY is within a Bazel repository.
 DIRECTORY can be a directory or file name."
+  (declare (ftype (function (string) t)))
   (cl-check-type directory string)
   (and (file-directory-p directory)
        (bazel--locate-build-file directory)))
@@ -2218,57 +2491,66 @@ REPOSITORY-NAME should be either a string naming an external
 repository, or nil to refer to the current repository.
 THIS-REPOSITORY-ROOT should be the name of the current repository
 root directory, as returned by ‘bazel--repository-root’.  The
-return value is a directory name."
+return value is a directory name or nil if the repository root can’t be
+determined for any reason."
+  (declare (ftype (function ((or null string) string) string)))
   (cl-check-type repository-name (or null string))
   (cl-check-type this-repository-root string)
   (cl-assert (not (string-empty-p repository-name)))
-  (file-name-as-directory
-   (if repository-name
-       ;; See https://bazel.build/remote/output-directories for some overview of
-       ;; the Bazel directory layout.  Empirically, the directory
-       ;; ROOT/bazel-ROOT/external/REPOSITORY is a symlink to the repository
-       ;; root of the external repository REPOSITORY.  Again, this is a
-       ;; heuristic, and should work for the common case.  In particular, we
-       ;; don’t want to shell out to “bazel info workspace” here, because that
-       ;; might block indefinitely if another Bazel instance holds the lock.  We
-       ;; don’t check whether the directory exists, because it’s generated and
-       ;; cached when needed.
-       (expand-file-name repository-name
-                         (bazel--external-repository-dir this-repository-root))
-     this-repository-root)))
+  (if repository-name
+      ;; See https://bazel.build/remote/output-directories for some overview of
+      ;; the Bazel directory layout.  Empirically, the directory
+      ;; $(readlink ROOT/bazel-out)/../../../external/REPOSITORY is a symlink to
+      ;; the repository root of the external repository REPOSITORY; see
+      ;; https://bazel.build/remote/output-directories#layout-diagram.  Again,
+      ;; this is a heuristic, and should work for the common case.  In
+      ;; particular, we don’t want to shell out to “bazel info workspace” here,
+      ;; because that might block indefinitely if another Bazel instance holds
+      ;; the lock.  We don’t check whether the directory exists, because it’s
+      ;; generated and cached when needed.
+      (when-let* ((dir (bazel--external-repository-dir this-repository-root)))
+        (file-name-as-directory (expand-file-name repository-name dir)))
+    (file-name-as-directory this-repository-root)))
 
 (defun bazel--external-repository-dir (root)
   "Return a directory name for the parent directory of the external repositories.
 ROOT should be the name or file name of the main repository root
-directory as returned by ‘bazel--repository-root’."
+directory as returned by ‘bazel--repository-root’.  Return nil if the
+external repository directory can’t be determined for any reason; but a
+non-nil return value is no guarantee that the directory exists."
+  (declare (ftype (function (string) (or string null))))
   (cl-check-type root string)
   ;; See the commentary in ‘bazel--external-repository’ for how to find external
   ;; repositories.
-  (expand-file-name
-   (concat "bazel-" (file-name-nondirectory (directory-file-name root))
-           "/external/")
-   root))
+  (when-let* ((output-dir (file-chase-links (expand-file-name "bazel-out" root)))
+              (main-exec-root (file-name-parent-directory output-dir))
+              (exec-root (file-name-parent-directory main-exec-root))
+              (output-base (file-name-parent-directory exec-root)))
+    (file-name-as-directory (expand-file-name "external" output-base))))
 
 (defun bazel--external-repository-roots (main-root)
   "Return the directory names of the external repository roots.
 MAIN-ROOT should be the name or file name of the main repository
 root directory as returned by ‘bazel--repository-root’."
+  (declare (ftype (function (string) list)))
   (cl-check-type main-root string)
-  (let ((case-fold-search nil)
-        (search-spaces-regexp nil))
-    (mapcar
-     (if (file-name-quoted-p main-root) #'file-name-quote #'identity)
-     ;; If there’s no external repository directory, don’t signal an error.
-     (ignore-error file-missing
-       (directory-files
-        (bazel--external-repository-dir main-root)
-        :full
-        ;; https://bazel.build/rules/lib/globals/module#parameters-8 states that
-        ;; module names may only contain letters, numbers, underscores, hyphens,
-        ;; and dots.  We also include the plus sign since it’s part of canonical
-        ;; repository names.
-        (rx bos (any ?+ "A-Z" "a-z") (* (any ?+ ?- ?. ?_ "A-Z" "a-z" "0-9"))
-            eos))))))
+  (when-let* ((dir (bazel--external-repository-dir main-root)))
+    (let ((case-fold-search nil)
+          (search-spaces-regexp nil))
+      (mapcar
+       (if (file-name-quoted-p main-root) #'file-name-quote #'identity)
+       ;; If there’s no external repository directory, don’t signal an error.
+       (ignore-error file-missing
+         (directory-files
+          dir :full
+          ;; https://bazel.build/rules/lib/globals/module#parameters-8 states
+          ;; that module names may only contain letters, numbers, underscores,
+          ;; hyphens, and dots.  We also include the plus sign since it’s part
+          ;; of canonical repository names.
+          (rx bos (any ?+ "A-Z" "a-z") (* (any ?+ ?- ?. ?_ "A-Z" "a-z" "0-9"))
+              eos)))))))
+
+;;;; Utility functions for target completion
 
 (defun bazel--target-completion-table (pattern only-tests)
   "Return a completion table for Bazel targets and target patterns.
@@ -2284,23 +2566,25 @@ to test targets.  If ‘default-directory’ is not in a Bazel
 package or repository, return an empty completion table.  This
 function should always be fast and not access the filesystem, but
 the returned completion table can access the filesystem."
+  (declare (ftype (function (string t) t)))
   ;; We return a completion function so that we don’t have to find all targets
   ;; eagerly.  See Info node ‘(elisp) Programmed Completion’.
-  (when-let ((directory default-directory))
-    (lambda (string predicate action)
-      (cl-check-type string string)
-      (cl-check-type predicate (or function null))
-      (when-let* ((root (bazel--repository-root directory))
-                  (package (bazel--package-name directory root)))
-        (let ((case-fold-search completion-ignore-case)
-              (search-spaces-regexp nil))
-          ;; We dynamically generate and use a helper completion table based on
-          ;; the provided prefix pattern.
-          (complete-with-action
-           action
-           (bazel--target-completion-table-1 root package pattern only-tests
-                                             string)
-           string predicate))))))
+  (bazel--target-completion-table-with-metadata
+   (when-let* ((directory default-directory))
+     (lambda (string predicate action)
+       (cl-check-type string string)
+       (cl-check-type predicate (or function null))
+       (when-let* ((root (bazel--repository-root directory))
+                   (package (bazel--package-name directory root)))
+         (let ((case-fold-search completion-ignore-case)
+               (search-spaces-regexp nil))
+           ;; We dynamically generate and use a helper completion table based on
+           ;; the provided prefix pattern.
+           (complete-with-action
+            action
+            (bazel--target-completion-table-1 root package pattern only-tests
+                                              string)
+            string predicate)))))))
 
 (defun bazel--target-completion-table-1
     (root package pattern only-tests string)
@@ -2310,6 +2594,7 @@ package name.  If PATTERN is non-nil, complete target patterns
 and skip files.  If ONLY-TESTS is non-nil, restrict rule target
 completion to test targets.  This is a helper function for
 ‘bazel--target-completion-table’."
+  (declare (ftype (function (string string t t string) t)))
   (cl-check-type root string)
   (cl-check-type package string)
   (cl-check-type string string)
@@ -2337,8 +2622,8 @@ completion to test targets.  This is a helper function for
      ;; repository here.
      (bazel--completion-table-with-prefix prefix
        (completion-table-merge
-        (bazel--target-repository-completion-table
-         (bazel--external-repository-dir root))
+        (when-let* ((dir (bazel--external-repository-dir root)))
+          (bazel--target-repository-completion-table dir))
         '("//"))))
     ((rx bos (let prefix (* (not (any ?:))) "/...:"))
      ;; Combination of package wildcard and target wildcard.
@@ -2440,7 +2725,9 @@ Set PREDICATE to a new predicate function that is the logical
 conjunction of PREDICATE and BODY.  Within BODY, ARG is bound to
 the candidate to be tested.  The value of PREDICATE can also be
 nil, which is interpreted as an always-true predicate."
-    (declare (indent 2) (debug (symbolp symbolp def-body)))
+    (declare (ftype (function (symbol symbol &rest t) t))
+             (debug (symbolp symbolp def-body))
+             (indent 2))
     (cl-check-type predicate symbol)
     (cl-check-type arg symbol)
     (cl-with-gensyms (original)
@@ -2458,6 +2745,7 @@ nil, which is interpreted as an always-true predicate."
 ROOT is the parent directory of the external repositories as
 returned by ‘bazel--external-repository-dir’.  This is a helper
 function for ‘bazel--target-completion-table’."
+  (declare (ftype (function (string) t)))
   (cl-check-type root string)
   (lambda (string predicate action)
     (cl-check-type string string)
@@ -2474,7 +2762,7 @@ function for ‘bazel--target-completion-table’."
       (ignore-error file-error
         (pcase action
           ('nil
-           (when-let ((name (file-name-completion string root predicate)))
+           (when-let* ((name (file-name-completion string root predicate)))
              (let ((result (directory-file-name name)))
                ;; Fulfill the contract of ‘try-completion’.
                (if (string-equal result string) t result))))
@@ -2504,12 +2792,14 @@ repository name or the empty string for the main repository, and
 PACKAGE is the current package.  If PATTERN is non-nil, complete
 target patterns and include wildcards.  This is a helper function
 for ‘bazel--target-completion-table’."
+  (declare (ftype (function (string string string t) t)))
   (cl-check-type root string)
   (cl-check-type repository string)
   (cl-check-type package string)
-  (let* ((root (if (string-empty-p repository) root
-                 (bazel--external-repository repository root)))
-         (directory (file-name-as-directory (expand-file-name package root))))
+  (when-let* ((root (if (string-empty-p repository) root
+                     (bazel--external-repository repository root)))
+              (directory (file-name-as-directory
+                          (expand-file-name package root))))
     (lambda (string predicate action)
       (let* ((slash (string-match-p (rx ?/ (* (not (any ?/))) eos) string))
              (parent (substring-no-properties string 0 (or slash 0)))
@@ -2536,6 +2826,7 @@ for ‘bazel--target-completion-table’."
   "Return a completion table for Bazel packages found in DIRECTORY.
 This is a helper function for
 ‘bazel--target-package-completion-table’."
+  (declare (ftype (function (string) t)))
   (cl-check-type directory string)
   (lambda (string predicate action)
     (cl-check-type string string)
@@ -2553,7 +2844,7 @@ This is a helper function for
         ;; impression that they can’t enter a colon, strip the trailing slash.
         (pcase action
           ('nil
-           (when-let ((res (file-name-completion string directory predicate)))
+           (when-let* ((res (file-name-completion string directory predicate)))
              (bazel--remove-slash res)))
           ('t
            (cl-loop for cand in (file-name-all-completions string directory)
@@ -2581,19 +2872,18 @@ non-nil, complete target patterns, include target wildcards like
 target completion to test targets.  If COLON is non-nil, prefix
 the wildcards with a colon.  This is a helper function for
 ‘bazel--target-completion-table’."
+  (declare (ftype (function (string string string t t t) t)))
   (cl-check-type root string)
   (cl-check-type repository string)
   (cl-check-type package string)
-  (when-let ((build-file
-              (bazel--locate-build-file
-               (expand-file-name package
-                                 (if (string-empty-p repository) root
-                                   (bazel--external-repository repository
-                                                               root))))))
+  (when-let* ((external-root (if (string-empty-p repository) root
+                               (bazel--external-repository repository root)))
+              (build-file (bazel--locate-build-file
+                           (expand-file-name package external-root))))
     (let ((completion-regexp-list
            (cons (rx bos (+ (any "a-z" "A-Z" "0-9" ?-
-                                 "!%@^_` \"#$&'()*+,;<=>?[]{|}~/.")
-                            eos))
+                                 "!%@^_` \"#$&'()*+,;<=>?[]{|}~/."))
+                     eos)
                  completion-regexp-list)))
       (completion-table-merge
        (completion-table-with-cache
@@ -2622,6 +2912,7 @@ the wildcards with a colon.  This is a helper function for
 Assume that STRING comes from ‘file-name-completion’ or
 ‘file-name-all-completions’.  This is a helper function for
 ‘bazel--target-completion-table’."
+  (declare (ftype (function (string) t)))
   (cl-check-type string string)
   ;; No thorough check here, since this is only used for completion.  Filename
   ;; completion always returns directory names for directories, so this
@@ -2630,10 +2921,31 @@ Assume that STRING comes from ‘file-name-completion’ or
   (and (directory-name-p string)
        (not (string-prefix-p "." string))))
 
+(defun bazel--annotate (target)
+  "Annotate Bazel TARGET for completion.
+TARGET should be a completion candidate returned by
+‘bazel--target-completion-table’.  Return a string specifying the target
+kind of TARGET, or nil if TARGET is not a Bazel target or its kind can’t
+be determined.  This function is meant to be used as completion
+annotation function; see Info node ‘(elisp) Programmed Completion’."
+  (declare (ftype (function (string) (or string null)))
+           (side-effect-free t))
+  (cl-check-type target string)
+  ;; Note that ‘bazel--complete-targets’ and ‘bazel--complete-files’ add the
+  ;; ‘bazel-target-kind’ property to the last component of the target label, so
+  ;; we check the last instead of the first character.
+  (let ((n (length target)))
+    (unless (eql n 0)
+      (when-let* ((kind (get-text-property (1- n) 'bazel-target-kind target)))
+        (format " (%s)" kind)))))
+
+;;;; Miscellaneous helper functions
+
 (defun bazel--locate-workspace-file (directory)
   "Return the file name of the Bazel WORKSPACE file in DIRECTORY.
 Return nil if DIRECTORY doesn’t contain a WORKSPACE file.
 DIRECTORY can be a directory name or directory file name."
+  (declare (ftype (function (string) (or string null))))
   (cl-check-type directory string)
   (bazel--locate-file "WORKSPACE" (list directory) '(".bazel" "")))
 
@@ -2643,6 +2955,7 @@ Return nil if DIRECTORY is not a Bazel package (i.e., doesn’t
 contain a BUILD file).  Assume that DIRECTORY is within a Bazel
 repository.  DIRECTORY can be a directory name or directory file
 name."
+  (declare (ftype (function (string) (or string null))))
   (cl-check-type directory string)
   (bazel--locate-file "BUILD" (list directory) '(".bazel" "")))
 
@@ -2656,6 +2969,7 @@ a package name string.  TARGET is a string referring to the local
 name of LABEL.  See URL
 ‘https://bazel.build/concepts/labels#labels-lexical-specification’
 for the lexical syntax of labels."
+  (declare (ftype (function (string) list)))
   (cl-check-type label string)
   (let ((case-fold-search nil)
         (search-spaces-regexp nil))
@@ -2710,6 +3024,7 @@ for the lexical syntax of labels."
 For a package “foo/bar”, “bar” is the default target.  For a
 repository “foo”, “foo” in the root package is the default target.
 REPOSITORY can be nil to refer to the current repository."
+  (declare (ftype (function ((or null string) string) string)))
   (cl-check-type repository (or null string))
   (cl-check-type package string)
   (cl-assert (not (string-empty-p repository)))
@@ -2727,7 +3042,8 @@ REPOSITORY is either nil (referring to the current repository), the
 empty string (referring to the main repository), or an external
 repository name.  PACKAGE and TARGET should both be strings.  Return
 either @REPOSITORY//PACKAGE:TARGET or //PACKAGE:TARGET."
-  (declare (side-effect-free t))
+  (declare (ftype (function ((or null string) string string) string))
+           (side-effect-free t))
   (cl-check-type repository (or null string))
   (cl-check-type package string)
   (cl-check-type target string)
@@ -2735,7 +3051,8 @@ either @REPOSITORY//PACKAGE:TARGET or //PACKAGE:TARGET."
 
 (defun bazel--remove-slash (string)
   "Remove a final slash from STRING."
-  (declare (side-effect-free t))
+  (declare (ftype (function (string) string))
+           (side-effect-free t))
   (cl-check-type string string)
   ;; Don’t call ‘directory-file-name’ because that tries to invoke filename
   ;; handlers.
@@ -2746,6 +3063,7 @@ either @REPOSITORY//PACKAGE:TARGET or //PACKAGE:TARGET."
 
 (defun bazel--string-at-point ()
   "Return the string literal at point, or nil if not inside a string literal."
+  (declare (ftype (function () (or string null))))
   (let ((state (syntax-ppss)))
     (when (ppss-string-terminator state) ; in string
       (let ((start (1+ (ppss-comment-or-string-start state))))
@@ -2758,6 +3076,7 @@ either @REPOSITORY//PACKAGE:TARGET or //PACKAGE:TARGET."
   "Search for a target name from point to BOUND.
 If a target name was found, return non-nil and set the match to
 the match text.  The second match group matches the name."
+  (declare (ftype (function (integer) t)))
   (cl-check-type bound natnum)
   (let ((case-fold-search nil)
         (search-spaces-regexp nil))
@@ -2778,6 +3097,7 @@ the match text.  The second match group matches the name."
   "Search for a magic comment from point to BOUND.
 If a magic comment was found, return non-nil and set the match to
 the comment text."
+  (declare (ftype (function (integer) t)))
   (cl-check-type bound natnum)
   ;; Buildifier's magic comment detection appears to be case-insensitive, but
   ;; isn't documented as such.  Reference in the source: https://git.io/JO6FG.
@@ -2792,11 +3112,11 @@ the comment text."
 Restrict LINE to the buffer size and COLUMN to the number of
 characters in LINE.  COLUMN is measured in characters, not visual
 columns."
+  (declare (ftype (function (integer integer) integer)))
   (cl-check-type line natnum)
   (cl-check-type column natnum)
   (save-excursion
-    (save-restriction
-      (widen)
+    (without-restriction
       (goto-char (point-min))
       (forward-line (1- line))
       (min (line-end-position) (+ (point) column)))))
@@ -2805,22 +3125,20 @@ columns."
   "Return a completion table based on TABLE with the given PREFIX.
 The returned completion table completes strings of the form
 \(concat PREFIX STRING), if TABLE completes STRING."
-  (declare (indent 1))  ; reduces horizontal whitespace
+  (declare (ftype (function (string t) t))
+           (indent 1))  ; reduces horizontal whitespace
   (cl-check-type prefix string)
   (if (string-empty-p prefix)
       table  ; small optimization
-    (completion-table-subvert
-     ;; We’d like to pass TABLE here directly, but before Emacs 28,
-     ;; ‘completion-table-subvert’ reports incorrect completion boundaries in
-     ;; case TABLE has trivial boundaries, so we ensure that its underlying
-     ;; table has nontrivial ones.
-     (lambda (string predicate action)
-       (pcase action
-         (`(boundaries . ,suffix)
-          `(boundaries . ,(completion-boundaries string table predicate
-                                                 suffix)))
-         (_ (complete-with-action action table string predicate))))
-     prefix "")))
+    (completion-table-subvert table prefix "")))
+
+(defun bazel--target-completion-table-with-metadata (table)
+  "Return a completion table based on TABLE with some Bazel-specific metadata.
+TABLE should provide completion for Bazel targets or target patterns."
+  (declare (ftype (function (t) t)))
+  (bazel--completion-table-with-metadata
+   table '((category . bazel-target)
+           (annotation-function . bazel--annotate))))
 
 (defun bazel--locate-file (filename path &optional suffixes)
   "Variant of ‘locate-file’ that returns quoted filenames.
@@ -2832,8 +3150,10 @@ function does if the first directory in PATH is quoted."
   (cl-check-type filename string)
   (cl-check-type path cons)
   (cl-check-type suffixes list)
-  (when-let ((result (locate-file filename path suffixes)))
+  (when-let* ((result (locate-file filename path suffixes)))
     (if (file-name-quoted-p (car path)) (file-name-quote result) result)))
+
+;;;; Polyfills
 
 (defalias 'bazel--json-parse-buffer
   (if (and (fboundp 'json-parse-buffer) (json-available-p))
@@ -2848,6 +3168,17 @@ function does if the first directory in PATH is quoted."
             (json-pre-element-read-function nil)
             (json-post-element-read-function nil))
         (json-read)))))
+
+(defalias 'bazel--completion-table-with-metadata
+  (if (fboundp 'completion-table-with-metadata)
+      #'completion-table-with-metadata
+    (lambda (table metadata)
+      "Polyfill for ‘completion-table-with-metadata’."
+      (cl-check-type metadata list)
+      (lambda (string predicate action)
+        (if (eq action 'metadata)
+            `(metadata . ,metadata)
+          (complete-with-action action table string predicate))))))
 
 (provide 'bazel)
 ;;; bazel.el ends here

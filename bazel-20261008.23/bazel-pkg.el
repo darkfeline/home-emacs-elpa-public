@@ -1,8 +1,8 @@
 ;; -*- no-byte-compile: t; lexical-binding: nil -*-
-(define-package "bazel" "20260810.1338"
+(define-package "bazel" "20261008.23"
   "Bazel support for Emacs."
-  '((emacs "29.1"))
+  '((emacs "30.1"))
   :url "https://github.com/bazel-contrib/bazel.el"
-  :commit "816e1571ed530b41fcef102cd6d9974c4343eb7d"
-  :revdesc "816e1571ed53"
+  :commit "5986655b5785e3fff3770af0fada2173a96d4030"
+  :revdesc "5986655b5785"
   :keywords '("build tools" "languages"))
