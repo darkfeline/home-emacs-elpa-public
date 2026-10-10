@@ -11,10 +11,19 @@
 
 ;;; Generated autoloads from kdl-mode.el
 
-(autoload 'kdl-mode "kdl-mode" "\
-Major mode for editing KDL document language.
+(autoload 'kdl-natnum-or-nil-p "kdl-mode"
+"Return t if V is either a nonnegative integer, or nil.
 
-(fn)" t)
+(fn V)")
+(put 'kdl-indent-level 'safe-local-variable 'kdl-natnum-or-nil-p)
+(autoload 'kdl-mode "kdl-mode"
+"Major mode for editing KDL document language.
+
+In addition to any hooks its parent mode `prog-mode' might have run,
+this mode runs the hook `kdl-mode-hook', as the final or penultimate
+step during initialization.
+
+\\{kdl-mode-map}" t)
 (add-to-list 'auto-mode-alist '("\\.kdl\\'" . kdl-mode))
 (register-definition-prefixes "kdl-mode" '("kdl-"))
 

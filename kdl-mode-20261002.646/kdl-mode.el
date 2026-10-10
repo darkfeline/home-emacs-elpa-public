@@ -3,8 +3,8 @@
 ;; Copyright © 2025, by Ta Quang Trung
 
 ;; Author: Ta Quang Trung
-;; Package-Version: 20250620.259
-;; Package-Revision: 0723706e1248
+;; Package-Version: 20261002.646
+;; Package-Revision: e966ed4b53f8
 ;; Created: 27 April, 2025
 ;; Keywords: languages
 ;; Package-Requires: ((emacs "29.1"))
@@ -46,12 +46,34 @@
 
 (declare-function treesit-parser-create "treesit.c")
 
-(defconst kdl-special-constants
-  '("inf"
-    "nan"
-    "true"
-    "false")
-  "List of KDL constants.")
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; User options
+
+(defgroup kdl-mode nil
+  "Support for editing KDL configuration files."
+  :link '(url-link "https://kdl.dev/")
+  :group 'languages
+  :prefix "kdl-")
+
+(defcustom kdl-indent-level nil
+  "Amount of indentation per nesting level within a KDL expression."
+  :group 'kdl-mode
+  :local t
+  :type '(choice (natnum :tag "Number of spaces" :value 4)
+                 (const :tag "Use `tab-width'" nil)))
+
+;; kdl-natnum-or-nil-p needs to be autoloaded, so it can't be embedded
+;; in the defcustom above, and it needs to have a name and a docstring
+;; so that ‘C-h v kdl-indent-level’ provides a useful explanation for
+;; what values are safe.
+
+;;;###autoload
+(defun kdl-natnum-or-nil-p (v)
+  "Return t if V is either a nonnegative integer, or nil."
+  (or (natnump v) (null v)))
+
+;;;###autoload
+(put 'kdl-indent-level 'safe-local-variable 'kdl-natnum-or-nil-p)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Syntax table
@@ -69,6 +91,13 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Syntax highlighting using regular expression
+
+(defconst kdl-special-constants
+  '("inf"
+    "nan"
+    "true"
+    "false")
+  "List of KDL constants.")
 
 (defvar kdl-special-constants-regexp
   (concat
@@ -108,6 +137,17 @@
 ;; Syntax highlighting using tree-sitter
 ;;
 ;; Adopted from: https://github.com/dataphract/kdl-ts-mode/
+
+(defun kdl--treesit-fontify-commented-parent (node override start end &rest _)
+  "Fontify the parent of the slashdash comment NODE as a comment.
+OVERRIDE, START and END are as in `treesit-font-lock-rules' capture
+functions.  The slashdash node is matched on its own, because nested
+patterns such as `(node (node_field (node_field_comment)))' take
+practically forever to compile with grammar v2."
+  (when-let* ((parent (treesit-node-parent node)))
+    (treesit-fontify-with-override
+     (treesit-node-start parent) (treesit-node-end parent)
+     'font-lock-comment-face override start end)))
 
 (defvar kdl-treesit-font-locks
   (treesit-font-lock-rules
@@ -161,11 +201,23 @@
    :language 'kdl
    :feature 'comment
    :override t
-   '((node (node_comment)) @font-lock-comment-face
-     (node (node_field (node_field_comment)) @font-lock-comment-face)
-     (node_children (node_children_comment)) @font-lock-comment-face))
+   '((node_comment) @kdl--treesit-fontify-commented-parent
+     (node_field_comment) @kdl--treesit-fontify-commented-parent
+     (node_children_comment) @kdl--treesit-fontify-commented-parent))
 
   "Tree-sitter font-lock settings for `kdl-mode'.")
+
+(defun kdl--treesit-font-lock-settings ()
+  "Return the tree-sitter font-lock settings for the loaded KDL grammar.
+Grammar v2 parses `#null' as a `keyword' node that the common rules do not
+match, while grammar v1 has no `keyword' node and rejects any query on it."
+  (if (treesit-query-valid-p 'kdl '((keyword) @font-lock-constant-face))
+      (append kdl-treesit-font-locks
+              (treesit-font-lock-rules
+               :language 'kdl
+               :feature 'constant
+               '((keyword) @font-lock-constant-face)))
+    kdl-treesit-font-locks))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Indentation
@@ -189,36 +241,58 @@
 
 (defun kdl-calculate-indentation ()
   "Calculate the indentation of the current line."
-  (let (indent)
-    (save-excursion
-      (back-to-indentation)
-      (let* ((ppss (syntax-ppss))
-             (depth (car ppss))
-             (base (* tab-width depth)))
-        (unless (= depth 0)
-          (setq indent base)
-          (cond ((looking-at "\s*[})]")
-                 ;; closing a block or a parentheses pair
-                 (setq indent (- base tab-width)))
-                ((looking-at "\s*:=")
-                 ;; indent for multiple-line assignment
-                 (setq indent (+ base (* 2 tab-width))))
-                ((looking-back "\s*:=\s*\n\s*" nil nil)
-                 ;; indent for multiple-line assignment
-                 (setq indent (+ base (* 2 tab-width))))))))
-    indent))
+  (save-excursion
+    (back-to-indentation)
+    (let* ((ppss (syntax-ppss))
+           (depth (car ppss))
+           (step (max 0 (or kdl-indent-level tab-width)))
+           (base (* step depth)))
+      (cond
+       ((= depth 0) nil)
+       ((looking-at (rx (* space) (char ?\} ?\))))
+        ;; closing a block or a parentheses pair
+        (- base step))
+       ((looking-back (rx space "\\\n" (* space)) nil nil)
+        ;; continued line
+        (+ base step))
+       (t base)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Public functions
 
+(defconst kdl--grammar-repository
+  "https://github.com/tree-sitter-grammars/tree-sitter-kdl"
+  "Repository of the tree-sitter-kdl grammar.")
+
+(defconst kdl--grammar-revisions '("v2.0.0" "v1.1.0")
+  "Supported revisions of tree-sitter-kdl, newest first.
+Revisions are pinned so that the font-lock rules do not break when the
+grammar changes.  v2.0.0 uses grammar ABI 15, which needs libtree-sitter
+0.25 or later; v1.1.0 uses ABI 14, which older libraries load.")
+
+(defun kdl--install-grammar-revision (revision)
+  "Build and install the tree-sitter-kdl grammar at REVISION."
+  (let ((treesit-language-source-alist
+         `((kdl . (,kdl--grammar-repository ,revision "src")))))
+    (treesit-install-language-grammar 'kdl)))
+
 (defun kdl-install-tree-sitter-grammar ()
-  "Install tree-sitter-kdl grammar."
+  "Install tree-sitter-kdl grammar.
+Install the newest supported revision that the installed libtree-sitter
+can load.  A grammar source set by the user in
+`treesit-language-source-alist' is used as is."
   (interactive)
-  (unless (assoc 'kdl treesit-language-source-alist)
-    (add-to-list 'treesit-language-source-alist
-                 '(kdl . ("https://github.com/tree-sitter-grammars/tree-sitter-kdl"
-                          "master" "src"))))
-  (treesit-install-language-grammar 'kdl))
+  (if (assoc 'kdl treesit-language-source-alist)
+      (treesit-install-language-grammar 'kdl)
+    (let ((revisions kdl--grammar-revisions))
+      (kdl--install-grammar-revision (pop revisions))
+      (while (and revisions (not (treesit-language-available-p 'kdl)))
+        (message "kdl-mode: the grammar cannot be loaded, installing %s"
+                 (car revisions))
+        (kdl--install-grammar-revision (pop revisions))
+        ;; Emacs keeps the rejected library loaded, so only a new session
+        ;; can load the replacement.
+        (message "kdl-mode: restart Emacs to load the tree-sitter-kdl grammar")))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Major mode settings
@@ -240,7 +314,7 @@
   ;; Syntax highlighting using tree-sitter
   (when (treesit-ready-p 'kdl)
     (treesit-parser-create 'kdl)
-    (setq-local treesit-font-lock-settings kdl-treesit-font-locks)
+    (setq-local treesit-font-lock-settings (kdl--treesit-font-lock-settings))
     (setq-local treesit-font-lock-feature-list
                 '((comment)
                   (string type)
